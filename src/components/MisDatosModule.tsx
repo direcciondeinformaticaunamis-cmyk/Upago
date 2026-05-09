@@ -1,0 +1,180 @@
+import React, { useState } from 'react';
+import PersonalDataForm from './PersonalDataForm';
+import DocumentUploadSection from './DocumentUploadSection';
+import { CheckCircle, AccessTime as Clock, Error as ErrorIcon, Description, Person, School, ArrowRight } from '@mui/icons-material';
+
+interface MisDatosModuleProps {
+    user?: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; estado_expediente?: 'pendiente' | 'aprobado' | 'rechazado'; };
+    initialStep?: number;
+    forceEdit?: boolean;
+}
+
+const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false }) => {
+    // Si en App.tsx seteamos expediente_aprobado = true, lo interpretamos como aprobado.
+    // Si está simulado como falso pero existe la prop, o si se añade un estado específico.
+    const [isSubmitted, setIsSubmitted] = useState(!forceEdit && user?.expediente_aprobado !== undefined);
+    const estado = user?.expediente_aprobado ? 'aprobado' : 'pendiente'; 
+    const [step, setStep] = useState(initialStep);
+    const [formData, setFormData] = useState({
+        nombre: user?.nombre || '',
+        apellido: user?.apellido || '',
+        cedula: user?.cedula || '',
+        correo: user?.email || '',
+        telefono: '',
+        fechaNacimiento: '',
+        genero: '',
+        direccion: '',
+        carrera: '',
+        sede: '',
+        tipoUsuario: 'postulante' as 'postulante' | 'concursante_docente',
+    });
+    const [photo, setPhoto] = useState<string | null>(null);
+    const [errors, setErrors] = useState<string[]>([]);
+
+    const handleChange = (field: string, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        setErrors(prev => prev.filter(e => e !== field));
+    };
+
+    const handleContinue = () => {
+        const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
+        const missing = required.filter(field => !formData[field as keyof typeof formData]);
+        
+        if (missing.length > 0) {
+            setErrors(missing);
+            alert("Por favor, complete todos los campos obligatorios.");
+            return;
+        }
+        
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleFinish = () => {
+        setIsSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    if (isSubmitted) {
+        return (
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 md:p-12 relative overflow-hidden max-w-4xl mx-auto">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 border-b border-slate-100 pb-8">
+                    <div>
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Mi Expediente</h2>
+                        <p className="text-slate-500">Resumen de sus datos personales y documentos digitales.</p>
+                    </div>
+                    
+                    {estado === 'aprobado' ? (
+                        <div className="bg-emerald-50 text-emerald-700 px-6 py-4 rounded-2xl flex items-center gap-4 border border-emerald-200">
+                            <CheckCircle style={{fontSize: 32}} />
+                            <div>
+                                <h3 className="font-bold text-lg leading-tight">Expediente Aprobado</h3>
+                                <p className="text-sm font-medium opacity-90 mt-0.5">Ya puede proceder a pagar sus aranceles.</p>
+                            </div>
+                        </div>
+                    ) : estado === 'pendiente' ? (
+                        <div className="bg-amber-50 text-amber-700 px-6 py-4 rounded-2xl flex items-center gap-4 border border-amber-200">
+                            <Clock style={{fontSize: 32}} />
+                            <div>
+                                <h3 className="font-bold text-lg leading-tight">A verificar</h3>
+                                <p className="text-sm font-medium opacity-90 mt-0.5">Sus documentos están en revisión por Admisión.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-red-50 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-4 border border-red-200">
+                            <ErrorIcon style={{fontSize: 32}} />
+                            <div>
+                                <h3 className="font-bold text-lg leading-tight">Expediente Rechazado</h3>
+                                <p className="text-sm font-medium opacity-90 mt-0.5">Motivo: Documentos ilegibles. Favor reenviar.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Datos Personales */}
+                    <div className="space-y-6">
+                        <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <Person className="text-slate-400" /> Datos Personales
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Nombre Completo</p>
+                                <p className="font-medium text-slate-800">{formData.nombre} {formData.apellido}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Cédula</p>
+                                <p className="font-medium text-slate-800">{formData.cedula}</p>
+                            </div>
+                            <div className="col-span-2">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Correo Electrónico</p>
+                                <p className="font-medium text-slate-800">{formData.correo}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Datos Académicos */}
+                    <div className="space-y-6">
+                        <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <School className="text-slate-400" /> Información Académica
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Programa</p>
+                                <p className="font-medium text-slate-800">{formData.carrera}</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sede</p>
+                                    <p className="font-medium text-slate-800">{formData.sede}</p>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Perfil</p>
+                                    <p className="font-medium text-slate-800 capitalize">{formData.tipoUsuario}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-10 bg-slate-50 p-6 rounded-2xl border border-slate-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <Description className="text-slate-400" />
+                        <div>
+                            <p className="font-bold text-slate-700">Expediente Digitalizado</p>
+                            <p className="text-xs text-slate-500">Sus documentos fueron recibidos correctamente.</p>
+                        </div>
+                    </div>
+                    <button className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors">
+                        Ver Documentos
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full">
+            {step === 1 ? (
+                <PersonalDataForm
+                    formData={formData}
+                    photo={photo}
+                    setPhoto={setPhoto}
+                    errors={errors}
+                    onChange={handleChange}
+                    onContinue={handleContinue}
+                />
+            ) : (
+                <DocumentUploadSection
+                    studentData={formData}
+                    photo={photo}
+                    onFinish={handleFinish}
+                />
+            )}
+        </div>
+    );
+};
+
+export default MisDatosModule;
