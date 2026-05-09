@@ -333,6 +333,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     </div>
                                 </button>
                             </div>
+                        </div>
                         <div className="flex flex-col gap-1.5 w-full">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
                                 Sede / Campus
