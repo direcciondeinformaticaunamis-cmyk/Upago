@@ -25,6 +25,7 @@ interface Pago {
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) => {
     const [activeSection, setActiveSection] = useState<'datos' | 'documentos' | 'pagos' | 'registro_pago' | 'editar_datos' | 'documentos_digitales'>('pagos');
+    const [showModalPago, setShowModalPago] = useState(false);
 
     const [misPagos, setMisPagos] = useState<Pago[]>([
         { id: 1, concepto: 'Examen Admisión - Medicina', monto: 350000, estado: 'verificado', fecha_pago: '12 Abr 2024', numero_boleta: 'BOL-2024-0001' },
@@ -296,7 +297,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                                         <ReceiptLong />
                                                     </button>
                                                 ) : (
-                                                    <button className="text-[#43474f] cursor-not-allowed p-2" disabled="">
+                                                    <button className="text-[#43474f] cursor-not-allowed p-2" disabled={true}>
                                                         <ReceiptLong />
                                                     </button>
                                                 )}

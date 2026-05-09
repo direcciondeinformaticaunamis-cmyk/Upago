@@ -258,11 +258,11 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                                         <p className="text-3xl font-black text-[#800020] tracking-tighter">{formatGs(selected.monto)}</p>
                                     </div>
                                 </div>
-                                {selected.comprobante && (
+                                {selected.comprobante_url && (
                                     <div className="mt-4">
                                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2">Comprobante adjunto</p>
                                         <img 
-                                            src={selected.comprobante.startsWith('http') ? selected.comprobante : `${API_BASE_URL}/${selected.comprobante}`} 
+                                            src={selected.comprobante_url.startsWith('http') ? selected.comprobante_url : `${API_BASE_URL}/${selected.comprobante_url}`} 
                                             alt="Comprobante" 
                                             className="w-full rounded-xl border border-slate-100 shadow-sm max-h-48 object-contain bg-slate-50"
                                         />

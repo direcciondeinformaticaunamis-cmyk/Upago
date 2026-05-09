@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, CheckCircle, Warning, Description, Edit, UploadFile, AssignmentInd, Assignment } from '@mui/icons-material';
+import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, CheckCircle, Warning, Description, Edit, UploadFile, AssignmentInd, Assignment, FactCheck as FileCheck, AccessTime as Clock, FilterList, Close as X, Check } from '@mui/icons-material';
 import MisDatosModule from './MisDatosModule';
 import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';

@@ -101,8 +101,8 @@ const FinancialReports: React.FC = () => {
                                 <td>#${p.id.toString().padStart(6, '0')}</td>
                                 <td>${p.fecha_pago}</td>
                                 <td>
-                                    <strong>${p.nombre_estudiante}</strong><br>
-                                    <span style="color: #666; font-size: 10px;">CI: ${p.cedula_estudiante}</span>
+                                    <strong>${p.nombre || 'N/A'}</strong><br>
+                                    <span style="color: #666; font-size: 10px;">CI: ${p.postulante_cedula || 'N/A'}</span>
                                 </td>
                                 <td>${p.concepto}</td>
                                 <td class="amount">${p.monto.toLocaleString('es-PY')}</td>

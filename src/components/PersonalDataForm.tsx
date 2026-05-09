@@ -87,6 +87,14 @@ interface UploadedFile {
     preview: string;
 }
 
+interface DocumentItem {
+    id: string;
+    label: string;
+    required: boolean;
+    description: string;
+    templateUrl?: string;
+}
+
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadedDocs, setUploadedDocs] = useState<UploadedFile[]>([]);
@@ -120,21 +128,21 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
         setUploadedDocs(prev => prev.filter(d => d.id !== docId));
     };
 
-    const studentDocs = [
+    const studentDocs: DocumentItem[] = [
         { id: 'cedula', label: 'Cédula de Identidad', required: true, description: 'Copia de ambos lados.' },
         { id: 'nacimiento', label: 'Certificado de Nacimiento', required: true, description: 'Original o copia autenticada.' },
         { id: 'titulo', label: 'Título/ Certificado', required: true, description: 'Copia del título de educación media.' },
         { id: 'foto', label: 'Foto Tipo Carnet', required: true, description: 'Formato digital nítido.' },
     ];
 
-    const teacherDocs = [
+    const teacherDocs: DocumentItem[] = [
         { id: 'cedula', label: 'Cédula de Identidad', required: true, description: 'Copia autenticada.' },
         { id: 'titulo', label: 'Título de Grado', required: true, description: 'Copia autenticada.' },
         { id: 'posgrado', label: 'Título de Posgrado', required: false, description: 'Opcional, si aplica.' },
         { id: 'cv', label: 'Currículum Vitae', required: true, description: 'Formato libre, actualizado.' },
     ];
 
-    const lenguaSantaRosaDocs = [
+    const lenguaSantaRosaDocs: DocumentItem[] = [
         { id: 'cedula', label: 'Cédula de Identidad (Ambos Lados)', required: true, description: 'Copia autenticada por escribanía pública.' },
         { id: 'nacimiento', label: 'Certificado de Nacimiento Original', required: true, description: 'O copia de Identidad Electrónica válida.' },
         { id: 'titulo', label: 'Título de Profesorado o Equivalente', required: true, description: 'Copia autenticada por escribanía pública.' },
