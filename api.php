@@ -540,6 +540,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
         echo json_encode(["status" => "error", "message" => "Datos inválidos"]);
         exit;
     }
+
+    // Acción para aprobar expediente
+    if (isset($data['action']) && $data['action'] === 'approve_expediente') {
+        try {
+            $stmt = $conn->prepare("UPDATE postulantes SET estado_revision = 'verificado' WHERE cedula = ?");
+            $stmt->execute([$data['cedula']]);
+            echo json_encode(["status" => "success"]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
     
     // Normalizar tipo de usuario para el ENUM
     $tipo_usuario = $data['tipoUsuario'] ?? 'postulante';
@@ -569,6 +582,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
+    // Traer datos de un postulante específico por correo (Login)
+    if (isset($_GET['perfil_by_email'])) {
+        $email = $_GET['perfil_by_email'];
+        try {
+            $stmt = $conn->prepare("SELECT * FROM postulantes WHERE correo = ?");
+            $stmt->execute([$email]);
+            echo json_encode($stmt->fetch(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     // Traer datos de un postulante específico
     if (isset($_GET['perfil'])) {
         $cedula = $_GET['perfil'];
@@ -596,7 +623,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
         exit;
     }
-
+    // Traer pagos (puede filtrarse por cédula para el estudiante)
+    if (isset($_GET['pagos'])) {
+        $cedula = $_GET['pagos'];
+        try {
+            if ($cedula && $cedula !== 'true') {
+                $stmt = $conn->prepare("SELECT * FROM pagos WHERE postulante_cedula = ? ORDER BY fecha_registro DESC");
+                $stmt->execute([$cedula]);
+            } else {
+                // Si es admin, trae todos con datos del postulante
+                $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido 
+                                     FROM pagos p 
+                                     JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                                     ORDER BY p.fecha_registro DESC");
+                $stmt->execute();
+            }
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
 // Listado general de postulantes
     try {
         $stmt = $conn->prepare("SELECT * FROM postulantes ORDER BY fecha_registro DESC");
@@ -663,23 +711,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['reconciliation_queue'])
             foreach ($pagos as $p) {
                 $score = 0;
                 
-                // Monto exacto (50 pts)
+                // 1. Monto exacto (50 pts)
                 if ((float)$tx['monto'] == (float)$p['monto']) $score += 50;
 
-                // Referencia en descripción (30 pts)
-                if ($p['num_comprobante'] && stripos($tx['descripcion'], $p['num_comprobante']) !== false) $score += 30;
+                // 2. Referencia bancaria en descripción (40 pts)
+                // Buscamos el num_comprobante (que el alumno puso en su declaración) 
+                // dentro de la descripción del banco.
+                if ($p['num_comprobante'] && stripos($tx['descripcion'], $p['num_comprobante']) !== false) {
+                    $score += 40;
+                }
 
-                // Nombre en descripción (20 pts)
+                // 3. Referencia del banco (Movimiento ID) (30 pts)
+                // A veces el alumno pone el ID de movimiento del extracto.
+                if ($p['num_comprobante'] && stripos($tx['referencia'], $p['num_comprobante']) !== false) {
+                    $score += 30;
+                }
+
+                // 4. Nombre/Apellido en descripción (20 pts)
                 $fullName = $p['nombre'] . ' ' . $p['apellido'];
-                if (stripos($tx['descripcion'], $p['nombre']) !== false || stripos($tx['descripcion'], $p['apellido']) !== false) $score += 20;
+                if (stripos($tx['descripcion'], $p['nombre']) !== false || stripos($tx['descripcion'], $p['apellido']) !== false) {
+                    $score += 20;
+                }
+                
+                // 5. Cédula en descripción (Pattern Banco Continental) (30 pts)
+                if (stripos($tx['descripcion'], $p['postulante_cedula']) !== false) {
+                    $score += 30;
+                }
 
                 if ($score > $max_score) {
-                    $max_score = $score;
+                    $max_score = min(100, $score); // Cap at 100
                     $best_match = [
                         "estudiante" => $fullName,
                         "concepto" => $p['concepto'],
                         "pago_id" => $p['id'],
-                        "puntaje" => $score
+                        "puntaje" => $max_score
                     ];
                 }
             }
@@ -728,6 +793,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['reconcile'])) {
 
         $conn->commit();
         echo json_encode(["status" => "success", "message" => "Conciliación exitosa"]);
+    } catch (Exception $e) {
+        if ($conn->inTransaction()) $conn->rollBack();
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    }
+    exit;
+}
+// ==================== BOT AUTO-CONCILIACIÓN ====================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['bot_auto_reconcile'])) {
+    try {
+        // Ejecutamos la lógica de búsqueda de matches
+        // (Reutilizamos la lógica de reconciliation_queue pero para ejecutar)
+        $stmt = $conn->query("SELECT * FROM transacciones_bancarias WHERE estado = 'pendiente'");
+        $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido 
+                             FROM pagos p 
+                             JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                             WHERE p.estado = 'pendiente'");
+        $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $count = 0;
+        foreach ($transacciones as $tx) {
+            foreach ($pagos as $p) {
+                $score = 0;
+                if ((float)$tx['monto'] == (float)$p['monto']) $score += 50;
+                if ($p['num_comprobante'] && stripos($tx['descripcion'], $p['num_comprobante']) !== false) $score += 40;
+                if ($p['num_comprobante'] && stripos($tx['referencia'], $p['num_comprobante']) !== false) $score += 30;
+                if (stripos($tx['descripcion'], $p['nombre']) !== false || stripos($tx['descripcion'], $p['apellido']) !== false) $score += 20;
+                if (stripos($tx['descripcion'], $p['postulante_cedula']) !== false) $score += 30;
+
+                if ($score >= 90) { // Umbral de confianza del Bot
+                    $conn->beginTransaction();
+                    $stmt = $conn->prepare("UPDATE pagos SET estado = 'verificado', observaciones = CONCAT(IFNULL(observaciones,''), ' | Auto-Conciliado por Bot IA') WHERE id = ?");
+                    $stmt->execute([$p['id']]);
+                    $stmt = $conn->prepare("UPDATE transacciones_bancarias SET estado = 'conciliado' WHERE id = ?");
+                    $stmt->execute([$tx['id']]);
+                    $stmt = $conn->prepare("INSERT INTO conciliaciones (pago_id, transaccion_bancaria_id, metodo) VALUES (?, ?, 'automatico')");
+                    $stmt->execute([$p['id'], $tx['id']]);
+                    $conn->commit();
+                    $count++;
+                    break; // Siguiente transacción
+                }
+            }
+        }
+        echo json_encode(["status" => "success", "conciliated_count" => $count]);
     } catch (Exception $e) {
         if ($conn->inTransaction()) $conn->rollBack();
         http_response_code(500);

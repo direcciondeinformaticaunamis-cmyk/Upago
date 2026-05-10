@@ -71,20 +71,17 @@ const BankReconciliation: React.FC = () => {
     };
 
     const handleApproveAll = async () => {
-        const toConciliate = systemRecords.filter(r => r.estado === 'pendiente' && r.match);
-        let count = 0;
-        for (const item of toConciliate) {
-            if (item.match) {
-                try {
-                    await FinanceService.reconcile(item.match.pago_id, item.id);
-                    count++;
-                } catch (e) {
-                    console.error(`Error conciliando ${item.id}:`, e);
-                }
-            }
+        try {
+            const result = await FinanceService.botAutoReconcile();
+            await loadRecords();
+            setChatMessages(prev => [...prev, { 
+                role: 'bot', 
+                text: `¡Hecho! El Bot IA ha procesado los registros. Se han conciliado automáticamente ${result.conciliated_count} pagos con alta confianza.` 
+            }]);
+        } catch (e) {
+            console.error('Error in bot auto-reconciliation:', e);
+            setChatMessages(prev => [...prev, { role: 'bot', text: 'Lo siento, ocurrió un error al intentar conciliar automáticamente.' }]);
         }
-        await loadRecords();
-        setChatMessages(prev => [...prev, { role: 'bot', text: `¡Hecho! Se han conciliado ${count} registros exitosamente.` }]);
     };
 
     const handleSingleReconcile = async (pago_id: number, transaccion_id: number) => {

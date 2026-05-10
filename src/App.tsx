@@ -23,45 +23,87 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | undefined>();
 
-    const handleLogin = (email: string, password: string) => {
+    const handleLogin = async (email: string, password: string) => {
         setLoading(true);
         setError(undefined);
         
-        // MODO PRUEBA - Simular login
-        setTimeout(() => {
-            if (email === 'academico@unamis.edu.py') {
+        try {
+            // Caso especial para admin y académico si no están en la BD aún
+            if (email === 'academico@unamis.edu.py' && password === 'admin123') {
                 setCurrentUser({
                     nombre: 'Coordinador',
                     apellido: 'Académico',
                     email: email,
-                    cedula: '',
+                    cedula: 'ADMIN-ACAD',
                     rol: 'academico'
                 });
                 setView('academic');
-            } else if (email.endsWith('@unamis.edu.py') && email.includes('finanzas')) {
+                setLoading(false);
+                return;
+            }
+
+            if (email === 'finanzas@unamis.edu.py' && password === 'admin123') {
                 setCurrentUser({
-                    nombre: 'Usuario',
+                    nombre: 'Admin',
                     apellido: 'Finanzas',
                     email: email,
-                    cedula: '',
+                    cedula: 'ADMIN-FIN',
                     rol: 'finance'
                 });
                 setView('admin');
-            } else {
-                // Estudiante o Docente
-                const nombreFromEmail = email.split('@')[0];
+                setLoading(false);
+                return;
+            }
+
+            // Para estudiantes, buscamos por perfil en la API
+            // En un entorno real, aquí iría una validación de password real.
+            // Por ahora consultamos el perfil por correo si existe.
+            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
+            const data = await response.json();
+
+            if (data && data.cedula) {
                 setCurrentUser({
-                    nombre: nombreFromEmail.charAt(0).toUpperCase() + nombreFromEmail.slice(1),
-                    apellido: '',
-                    email: email,
-                    cedula: '4.555.666',
-                    rol: 'estudiante',
-                    expediente_aprobado: true // Para poder probar los pagos. En un entorno real viene de la BD.
+                    nombre: data.nombre,
+                    apellido: data.apellido,
+                    email: data.correo,
+                    cedula: data.cedula,
+                    rol: data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
+                    expediente_aprobado: data.estado_revision === 'verificado'
                 });
                 setView('student');
+            } else {
+                setError('Usuario no encontrado o credenciales inválidas.');
             }
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('Error de conexión con el servidor.');
+        } finally {
             setLoading(false);
-        }, 800);
+        }
+    };
+
+    const handleRegister = async (data: any) => {
+        setLoading(true);
+        setError(undefined);
+        try {
+            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                // Después de registrar, logueamos automáticamente
+                handleLogin(data.correo || data.email, data.password);
+            } else {
+                setError(result.message || 'Error al registrar usuario.');
+            }
+        } catch (err) {
+            console.error('Registration error:', err);
+            setError('Error al conectar con el servidor.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleLogout = () => {
@@ -73,7 +115,7 @@ const App: React.FC = () => {
         return (
             <AuthScreen
                 onLogin={handleLogin}
-                onRegister={() => {}}
+                onRegister={handleRegister}
                 error={error}
                 loading={loading}
             />

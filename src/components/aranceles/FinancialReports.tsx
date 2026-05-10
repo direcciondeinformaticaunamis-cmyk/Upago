@@ -36,7 +36,7 @@ const FinancialReports: React.FC = () => {
     };
 
     const handleExportPDF = () => {
-        const verifiedPayments = payments.filter(p => p.estado === 'verificado');
+        const verifiedPayments = (payments || []).filter(p => p.estado === 'verificado');
         const total = verifiedPayments.reduce((sum, p) => sum + p.monto, 0);
         
         const fechaReporte = new Date().toLocaleDateString('es-PY');
@@ -215,7 +215,7 @@ const FinancialReports: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#001738] uppercase tracking-widest mb-8">Tendencia Mensual</h3>
                     
                     <div className="space-y-6 flex-1">
-                        {stats?.tendencia.map((item, idx) => (
+                        {stats?.tendencia?.map((item, idx) => (
                             <div key={idx}>
                                 <div className="flex justify-between items-end mb-2">
                                     <span className="text-xs text-slate-600 font-medium">{item.mes}</span>
@@ -284,7 +284,7 @@ const FinancialReports: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {payments.map((p) => (
+                            {payments?.map((p) => (
                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-6 py-5 text-sm font-medium text-[#001738]">{new Date(p.fecha_registro).toLocaleDateString()}</td>
                                     <td className="px-6 py-5">

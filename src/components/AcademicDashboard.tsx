@@ -3,96 +3,48 @@ import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, 
 import MisDatosModule from './MisDatosModule';
 import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';
+import { AcademicService, Expediente } from '../services/AcademicService';
 
 interface AcademicDashboardProps {
     user: { nombre: string; apellido: string; email: string; cedula: string; rol: string };
     onLogout: () => void;
 }
 
-interface Expediente {
-    id: string;
-    nombre: string;
-    cedula: string;
-    carrera: string;
-    tipo: 'estudiante' | 'docente';
-    fechaEnvio: string;
-    estado: 'pendiente' | 'aprobado' | 'rechazado';
-    documentos: {
-        id: string;
-        nombre: string;
-        url: string;
-        estado: 'pendiente' | 'aprobado';
-    }[];
-}
-
 const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout }) => {
     const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion'>('admision');
     const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>(null);
+    const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [expedientes, setExpedientes] = useState<Expediente[]>([
-        {
-            id: 'EXP-001',
-            nombre: 'Juan Pérez',
-            cedula: '4.555.666',
-            carrera: 'Lic. en Administración de Empresas',
-            tipo: 'estudiante',
-            fechaEnvio: '2024-05-08',
-            estado: 'pendiente',
-            documentos: [
-                { id: 'd1', nombre: 'Cédula de Identidad', url: '#', estado: 'pendiente' },
-                { id: 'd2', nombre: 'Certificado de Nacimiento', url: '#', estado: 'pendiente' },
-                { id: 'd3', nombre: 'Título de Bachiller', url: '#', estado: 'pendiente' },
-            ]
-        },
-        {
-            id: 'EXP-002',
-            nombre: 'María Gómez',
-            cedula: '3.444.555',
-            carrera: 'Lic. en Enfermería',
-            tipo: 'estudiante',
-            fechaEnvio: '2024-05-07',
-            estado: 'aprobado',
-            documentos: [
-                { id: 'd4', nombre: 'Cédula de Identidad', url: '#', estado: 'aprobado' },
-                { id: 'd5', nombre: 'Certificado de Nacimiento', url: '#', estado: 'aprobado' },
-                { id: 'd6', nombre: 'Título de Bachiller', url: '#', estado: 'aprobado' },
-            ]
-        },
-        {
-            id: 'EXP-003',
-            nombre: 'Dr. Carlos Ruiz',
-            cedula: '2.111.222',
-            carrera: 'Docente - Medicina',
-            tipo: 'docente',
-            fechaEnvio: '2024-05-08',
-            estado: 'pendiente',
-            documentos: [
-                { id: 'd7', nombre: 'Cédula de Identidad', url: '#', estado: 'pendiente' },
-                { id: 'd8', nombre: 'Título de Grado', url: '#', estado: 'pendiente' },
-                { id: 'd9', nombre: 'Currículum Vitae', url: '#', estado: 'pendiente' },
-            ]
+    React.useEffect(() => {
+        loadExpedientes();
+    }, []);
+
+    const loadExpedientes = async () => {
+        setIsLoading(true);
+        try {
+            const data = await AcademicService.getExpedientes();
+            setExpedientes(data);
+        } catch (error) {
+            console.error('Error loading expedientes:', error);
+        } finally {
+            setIsLoading(false);
         }
-    ]);
+    };
 
-    const handleAprobarExpediente = (id: string) => {
-        setExpedientes(prev => prev.map(exp => 
-            exp.id === id ? { 
-                ...exp, 
-                estado: 'aprobado', 
-                documentos: exp.documentos.map(d => ({ ...d, estado: 'aprobado' })) 
-            } : exp
-        ));
-        
-        const exp = expedientes.find(e => e.id === id);
-        if (exp) {
+    const handleAprobarExpediente = async (cedula: string) => {
+        try {
+            await AcademicService.approveExpediente(cedula);
             notificationService.send(
                 'Expediente Aprobado', 
-                `El expediente de ${exp.nombre} ha sido validado correctamente. Se ha notificado al estudiante para proceder al pago.`,
+                `El expediente ha sido validado correctamente.`,
                 'success'
             );
+            loadExpedientes();
+            setSelectedExpediente(null);
+        } catch (error) {
+            console.error('Error approving expediente:', error);
         }
-        
-        setSelectedExpediente(null);
     };
 
     const pendientes = expedientes.filter(e => e.estado === 'pendiente').length;
@@ -182,7 +134,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {expedientes.map((exp) => (
+                                        {expedientes?.map((exp) => (
                                             <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm font-bold text-slate-800">{exp.nombre}</p>
@@ -292,7 +244,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         <Clock className="text-amber-500" /> Actividad Reciente
                                     </h3>
                                     <div className="space-y-6">
-                                        {expedientes.slice(0, 3).map((exp, i) => (
+                                        {expedientes?.slice(0, 3).map((exp, i) => (
                                             <div key={i} className="flex items-start gap-4 pb-4 border-b border-slate-50 last:border-0">
                                                 <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
                                                 <div>
@@ -329,7 +281,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 <Description style={{fontSize: 20}} /> Documentos Adjuntos
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {selectedExpediente.documentos.map((doc) => (
+                                {selectedExpediente?.documentos?.map((doc) => (
                                     <div key={doc.id} className="bg-white p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
                                         <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                                             <FileCheck />

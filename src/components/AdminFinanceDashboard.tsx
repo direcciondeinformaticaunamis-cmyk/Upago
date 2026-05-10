@@ -177,7 +177,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest">Aprobaciones</span>
                                     </div>
                                     <h3 className="text-[#43474f] text-sm font-semibold mb-1">Pagos Verificados</h3>
-                                    <p className="text-3xl font-extrabold text-emerald-700">{payments.filter(p => p.estado === 'verificado').length}</p>
+                                    <p className="text-3xl font-extrabold text-emerald-700">{payments?.filter(p => p.estado === 'verificado').length || 0}</p>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#43474f]">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                         <span>Sincronizado</span>
@@ -195,7 +195,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         </div>
                                     </div>
                                     <div className="relative h-64 w-full flex items-end gap-2">
-                                        {stats?.tendencia.map((item, idx) => (
+                                        {stats?.tendencia?.map((item, idx) => (
                                             <div key={idx} className="flex-1 bg-[#800020]/10 rounded-t-sm relative group" style={{ height: `${Math.min(100, (item.total / 10000000) * 100)}%` }}>
                                                 <div className="absolute -top-1 bg-[#800020] w-full h-1 rounded-full"></div>
                                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#001738] text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -205,7 +205,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         ))}
                                     </div>
                                     <div className="flex justify-between mt-4 text-[10px] font-bold text-[#c3c6d1] uppercase">
-                                        {stats?.tendencia.map(i => <span key={i.mes}>{i.mes}</span>)}
+                                        {stats?.tendencia?.map(i => <span key={i.mes}>{i.mes}</span>)}
                                     </div>
                                 </div>
 
@@ -264,8 +264,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 <th className="px-8 py-4 text-right"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y-0">
-                                            {payments.map((p) => (
+                                        <tbody className="divide-y divide-slate-100">
+                                            {payments?.map((p) => (
                                                 <tr key={p.id} className="hover:bg-[#e6e8ea] transition-colors">
                                                     <td className="px-8 py-4">
                                                         <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {payments.length === 0 && !isLoading && (
+                                            {(payments?.length === 0 || !payments) && !isLoading && (
                                                 <tr>
                                                     <td colSpan={5} className="px-8 py-10 text-center text-slate-400 italic">No hay actividad reciente.</td>
                                                 </tr>

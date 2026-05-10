@@ -23,15 +23,29 @@ interface Pago {
 
 
 
+import { FinanceService, Payment as Pago } from '../services/FinanceService';
+
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) => {
     const [activeSection, setActiveSection] = useState<'datos' | 'documentos' | 'pagos' | 'registro_pago' | 'editar_datos' | 'documentos_digitales'>('pagos');
     const [showModalPago, setShowModalPago] = useState(false);
+    const [misPagos, setMisPagos] = useState<Pago[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [misPagos, setMisPagos] = useState<Pago[]>([
-        { id: 1, concepto: 'Examen Admisión - Medicina', monto: 350000, estado: 'verificado', fecha_pago: '12 Abr 2024', numero_boleta: 'BOL-2024-0001' },
-        { id: 2, concepto: 'Derecho de Examen', monto: 150000, estado: 'rechazado', fecha_pago: '05 Abr 2024', observacion: 'Comprobante ilegible. Favor subir una foto más clara.' },
-        { id: 3, concepto: 'Matrícula', monto: 1200000, estado: 'verificado', fecha_pago: '15 Feb 2024', numero_boleta: 'BOL-2024-0015' },
-    ]);
+    React.useEffect(() => {
+        loadPagos();
+    }, []);
+
+    const loadPagos = async () => {
+        setIsLoading(true);
+        try {
+            const data = await FinanceService.getPagos(user.cedula);
+            setMisPagos(data);
+        } catch (error) {
+            console.error('Error loading payments:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const documentos = [
         { id: 'cedula', nombre: 'Cédula de Identidad', estado: 'verificado' },
@@ -60,9 +74,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
 
 
 
-    const totalPagado = misPagos.filter(p => p.estado === 'verificado').reduce((sum, p) => sum + p.monto, 0);
-    const pendienteCount = misPagos.filter(p => p.estado === 'pendiente').length;
-    const pendienteMonto = misPagos.filter(p => p.estado === 'pendiente').reduce((sum, p) => sum + p.monto, 0);
+    const totalPagado = misPagos?.filter(p => p.estado === 'verificado').reduce((sum, p) => sum + p.monto, 0) || 0;
+    const pendienteCount = misPagos?.filter(p => p.estado === 'pendiente').length || 0;
+    const pendienteMonto = misPagos?.filter(p => p.estado === 'pendiente').reduce((sum, p) => sum + p.monto, 0) || 0;
 
     return (
         <div className="flex h-screen overflow-hidden bg-[#f7f9fb]">
@@ -260,7 +274,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#e6e8ea]">
-                                    {misPagos.map((pago) => (
+                                    {misPagos?.map((pago) => (
                                         <tr key={pago.id} className="hover:bg-[#e6e8ea] transition-colors group">
                                             <td className="px-6 py-4 text-sm font-medium text-[#191c1e]">{pago.fecha_pago}</td>
                                             <td className="px-6 py-4">

@@ -36,7 +36,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         setErrors(prev => prev.filter(e => e !== field));
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
         const missing = required.filter(field => !formData[field as keyof typeof formData]);
         
@@ -46,8 +46,25 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
             return;
         }
         
-        setStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Guardar datos en la base de datos antes de pasar al siguiente paso
+        try {
+            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                console.log("Datos personales guardados correctamente");
+                setStep(2);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert("Error al guardar datos: " + result.message);
+            }
+        } catch (err) {
+            console.error("Error saving personal data:", err);
+            alert("Error de conexión al guardar los datos.");
+        }
     };
 
     const handleFinish = () => {

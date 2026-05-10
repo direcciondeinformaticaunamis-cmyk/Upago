@@ -45,7 +45,7 @@ interface StudentData {
     direccion?: string;
     carrera: string;
     sede: string;
-    tipo?: 'estudiante' | 'docente';
+    tipoUsuario?: 'postulante' | 'concursante_docente';
 }
 
 interface DocumentUploadSectionProps {
@@ -73,7 +73,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
             }
         ];
 
-        if (studentData.tipo === 'docente') {
+        if (studentData.tipoUsuario === 'concursante_docente') {
             return [
                 {
                     id: 'cv',

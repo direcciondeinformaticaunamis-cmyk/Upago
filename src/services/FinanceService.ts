@@ -73,9 +73,15 @@ export const FinanceService = {
             body: JSON.stringify({ pago_id, transaccion_id })
         });
     },
+    
+    botAutoReconcile: async (): Promise<{ status: string, conciliated_count: number }> => {
+        return fetchApi('bot_auto_reconcile', {
+            method: 'POST'
+        });
+    },
 
-    getPagos: async (): Promise<Payment[]> => {
-        return fetchApi('pagos');
+    getPagos: async (cedula: string = ''): Promise<Payment[]> => {
+        return fetchApi(cedula ? `pagos=${cedula}` : 'pagos');
     },
 
     registerPayment: async (formData: FormData): Promise<any> => {

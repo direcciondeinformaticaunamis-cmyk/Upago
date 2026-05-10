@@ -23,7 +23,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onLogin(formData.email, formData.password);
+        if (isLogin) {
+            onLogin(formData.email, formData.password);
+        } else {
+            onRegister(formData);
+        }
     };
 
     return (
