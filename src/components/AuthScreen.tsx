@@ -5,7 +5,7 @@ import AppInput from './ui/AppInput';
 
 interface AuthScreenProps {
     onLogin: (email: string, password: string) => void;
-    onRegister: () => void;
+    onRegister: (data: any) => void;
     error?: string;
     loading?: boolean;
 }

@@ -10,19 +10,6 @@ interface StudentDashboardProps {
     onLogout: () => void;
 }
 
-interface Pago {
-    id: number;
-    concepto: string;
-    monto: number;
-    estado: 'pendiente' | 'verificado' | 'rechazado';
-    fecha_pago: string;
-    numero_boleta?: string;
-    comprobante_url?: string;
-    observacion?: string;
-}
-
-
-
 import { FinanceService, Payment as Pago } from '../services/FinanceService';
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) => {
@@ -276,7 +263,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 <tbody className="divide-y divide-[#e6e8ea]">
                                     {misPagos?.map((pago) => (
                                         <tr key={pago.id} className="hover:bg-[#e6e8ea] transition-colors group">
-                                            <td className="px-6 py-4 text-sm font-medium text-[#191c1e]">{pago.fecha_pago}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-[#191c1e]">{pago.fecha_pago || ''}</td>
                                             <td className="px-6 py-4">
                                                 <p className="text-sm font-bold text-[#800020]">{pago.concepto}</p>
                                                 <p className="text-[10px] text-[#43474f]">Ciclo 2024</p>
