@@ -16,11 +16,10 @@ export const msalConfig: Configuration = {
     auth: {
         clientId: CLIENT_ID,
         authority: `https://login.microsoftonline.com/${TENANT_ID}`,
-        redirectUri: window.location.origin,   // https://upago.unamis.edu.py en prod
+        redirectUri: window.location.origin,
     },
     cache: {
         cacheLocation: 'sessionStorage',
-        storeAuthStateInCookie: false,
     }
 };
 
