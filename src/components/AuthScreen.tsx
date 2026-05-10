@@ -3,6 +3,7 @@ import { GraduationCap, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, 
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
 import { CATALOGO_UNAMIS } from '../constants/catalogoUnamis';
+import { msalInstance, loginRequest } from '../services/MicrosoftAuthService';
 
 interface AuthScreenProps {
     onLogin: (email: string, password: string) => void;
@@ -30,6 +31,28 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
             onLogin(formData.email, formData.password);
         } else {
             onRegister(formData);
+        }
+    };
+
+    const handleMicrosoftLogin = async () => {
+        try {
+            await msalInstance.initialize();
+            const response = await msalInstance.loginPopup(loginRequest);
+            if (response?.account) {
+                const { name, username } = response.account;
+                const [nombre, ...apellidoParts] = (name || '').split(' ');
+                onRegister({
+                    email: username,
+                    nombre: nombre || '',
+                    apellido: apellidoParts.join(' ') || '',
+                    cedula: '',
+                    carrera: '',
+                    tipoUsuario: 'postulante',
+                    microsoft_token: response.accessToken,
+                });
+            }
+        } catch (err) {
+            console.error('Error de autenticación Microsoft:', err);
         }
     };
 
@@ -70,6 +93,28 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                             {error}
                         </div>
                     )}
+
+                    {/* Microsoft SSO Button */}
+                    <button
+                        type="button"
+                        onClick={handleMicrosoftLogin}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3.5 mb-5 bg-white border-2 border-slate-200 rounded-xl font-bold text-slate-700 text-sm hover:border-[#0078d4] hover:bg-blue-50 transition-all duration-300 group"
+                    >
+                        {/* Microsoft Logo SVG */}
+                        <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                        </svg>
+                        <span className="group-hover:text-[#0078d4] transition-colors">Continuar con cuenta <strong>@unamis.edu.py</strong></span>
+                    </button>
+
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">o con contraseña</span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                    </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="relative">
