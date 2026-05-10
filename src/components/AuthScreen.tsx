@@ -18,7 +18,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
         password: '',
         nombre: '',
         apellido: '',
-        cedula: ''
+        cedula: '',
+        carrera: '',
+        tipoUsuario: 'postulante'
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -130,6 +132,36 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                     className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                     required
                                 />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 ml-2 uppercase">Tipo de Perfil</p>
+                                        <select
+                                            value={formData.tipoUsuario}
+                                            onChange={(e) => setFormData({...formData, tipoUsuario: e.target.value})}
+                                            className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20 text-sm font-medium"
+                                            required
+                                        >
+                                            <option value="postulante">Postulante Estudiante</option>
+                                            <option value="concursante_docente">Concursante Docente</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 ml-2 uppercase">Carrera / Área</p>
+                                        <select
+                                            value={formData.carrera}
+                                            onChange={(e) => setFormData({...formData, carrera: e.target.value})}
+                                            className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20 text-sm font-medium"
+                                            required
+                                        >
+                                            <option value="">Seleccionar Carrera...</option>
+                                            <option value="Medicina">Medicina</option>
+                                            <option value="Enfermería">Enfermería</option>
+                                            <option value="Derecho">Derecho</option>
+                                            <option value="Administración">Administración</option>
+                                            <option value="Contabilidad">Contabilidad</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </>
                         )}
 

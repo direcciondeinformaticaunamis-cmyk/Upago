@@ -13,7 +13,9 @@ interface StudentDashboardProps {
 import { FinanceService, Payment as Pago } from '../services/FinanceService';
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'datos' | 'documentos' | 'pagos' | 'registro_pago' | 'editar_datos' | 'documentos_digitales'>('pagos');
+    const [activeSection, setActiveSection] = useState<'datos' | 'documentos' | 'pagos' | 'registro_pago' | 'editar_datos' | 'documentos_digitales'>(
+        user.expediente_aprobado ? 'pagos' : 'datos'
+    );
     const [showModalPago, setShowModalPago] = useState(false);
     const [misPagos, setMisPagos] = useState<Pago[]>([]);
     const [isLoading, setIsLoading] = useState(true);

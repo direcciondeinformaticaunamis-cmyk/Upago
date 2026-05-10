@@ -12,7 +12,9 @@ interface MisDatosModuleProps {
 const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false }) => {
     // Si en App.tsx seteamos expediente_aprobado = true, lo interpretamos como aprobado.
     // Si está simulado como falso pero existe la prop, o si se añade un estado específico.
-    const [isSubmitted, setIsSubmitted] = useState(!forceEdit && user?.expediente_aprobado !== undefined);
+    // Solo mostrar el resumen si el expediente está aprobado o si ya se envió (tiene carrera) y no estamos forzando edición.
+    const hasSubmittedData = user?.expediente_aprobado || (user?.nombre && (user as any).carrera);
+    const [isSubmitted, setIsSubmitted] = useState(!forceEdit && hasSubmittedData);
     const estado = user?.expediente_aprobado ? 'aprobado' : 'pendiente'; 
     const [step, setStep] = useState(initialStep);
     const [formData, setFormData] = useState({

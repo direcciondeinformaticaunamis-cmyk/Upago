@@ -48,7 +48,7 @@ try {
       `fecha_nacimiento` date DEFAULT NULL,
       `genero` varchar(20) DEFAULT NULL,
       `direccion` text DEFAULT NULL,
-      `carrera` varchar(255) NOT NULL,
+      `carrera` varchar(255) DEFAULT NULL,
       `sede` varchar(100) DEFAULT 'Santa Rosa de Lima',
       `tipo_usuario` enum('postulante', 'concursante_docente') DEFAULT 'postulante',
       `foto_url` text DEFAULT NULL,
@@ -554,17 +554,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
         exit;
     }
     
-    // Normalizar tipo de usuario para el ENUM
+    // Normalizar tipo de usuario y campos de correo
     $tipo_usuario = $data['tipoUsuario'] ?? 'postulante';
+    $correo = $data['correo'] ?? $data['email'] ?? '';
+    $carrera = $data['carrera'] ?? '';
+    $sede = $data['sede'] ?? 'Santa Rosa de Lima';
+    $telefono = $data['telefono'] ?? null;
+    $fecha_nacimiento = $data['fechaNacimiento'] ?? null;
+    $genero = $data['genero'] ?? null;
+    $direccion = $data['direccion'] ?? null;
     
     $stmt = $conn->prepare("INSERT INTO postulantes (nombre, apellido, cedula, correo, telefono, fecha_nacimiento, genero, direccion, carrera, sede, tipo_usuario) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
                             ON DUPLICATE KEY UPDATE nombre=?, apellido=?, correo=?, telefono=?, fecha_nacimiento=?, genero=?, direccion=?, carrera=?, sede=?, tipo_usuario=?");
     $stmt->execute([
-        $data['nombre'], $data['apellido'], $data['cedula'], $data['correo'], $data['telefono'], 
-        $data['fechaNacimiento'], $data['genero'], $data['direccion'], $data['carrera'], $data['sede'], $tipo_usuario,
-        $data['nombre'], $data['apellido'], $data['correo'], $data['telefono'], 
-        $data['fechaNacimiento'], $data['genero'], $data['direccion'], $data['carrera'], $data['sede'], $tipo_usuario
+        $data['nombre'], $data['apellido'], $data['cedula'], $correo, $telefono, 
+        $fecha_nacimiento, $genero, $direccion, $carrera, $sede, $tipo_usuario,
+        $data['nombre'], $data['apellido'], $correo, $telefono, 
+        $fecha_nacimiento, $genero, $direccion, $carrera, $sede, $tipo_usuario
     ]);
     echo json_encode(["status" => "success", "id" => $data['cedula']]);
     exit;

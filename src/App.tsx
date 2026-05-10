@@ -68,8 +68,9 @@ const App: React.FC = () => {
                     email: data.correo,
                     cedula: data.cedula,
                     rol: data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
-                    expediente_aprobado: data.estado_revision === 'verificado'
-                });
+                    expediente_aprobado: data.estado_revision === 'verificado',
+                    ...data // Incluimos carrera, sede, etc.
+                } as any);
                 setView('student');
             } else {
                 setError('Usuario no encontrado o credenciales inválidas.');
