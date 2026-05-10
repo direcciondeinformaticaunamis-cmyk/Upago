@@ -272,7 +272,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                                         value={form.carrera}
                                         onChange={(e) => set('carrera', e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                                     >
                                         {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
                                             <optgroup key={sede} label={sede}>
