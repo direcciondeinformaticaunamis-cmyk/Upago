@@ -21,6 +21,7 @@ export interface Payment {
     comprobante_nombre?: string;
     estado: 'pendiente' | 'verificado' | 'rechazado';
     observaciones?: string;
+    numero_boleta?: string;
     fecha_pago?: string;
     fecha_registro: string;
 }

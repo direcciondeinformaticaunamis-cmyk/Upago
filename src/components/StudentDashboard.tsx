@@ -285,8 +285,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                                         <ErrorIcon style={{fontSize: 12}} /> REJECTED
                                                     </span>
                                                 )}
-                                                {pago.observacion && (
-                                                    <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 group-relative cursor-help" title={pago.observacion}>
+                                                {pago.observaciones && (
+                                                    <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 group-relative cursor-help" title={pago.observaciones}>
                                                         <MessageIcon style={{fontSize: 10}} />
                                                         <span>Ver Observación</span>
                                                     </div>
