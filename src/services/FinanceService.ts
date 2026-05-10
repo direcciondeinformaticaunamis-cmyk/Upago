@@ -99,5 +99,9 @@ export const FinanceService = {
             method: 'POST',
             body: JSON.stringify({ id, estado, observaciones })
         });
+    },
+
+    getPostulantes: async (): Promise<any[]> => {
+        return fetchApi(''); // api.php sin parámetros devuelve todos los postulantes (línea 648 de api.php)
     }
 };

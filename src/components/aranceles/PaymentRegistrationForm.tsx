@@ -7,6 +7,7 @@ import {
     School, ChevronDown, Settings2, Download, Home, MailCheck
 } from 'lucide-react';
 import { FinanceService } from '../../services/FinanceService';
+import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS } from '../../constants/catalogoUnamis';
 
 interface Arancel {
     id: number;
@@ -16,13 +17,7 @@ interface Arancel {
     descripcion: string;
 }
 
-const carreras = [
-    'Ingeniería en Sistemas',
-    'Administración de Empresas',
-    'Derecho y Ciencias Sociales',
-    'Contaduría Pública',
-    'Licenciatura en Enseñanza de Lengua y Literatura Castellana',
-];
+
 
 interface Props {
     studentName?: string;
@@ -45,7 +40,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         cedula: studentCedula, 
         telefono: '',
         direccion: '', 
-        carrera: carreras[0], 
+        carrera: TODAS_LAS_CARRERAS[0], 
         titular: '',
         numComprobante: '', 
         fechaPago: new Date().toISOString().split('T')[0], 
@@ -277,8 +272,15 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                                         value={form.carrera}
                                         onChange={(e) => set('carrera', e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                                     >
-                                        {carreras.map(c => <option key={c}>{c}</option>)}
+                                        {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
+                                            <optgroup key={sede} label={sede}>
+                                                {carreras.map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </optgroup>
+                                        ))}
                                     </select>
                                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                                 </div>

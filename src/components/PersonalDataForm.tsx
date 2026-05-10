@@ -20,6 +20,7 @@ import AppInput from './ui/AppInput';
 import AppButton from './ui/AppButton';
 import SectionTitle from './ui/SectionTitle';
 import AppDatePicker from './ui/AppDatePicker';
+import { CATALOGO_UNAMIS, getCarrerasPorSede } from '../constants/catalogoUnamis';
 
 interface FormData {
     nombre: string;
@@ -35,41 +36,7 @@ interface FormData {
     tipoUsuario: 'postulante' | 'concursante_docente';
 }
 
-const CATALOGO_UNAMIS: Record<string, string[]> = {
-    "Sede Ayolas": [
-        "Licenciatura en Logística y Transporte",
-        "Licenciatura en Ciencias Básicas y sus Tecnologías"
-    ],
-    "Sede San Ignacio Guazú": [
-        "Licenciatura en Ciencias Políticas y de Gobierno",
-        "Licenciatura en Psicología General",
-        "Licenciatura en Centrales Hidroeléctricas",
-        "Carrera de Medicina"
-    ],
-    "Sede San Juan Bautista": [
-        "Programa de Especialización en Didáctica Superior Universitaria",
-        "Licenciatura en Negocio Internacional",
-        "Ingeniería Civil"
-    ],
-    "Sede Santa María de Fe": [
-        "Licenciatura en Tecnología de la Producción",
-        "Licenciatura en Tecnología de los Alimentos"
-    ],
-    "Sede Santa Rosa de Lima": [
-        "Licenciatura en Ciencias Matemáticas",
-        "Arquitectura",
-        "Licenciatura en Enseñanza de Lengua y Literatura Castellana"
-    ],
-    "Sede Santiago": [
-        "Ingeniería Agroindustrial"
-    ],
-    "Sede Villa Florida": [
-        "Ingeniería Informática"
-    ],
-    "Sede Yabebyry": [
-        "Licenciatura en Ciencias de la Educación"
-    ]
-};
+
 
 interface PersonalDataFormProps {
     formData: FormData;
@@ -152,14 +119,14 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
         { id: 'matriculacion', label: 'Solicitud de Matriculación', required: true, description: 'Descargar, llenar, firmar y luego adjuntar.', templateUrl: '/plantillas/solicitud_matriculacion.docx' },
     ];
 
-    const isLenguaSantaRosa = formData.carrera === 'Licenciatura en Enseñanza de Lengua y Literatura Castellana' && formData.sede === 'Sede Santa Rosa de Lima';
+    const isLenguaSantaRosa = formData.carrera === 'Lic. en Enseñanza de Lengua y Literatura Castellana' && formData.sede === 'Sede Santa Rosa de Lima';
 
     let docs = formData.tipoUsuario === 'concursante_docente' ? teacherDocs : studentDocs;
     if (formData.tipoUsuario === 'postulante' && isLenguaSantaRosa) {
         docs = lenguaSantaRosaDocs;
     }
 
-    const availableCareers = formData.sede ? CATALOGO_UNAMIS[formData.sede] || [] : Object.values(CATALOGO_UNAMIS).flat();
+    const availableCareers = formData.sede ? getCarrerasPorSede(formData.sede) : [];
 
     return (
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium p-8 md:p-12 relative overflow-hidden">

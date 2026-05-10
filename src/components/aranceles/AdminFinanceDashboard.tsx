@@ -20,10 +20,10 @@ interface FinanceStat {
 }
 
 const RecentActivity = [
-    { id: '1', name: 'Miguel Angel Ortiz', cedula: '2024-00129', concepto: 'Cuota Mensual - Abril', monto: 600000, fecha: '10:45', estado: 'verificado' },
-    { id: '2', name: 'Elena Rodriguez', cedula: '2024-00456', concepto: 'Matrícula Anual', monto: 1200000, fecha: '10:12', estado: 'pendiente' },
-    { id: '3', name: 'Juan Carlos Perez', cedula: '2024-00982', concepto: 'Arancel Laboratorio', monto: 150000, fecha: '09:55', estado: 'verificado' },
-    { id: '4', name: 'Lucía Méndez', cedula: '2024-00331', concepto: 'Derecho Examen', monto: 120000, fecha: '09:30', estado: 'rechazado' },
+    { id: '1', name: 'Miguel Angel Ortiz', cedula: '2024-00129', concepto: 'INSCRIPCIÓN A CONCURSO ENCARGADO DE CÁTEDRA', monto: 300000, fecha: '10:45', estado: 'verificado' },
+    { id: '2', name: 'Elena Rodriguez', cedula: '2024-00456', concepto: 'EXAMEN DE ADMISIÓN - CARRERA DE MEDICINA', monto: 1000000, fecha: '10:12', estado: 'pendiente' },
+    { id: '3', name: 'Juan Carlos Perez', cedula: '2024-00982', concepto: 'CONVALIDACIONES DE ASIGNATURA', monto: 150000, fecha: '09:55', estado: 'verificado' },
+    { id: '4', name: 'Lucía Méndez', cedula: '2024-00331', concepto: 'CERTIFICADO DE ESTUDIOS', monto: 53000, fecha: '09:30', estado: 'rechazado' },
 ];
 
 const AdminFinanceDashboard: React.FC = () => {

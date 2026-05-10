@@ -16,14 +16,8 @@ import {
     Check
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { CATALOGO_UNAMIS, TODAS_LAS_SEDES, TODAS_LAS_CARRERAS, getCarrerasPorSede } from '../../../constants/catalogoUnamis';
 
-const SEDES = ['Santa Rosa de Lima', 'Encarnación', 'Posadas', 'Asunción'];
-const CARRERAS = [
-    'Licenciatura en Enseñanza de Lengua y Literatura Castellana',
-    'Ingeniería en Informática',
-    'Derecho',
-    'Ciencias de la Educación'
-];
 const TIPOS = [
     { id: 'investigacion', label: 'Investigación' },
     { id: 'extension', label: 'Extensión Universitaria' },
@@ -37,8 +31,8 @@ const RegistrationForm = () => {
         titulo: '',
         resumen: '',
         tipo_proyecto: 'investigacion',
-        sede: 'Santa Rosa de Lima',
-        carrera: 'Licenciatura en Enseñanza de Lengua y Literatura Castellana',
+        sede: TODAS_LAS_SEDES[0],
+        carrera: TODAS_LAS_CARRERAS[0],
         anio_academico: new Date().getFullYear(),
         presupuesto_estimado: 0,
         moneda: 'PYG',
@@ -170,7 +164,7 @@ const RegistrationForm = () => {
                                 value={formData.sede}
                                 onChange={(e) => handleChange('sede', e.target.value)}
                             >
-                                {SEDES.map(s => <option key={s} value={s}>{s}</option>)}
+                                {TODAS_LAS_SEDES.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
@@ -180,7 +174,11 @@ const RegistrationForm = () => {
                                 value={formData.carrera}
                                 onChange={(e) => handleChange('carrera', e.target.value)}
                             >
-                                {CARRERAS.map(c => <option key={c} value={c}>{c}</option>)}
+                                {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
+                                    <optgroup key={sede} label={sede}>
+                                        {carreras.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </optgroup>
+                                ))}
                             </select>
                         </div>
                     </div>

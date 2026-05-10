@@ -15,7 +15,7 @@ interface AdminDashboardProps {
 }
 
 const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas'>('dashboard');
+    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas' | 'postulantes'>('dashboard');
     const [payments, setPayments] = useState<Payment[]>([]);
     const [stats, setStats] = useState<FinanceStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -24,11 +24,18 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [paymentsData, statsData] = await Promise.all([
+            const [pagosData, statsData, postulantesData] = await Promise.all([
                 FinanceService.getPagos(),
-                FinanceService.getFinanceStats()
+                FinanceService.getFinanceStats(),
+                FinanceService.getPostulantes()
             ]);
-            setPayments(paymentsData.slice(0, 5)); // Just the last 5 for activity
+            
+            // Guardamos los postulantes dentro del estado de payments de forma temporal o en uno nuevo
+            // Para simplicidad en este paso, lo asocio a payments como propiedad extra
+            const pData = pagosData || [];
+            (pData as any).allPostulantes = postulantesData || [];
+            
+            setPayments(pData);
             setStats(statsData);
         } catch (error) {
             console.error('Error loading admin finance data:', error);
@@ -56,6 +63,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                 <nav className="flex-1 space-y-3">
                     {[
                         { id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+                        { id: 'postulantes', label: 'Gestión Usuarios', icon: Group },
                         { id: 'pagos', label: 'Registro de Pago', icon: Payments },
                         { id: 'conciliacion', label: 'Conciliación', icon: AccountBalanceWallet },
                         { id: 'reportes', label: 'Reportes', icon: Assessment },
@@ -335,6 +343,55 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                     ) : activeSection === 'metricas' ? (
                         <div className="-m-8">
                             <InstitutionalAnalytics />
+                        </div>
+                    ) : activeSection === 'postulantes' ? (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center mb-8">
+                                <div>
+                                    <h1 className="text-3xl font-black text-[#800020] tracking-tight">Gestión de Usuarios</h1>
+                                    <p className="text-slate-500 font-medium text-sm">Listado total de postulantes y concursantes docentes registrados.</p>
+                                </div>
+                                <button onClick={loadData} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-[#800020]">
+                                    <History />
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50">
+                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre y Apellido</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">CI / Cédula</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Carrera / Área</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {/* Aquí usaremos una variable postulantes que cargaremos en loadData */}
+                                        {(payments as any).allPostulantes?.map((post: any) => (
+                                            <tr key={post.cedula} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="px-8 py-5">
+                                                    <p className="text-sm font-bold text-slate-800">{post.nombre} {post.apellido}</p>
+                                                    <p className="text-[10px] text-slate-400 font-mono">{post.correo}</p>
+                                                </td>
+                                                <td className="px-8 py-5 text-sm font-black text-[#800020]">{post.cedula}</td>
+                                                <td className="px-8 py-5 text-sm font-medium text-slate-600">{post.carrera || 'No especificada'}</td>
+                                                <td className="px-8 py-5">
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.tipo_usuario === 'postulante' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                                                        {post.tipo_usuario === 'postulante' ? 'Postulante' : 'Concursante'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.estado_revision === 'verificado' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                        {post.estado_revision}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     ) : (
                         <div className="-m-8 bg-slate-50/50 min-h-screen">

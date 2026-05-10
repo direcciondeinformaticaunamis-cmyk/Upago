@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GraduationCap, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
+import { CATALOGO_UNAMIS } from '../constants/catalogoUnamis';
 
 interface AuthScreenProps {
     onLogin: (email: string, password: string) => void;
@@ -49,17 +50,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                     <div className="flex items-center justify-center gap-4 mb-8">
                         <button
                             onClick={() => setIsLogin(true)}
-                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
-                                isLogin ? 'bg-[#800020] text-white' : 'bg-slate-100 text-slate-500'
-                            }`}
+                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${isLogin ? 'bg-[#800020] text-white' : 'bg-slate-100 text-slate-500'
+                                }`}
                         >
                             Ingresar
                         </button>
                         <button
                             onClick={() => setIsLogin(false)}
-                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
-                                !isLogin ? 'bg-[#800020] text-white' : 'bg-slate-100 text-slate-500'
-                            }`}
+                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${!isLogin ? 'bg-[#800020] text-white' : 'bg-slate-100 text-slate-500'
+                                }`}
                         >
                             Registrarse
                         </button>
@@ -79,7 +78,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                 type="email"
                                 placeholder="Email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                 required
                             />
@@ -91,7 +90,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="Contraseña"
                                 value={formData.password}
-                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full pl-12 pr-12 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                 required
                             />
@@ -111,7 +110,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                         type="text"
                                         placeholder="Nombre"
                                         value={formData.nombre}
-                                        onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                                         className="px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                         required
                                     />
@@ -119,7 +118,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                         type="text"
                                         placeholder="Apellido"
                                         value={formData.apellido}
-                                        onChange={(e) => setFormData({...formData, apellido: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
                                         className="px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                         required
                                     />
@@ -128,7 +127,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                     type="text"
                                     placeholder="Cédula de Identidad"
                                     value={formData.cedula}
-                                    onChange={(e) => setFormData({...formData, cedula: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
                                     className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
                                     required
                                 />
@@ -137,7 +136,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                         <p className="text-[10px] font-bold text-slate-400 ml-2 uppercase">Tipo de Perfil</p>
                                         <select
                                             value={formData.tipoUsuario}
-                                            onChange={(e) => setFormData({...formData, tipoUsuario: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, tipoUsuario: e.target.value })}
                                             className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20 text-sm font-medium"
                                             required
                                         >
@@ -149,16 +148,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                         <p className="text-[10px] font-bold text-slate-400 ml-2 uppercase">Carrera / Área</p>
                                         <select
                                             value={formData.carrera}
-                                            onChange={(e) => setFormData({...formData, carrera: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, carrera: e.target.value })}
                                             className="w-full px-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20 text-sm font-medium"
                                             required
                                         >
-                                            <option value="">Seleccionar Carrera...</option>
-                                            <option value="Medicina">Medicina</option>
-                                            <option value="Enfermería">Enfermería</option>
-                                            <option value="Derecho">Derecho</option>
-                                            <option value="Administración">Administración</option>
-                                            <option value="Contabilidad">Contabilidad</option>
+                                            <option value="">Seleccionar Carrera / Programa...</option>
+                                            {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
+                                                <optgroup key={sede} label={sede}>
+                                                    {carreras.map(c => (
+                                                        <option key={c} value={c}>{c}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
