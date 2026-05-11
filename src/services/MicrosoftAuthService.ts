@@ -17,9 +17,24 @@ export const msalConfig: Configuration = {
         clientId: CLIENT_ID,
         authority: `https://login.microsoftonline.com/${TENANT_ID}`,
         redirectUri: window.location.origin,
+        navigateToLoginRequestUrl: false,
     },
     cache: {
         cacheLocation: 'sessionStorage',
+        storeAuthStateInCookie: true,
+    },
+    system: {
+        allowRedirectInIframe: true,
+        windowHashTimeout: 60000,
+        iframeHashTimeout: 60000,
+        loadFrameTimeout: 0,
+        loggerOptions: {
+            loggerCallback: (level: any, message: string) => {
+                console.log("MSAL:", message);
+            },
+            logLevel: 3, // Info
+            piiLoggingEnabled: false
+        }
     }
 };
 
@@ -29,8 +44,3 @@ export const loginRequest = {
 };
 
 export const msalInstance = new PublicClientApplication(msalConfig);
-
-// Inicializar la instancia inmediatamente para evitar errores de interacción
-msalInstance.initialize().catch(err => {
-    console.error("MSAL initialization failed:", err);
-});

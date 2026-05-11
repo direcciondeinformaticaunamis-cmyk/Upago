@@ -7,6 +7,9 @@ import AuthScreen from './components/AuthScreen';
 import StudentDashboard from './components/StudentDashboard';
 import AdminFinanceDashboard from './components/AdminFinanceDashboard';
 import AcademicDashboard from './components/AcademicDashboard';
+import { useMsal } from '@azure/msal-react';
+import { InteractionStatus } from '@azure/msal-browser';
+import { useEffect } from 'react';
 
 type AppView = 'auth' | 'student' | 'admin' | 'academic';
 
@@ -22,6 +25,30 @@ const App: React.FC = () => {
     } | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | undefined>();
+    const { instance, accounts, inProgress } = useMsal();
+
+    // Manejar el resultado de Microsoft Redirect
+    useEffect(() => {
+        const checkMSALResponse = async () => {
+            if (inProgress === InteractionStatus.None && accounts.length > 0) {
+                const account = accounts[0];
+                const email = account.username;
+                
+                // Intentamos loguear con el correo de Microsoft
+                const exists = await handleMicrosoftAuth(email);
+                
+                if (!exists) {
+                    // Si no existe, no hacemos nada aquí, 
+                    // el usuario verá el formulario de AuthScreen con los datos que podemos precargar
+                    // Nota: En flujo redirect, el estado se pierde. 
+                    // Podríamos guardar en sessionStorage si es necesario precargar el registro.
+                    console.log("Usuario de Microsoft no registrado en DB local:", email);
+                    setError("Cuenta institucional verificada. Por favor, completa tu registro.");
+                }
+            }
+        };
+        checkMSALResponse();
+    }, [accounts, inProgress]);
 
     const handleLogin = async (email: string, password: string) => {
         setLoading(true);

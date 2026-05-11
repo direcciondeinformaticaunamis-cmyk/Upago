@@ -40,34 +40,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
 
     const { instance, inProgress } = useMsal();
 
-    const handleMicrosoftLogin = async () => {
+    const handleMicrosoftLogin = () => {
         if (inProgress !== InteractionStatus.None) return;
-
-        try {
-            const response = await instance.loginPopup(loginRequest);
-            if (response?.account && onMicrosoftAuth) {
-                const { name, username } = response.account;
-                
-                // Primero intentamos loguear (si ya existe en nuestra DB)
-                const exists = await onMicrosoftAuth(username);
-                
-                if (!exists) {
-                    // Si no existe, lo llevamos a registro con sus datos pre-cargados
-                    const [nombre, ...apellidoParts] = (name || '').split(' ');
-                    setFormData({
-                        ...formData,
-                        email: username,
-                        nombre: nombre || '',
-                        apellido: apellidoParts.join(' ') || '',
-                        password: 'MS-AUTH-' + Math.random().toString(36).slice(-8) // Password dummy
-                    });
-                    setIsMicrosoftUser(true);
-                    setIsLogin(false);
-                }
-            }
-        } catch (err) {
-            console.error('Error de autenticación Microsoft:', err);
-        }
+        instance.loginRedirect(loginRequest);
     };
 
     return (
