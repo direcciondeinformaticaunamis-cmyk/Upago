@@ -119,6 +119,15 @@ const App: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Respuesta no-JSON del servidor:', text.substring(0, 300));
+                setError('Error de servidor: api.php no está disponible. Verifique el deployment.');
+                return;
+            }
+
             const result = await response.json();
             if (result.status === 'success') {
                 // Después de registrar, logueamos automáticamente
