@@ -10,12 +10,14 @@ import { InteractionStatus } from '@azure/msal-browser';
 interface AuthScreenProps {
     onLogin: (email: string, password: string) => void;
     onRegister: (data: any) => void;
+    onMicrosoftAuth?: (email: string) => Promise<boolean>;
     error?: string;
     loading?: boolean;
 }
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loading }) => {
+const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosoftAuth, error, loading }) => {
     const [isLogin, setIsLogin] = useState(true);
+    const [isMicrosoftUser, setIsMicrosoftUser] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -43,18 +45,25 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
 
         try {
             const response = await instance.loginPopup(loginRequest);
-            if (response?.account) {
+            if (response?.account && onMicrosoftAuth) {
                 const { name, username } = response.account;
-                const [nombre, ...apellidoParts] = (name || '').split(' ');
-                onRegister({
-                    email: username,
-                    nombre: nombre || '',
-                    apellido: apellidoParts.join(' ') || '',
-                    cedula: '',
-                    carrera: '',
-                    tipoUsuario: 'postulante',
-                    microsoft_token: response.accessToken,
-                });
+                
+                // Primero intentamos loguear (si ya existe en nuestra DB)
+                const exists = await onMicrosoftAuth(username);
+                
+                if (!exists) {
+                    // Si no existe, lo llevamos a registro con sus datos pre-cargados
+                    const [nombre, ...apellidoParts] = (name || '').split(' ');
+                    setFormData({
+                        ...formData,
+                        email: username,
+                        nombre: nombre || '',
+                        apellido: apellidoParts.join(' ') || '',
+                        password: 'MS-AUTH-' + Math.random().toString(36).slice(-8) // Password dummy
+                    });
+                    setIsMicrosoftUser(true);
+                    setIsLogin(false);
+                }
             }
         } catch (err) {
             console.error('Error de autenticación Microsoft:', err);
@@ -129,29 +138,33 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
                                 placeholder="Email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
+                                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20 ${isMicrosoftUser ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 required
+                                readOnly={isMicrosoftUser}
                             />
+                            {isMicrosoftUser && <CheckCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500" size={18} />}
                         </div>
 
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="Contraseña"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full pl-12 pr-12 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                        </div>
+                        {!isMicrosoftUser && (
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Contraseña"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full pl-12 pr-12 py-4 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-[#800020]/20"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        )}
 
                         {!isLogin && (
                             <>

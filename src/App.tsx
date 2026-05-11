@@ -112,11 +112,43 @@ const App: React.FC = () => {
         setView('auth');
     };
 
+    const handleMicrosoftAuth = async (email: string) => {
+        setLoading(true);
+        setError(undefined);
+        try {
+            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
+            const data = await response.json();
+
+            if (data && data.cedula) {
+                // El usuario ya existe, lo logueamos directamente
+                setCurrentUser({
+                    nombre: data.nombre,
+                    apellido: data.apellido,
+                    email: data.correo,
+                    cedula: data.cedula,
+                    rol: data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
+                    expediente_aprobado: data.estado_revision === 'verificado',
+                    ...data
+                } as any);
+                setView('student');
+                return true; // Existe
+            }
+            return false; // No existe, debe completar registro
+        } catch (err) {
+            console.error('SSO error:', err);
+            setError('Error al verificar cuenta institucional.');
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (view === 'auth') {
         return (
             <AuthScreen
                 onLogin={handleLogin}
                 onRegister={handleRegister}
+                onMicrosoftAuth={handleMicrosoftAuth}
                 error={error}
                 loading={loading}
             />
