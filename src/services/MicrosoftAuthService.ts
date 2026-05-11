@@ -29,3 +29,8 @@ export const loginRequest = {
 };
 
 export const msalInstance = new PublicClientApplication(msalConfig);
+
+// Inicializar la instancia inmediatamente para evitar errores de interacción
+msalInstance.initialize().catch(err => {
+    console.error("MSAL initialization failed:", err);
+});

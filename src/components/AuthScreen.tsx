@@ -3,7 +3,9 @@ import { GraduationCap, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, 
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
 import { CATALOGO_UNAMIS } from '../constants/catalogoUnamis';
-import { msalInstance, loginRequest } from '../services/MicrosoftAuthService';
+import { loginRequest } from '../services/MicrosoftAuthService';
+import { useMsal } from '@azure/msal-react';
+import { InteractionStatus } from '@azure/msal-browser';
 
 interface AuthScreenProps {
     onLogin: (email: string, password: string) => void;
@@ -34,10 +36,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, error, loa
         }
     };
 
+    const { instance, inProgress } = useMsal();
+
     const handleMicrosoftLogin = async () => {
+        if (inProgress !== InteractionStatus.None) return;
+
         try {
-            await msalInstance.initialize();
-            const response = await msalInstance.loginPopup(loginRequest);
+            const response = await instance.loginPopup(loginRequest);
             if (response?.account) {
                 const { name, username } = response.account;
                 const [nombre, ...apellidoParts] = (name || '').split(' ');
