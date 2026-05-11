@@ -9,7 +9,7 @@ El sistema usa **GitHub Actions** para compilar y subir automáticamente el port
 Ve a tu repositorio en GitHub:  
 **Settings → Secrets and variables → Actions → New repository secret**
 
-Agrega estos 8 secrets:
+Agrega estos 10 secrets:
 
 | Secret Name       | Valor                                    |
 |-------------------|------------------------------------------|

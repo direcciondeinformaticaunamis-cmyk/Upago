@@ -37,6 +37,7 @@ jobs:
           cp api-banco.php dist/api-banco.php
           cp diagnostico.php dist/diagnostico.php
           cp .htaccess dist/.htaccess
+          cp *.sql dist/
 
       # 6. Crear config.php desde los Secrets de GitHub (NUNCA en el repositorio)
       - name: 🔐 Generar config.php desde Secrets
