@@ -30,12 +30,13 @@ jobs:
       - name: 🔨 Build de la aplicación
         run: npm run build
 
-      # 5. Copiar api.php y api-banco.php al directorio dist para que se suban junto con el frontend
-      - name: 📋 Copiar backend PHP al dist
+      # 5. Copiar api.php, api-banco.php y .htaccess al directorio dist para que se suban junto con el frontend
+      - name: 📋 Copiar backend PHP y .htaccess al dist
         run: |
           cp api.php dist/api.php
           cp api-banco.php dist/api-banco.php
           cp diagnostico.php dist/diagnostico.php
+          cp .htaccess dist/.htaccess
 
       # 6. Crear config.php desde los Secrets de GitHub (NUNCA en el repositorio)
       - name: 🔐 Generar config.php desde Secrets
