@@ -1,10 +1,10 @@
 <?php
 /**
- * Herramienta de Diagnóstico MiUNAMIS
+ * Herramienta de Diagnóstico - Upago UNAMIS
  */
 header("Content-Type: text/plain; charset=UTF-8");
 
-echo "=== DIAGNÓSTICO DE SISTEMA MIUNAMIS ===\n\n";
+echo "=== DIAGNÓSTICO DE SISTEMA UPAGO ===\n\n";
 
 echo "1. Información del Servidor:\n";
 echo "   PHP Versión: " . phpversion() . "\n";
@@ -30,7 +30,7 @@ $password = DB_PASS;
 if (!$db_name || !$username || !$password) {
     $config_ready = false;
     echo "   STATUS: CONFIGURACION INCOMPLETA [!]\n";
-    echo "   AYUDA: Defina MIUNAMIS_DB_NAME, MIUNAMIS_DB_USER y MIUNAMIS_DB_PASS.\n";
+    echo "   AYUDA: Verifique el archivo config.php en el servidor.\n";
 }
 
 if ($config_ready) {

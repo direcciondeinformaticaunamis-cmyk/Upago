@@ -1,0 +1,81 @@
+name: 🚀 Deploy UNAMIS Portal a Hostinger
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    name: Build y Deploy a producción
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: 📦 Checkout
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Instalar dependencias
+      - name: 📥 Instalar dependencias
+        run: npm ci
+
+      # 4. Compilar la aplicación React
+      - name: 🔨 Build de la aplicación
+        run: npm run build
+
+      # 5. Copiar api.php y api-banco.php al directorio dist para que se suban junto con el frontend
+      - name: 📋 Copiar backend PHP al dist
+        run: |
+          cp api.php dist/api.php
+          cp api-banco.php dist/api-banco.php
+          cp diagnostico.php dist/diagnostico.php
+
+      # 6. Crear config.php desde los Secrets de GitHub (NUNCA en el repositorio)
+      - name: 🔐 Generar config.php desde Secrets
+        run: |
+          cat > dist/config.php << 'PHPEOF'
+          <?php
+          define('DB_HOST',     '${{ secrets.DB_HOST }}');
+          define('DB_NAME',     '${{ secrets.DB_NAME }}');
+          define('DB_USER',     '${{ secrets.DB_USER }}');
+          define('DB_PASS',     '${{ secrets.DB_PASS }}');
+
+          define('ADMIN_USER',  '${{ secrets.ADMIN_USER }}');
+          define('ADMIN_PASS',  '${{ secrets.ADMIN_PASS }}');
+
+          define('UPLOAD_BASE', 'uploads/');
+          define('MAX_FILE_SIZE', 5242880);
+          define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'pdf']);
+
+          $upload_folders = [
+              "cedula"     => "cedulas/",
+              "nacimiento" => "nacimientos/",
+              "titulo"     => "titulos/",
+              "estudio"    => "certificados/",
+              "foto"       => "fotos/",
+              "otro"       => "otros/",
+          ];
+          PHPEOF
+
+      # 7. Subir todo a Hostinger vía FTP
+      - name: 🌐 Deploy a Hostinger vía FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:   ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Excluir archivos que no deben sobreescribirse en el servidor
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            uploads/**

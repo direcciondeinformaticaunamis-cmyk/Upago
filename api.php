@@ -24,7 +24,7 @@ if (!$db_name || !$username || !$password) {
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "Configuracion incompleta. Defina MIUNAMIS_DB_NAME, MIUNAMIS_DB_USER y MIUNAMIS_DB_PASS."
+        "message" => "Configuracion incompleta del servidor Upago. Verifique el archivo config.php."
     ]);
     exit;
 }

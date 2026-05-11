@@ -11,8 +11,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
             manifest: {
-                name: 'Portal de Admisión UNAMIS',
-                short_name: 'MiUNAMIS',
+                name: 'Portal de Pagos UNAMIS',
+                short_name: 'Upago',
                 description: 'Sistema de gestión de admisiones UNAMIS',
                 theme_color: '#800020',
                 background_color: '#ffffff',
