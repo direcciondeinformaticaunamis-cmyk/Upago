@@ -1,12 +1,12 @@
 /**
- * Configuración de Microsoft Authentication Library (MSAL)
+ * Configuración de Microsoft Authentication Library (MSAL) v5
  * para autenticación con cuentas institucionales @unamis.edu.py
  *
  * IMPORTANTE: Reemplazar CLIENT_ID y TENANT_ID con los valores
  * obtenidos desde Azure Portal > Registros de aplicaciones.
  */
 
-import { PublicClientApplication, Configuration } from '@azure/msal-browser';
+import { PublicClientApplication, Configuration, LogLevel } from '@azure/msal-browser';
 
 // ✅ Credenciales oficiales de Azure AD — UNAMIS
 const CLIENT_ID = '412fee5a-645d-4279-a73f-52892095e6d3';
@@ -17,25 +17,19 @@ export const msalConfig: Configuration = {
         clientId: CLIENT_ID,
         authority: `https://login.microsoftonline.com/${TENANT_ID}`,
         redirectUri: window.location.origin,
-        navigateToLoginRequestUrl: false,
     },
     cache: {
         cacheLocation: 'sessionStorage',
-        storeAuthStateInCookie: true,
     },
     system: {
-        allowRedirectInIframe: true,
-        windowHashTimeout: 60000,
-        iframeHashTimeout: 60000,
-        loadFrameTimeout: 0,
         loggerOptions: {
-            loggerCallback: (level: any, message: string) => {
-                console.log("MSAL:", message);
+            loggerCallback: (_level: LogLevel, message: string) => {
+                console.log('MSAL:', message);
             },
-            logLevel: 3, // Info
-            piiLoggingEnabled: false
-        }
-    }
+            logLevel: LogLevel.Info,
+            piiLoggingEnabled: false,
+        },
+    },
 };
 
 export const loginRequest = {
