@@ -10,9 +10,10 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # 3. REDIRECCIÓN SPA (React Router / Browser State)
 # Si el archivo o directorio solicitado no existe, servir index.html
-# Exceptuamos los archivos .php para que la API siga funcionando
+# Exceptuamos archivos reales, directorios y rutas específicas de la API
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/assets/
 RewriteCond %{REQUEST_URI} !^/api\.php
 RewriteCond %{REQUEST_URI} !^/api-banco\.php
 RewriteCond %{REQUEST_URI} !^/diagnostico\.php
