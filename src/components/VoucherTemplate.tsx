@@ -43,19 +43,33 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
             </div>
 
             {/* Header */}
-            <div className="flex justify-between items-start border-b-2 border-slate-100 pb-8 mb-10 relative">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tighter text-primary mb-1 uppercase">UNAMIS</h1>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Universidad Nacional de Misiones</p>
-                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-success-soft text-success rounded-lg text-[10px] font-black uppercase tracking-widest border border-success/10">
-                        <ShieldCheck size={12} /> Comprobante Oficial de Registro
+            <div className="flex justify-between items-start border-b-2 border-slate-100 pb-8 mb-6 relative">
+                <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
+                        U
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tighter text-slate-900 mb-1 uppercase">RECTORADO</h1>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Universidad Nacional de Misiones</p>
+                        <div className="mt-2 text-[9px] font-bold text-slate-500 italic">
+                            San Juan Bautista — Misiones — Paraguay
+                        </div>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Código de Trámite</p>
+                    <div className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest mb-3">
+                        Resolución Nº 162/2026
+                    </div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Registro Digital</p>
                     <p className="text-xl font-black text-primary tracking-tight">{registrationCode}</p>
-                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase italic">{today}</p>
+                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase italic">08 / Mayo / 2026</p>
                 </div>
+            </div>
+
+            <div className="mb-8 text-center bg-slate-50 py-3 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest">
+                    "POR LA CUAL SE ESTABLECEN LOS REQUISITOS PARA EL EXAMEN DE ADMISIÓN"
+                </p>
             </div>
 
             {/* Body */}
@@ -103,14 +117,18 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
                         <div className="grid grid-cols-1 gap-2">
                             {documents.map(doc => (
                                 <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl">
-                                    <span className="text-[11px] font-bold text-slate-600">{doc.label}</span>
-                                    {doc.status === 'uploaded' ? (
-                                        <span className="text-[9px] font-black text-success uppercase tracking-widest flex items-center gap-1">
-                                            <CheckCircle2 size={10} /> Recibido
+                                    <span className="text-[10px] font-bold text-slate-600 max-w-[70%]">{doc.label}</span>
+                                    {doc.status === 'verified' ? (
+                                        <span className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
+                                            <ShieldCheck size={10} /> VALIDADO
+                                        </span>
+                                    ) : doc.status === 'uploaded' ? (
+                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1">
+                                            <CheckCircle2 size={10} /> RECIBIDO
                                         </span>
                                     ) : (
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1">
-                                            <Clock size={10} /> Pendiente
+                                            <Clock size={10} /> PENDIENTE
                                         </span>
                                     )}
                                 </div>
@@ -137,8 +155,24 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
                 </div>
             </div>
 
-            <div className="mt-8 text-center">
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">UNAMIS • ADMISIÓN DIGITAL 2026</p>
+            {/* Signatures Area */}
+            <div className="mt-16 grid grid-cols-2 gap-20">
+                <div className="text-center">
+                    <div className="border-t border-slate-300 pt-4">
+                        <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">SECRETARIO GENERAL</p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">UNAMIS • Rectorado</p>
+                    </div>
+                </div>
+                <div className="text-center">
+                    <div className="border-t border-slate-300 pt-4">
+                        <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">RECTOR</p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">UNAMIS • Rectorado</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-12 text-center">
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">DOCUMENTO VINCULADO A RESOLUCIÓN Nº 162/2026</p>
             </div>
         </div>
     );
@@ -160,10 +194,10 @@ export const generateVoucherHTML = (studentData: any, documents: any[], registra
     });
 
     const docListHtml = documents.map(doc => `
-        <div style="display: flex; justify-between; align-items: center; padding: 10px; border: 1px solid #f1f5f9; border-radius: 12px; margin-bottom: 8px;">
-            <span style="font-size: 11px; font-weight: 700; color: #475569;">${doc.label}</span>
-            <span style="font-size: 9px; font-weight: 900; color: ${doc.status === 'uploaded' ? '#10b981' : '#f59e0b'}; text-transform: uppercase; letter-spacing: 1px;">
-                ${doc.status === 'uploaded' ? 'REPECIONADO' : 'PENDIENTE'}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border: 1px solid #f1f5f9; border-radius: 10px; margin-bottom: 6px;">
+            <span style="font-size: 10px; font-weight: 700; color: #475569; max-width: 70%;">${doc.label}</span>
+            <span style="font-size: 8px; font-weight: 900; color: ${doc.status === 'verified' ? '#991b1b' : doc.status === 'uploaded' ? '#10b981' : '#f59e0b'}; text-transform: uppercase; letter-spacing: 1px;">
+                ${doc.status === 'verified' ? 'VALIDADO' : doc.status === 'uploaded' ? 'RECIBIDO' : 'PENDIENTE'}
             </span>
         </div>
     `).join('');
@@ -173,81 +207,99 @@ export const generateVoucherHTML = (studentData: any, documents: any[], registra
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Comprobante UNAMIS - ${studentData.cedula}</title>
+            <title>Resolución 162/2026 - ${studentData.cedula}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
             <style>
-                body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding: 40px; }
-                .voucher { background: white; max-width: 800px; margin: 0 auto; padding: 60px; border-radius: 40px; border: 4px solid rgba(153, 27, 27, 0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.05); position: relative; }
-                h1 { color: #991b1b; font-weight: 900; margin: 0; letter-spacing: -2px; }
-                .primary-text { color: #991b1b; }
-                .success-text { color: #10b981; }
-                .info-box { background: #fee2e2; border-radius: 20px; padding: 25px; margin-top: 20px; border: 1px solid rgba(153, 27, 27, 0.05); }
-                .photo-placeholder { width: 140px; height: 140px; background: #f1f5f9; border-radius: 24px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0; }
-                .grid { display: flex; gap: 40px; margin-top: 40px; }
-                .left { flex: 0 0 160px; }
-                .right { flex: 1; }
+                body { font-family: 'Inter', sans-serif; background: #fff; margin: 0; padding: 20px; }
+                .voucher { background: white; max-width: 800px; margin: 0 auto; padding: 40px; border: 1px solid #eee; position: relative; }
+                .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 20px; }
+                .logo-area { display: flex; align-items: center; gap: 15px; }
+                .logo-u { width: 50px; height: 50px; background: #991b1b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; border-radius: 12px; }
+                h1 { font-size: 24px; font-weight: 900; margin: 0; letter-spacing: -1px; color: #1e293b; }
+                .res-box { background: #1e293b; color: white; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 900; display: inline-block; margin-bottom: 10px; }
+                .main-grid { display: flex; gap: 30px; margin-top: 20px; }
+                .left-col { flex: 0 0 140px; }
+                .right-col { flex: 1; }
+                .photo-box { width: 140px; height: 140px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+                .info-banner { background: #f8fafc; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #f1f5f9; }
+                .phase-box { background: #fee2e2; padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+                .signatures { display: flex; justify-content: space-between; margin-top: 60px; gap: 60px; }
+                .sig-box { flex: 1; text-align: center; border-top: 1px solid #cbd5e1; pt: 15px; }
                 @media print {
-                    body { background: white; padding: 0; }
-                    .voucher { box-shadow: none; border: 1px solid #eee; border-radius: 0; }
-                    button { display: none; }
+                    .no-print { display: none; }
                 }
             </style>
         </head>
         <body>
             <div class="voucher">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 30px; margin-bottom: 30px;">
-                    <div>
-                        <h1>UNAMIS</h1>
-                        <p style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 3px; margin: 5px 0 0 0;">Universidad Nacional de Misiones</p>
+                <div class="header">
+                    <div class="logo-area">
+                        <div class="logo-u">U</div>
+                        <div>
+                            <h1>RECTORADO</h1>
+                            <p style="font-size: 10px; color: #64748b; font-weight: 700; margin: 2px 0 0 0; text-transform: uppercase;">Universidad Nacional de Misiones</p>
+                        </div>
                     </div>
                     <div style="text-align: right;">
-                        <p style="font-size: 10px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; margin: 0;">Código de Registro</p>
-                        <p style="font-size: 24px; font-weight: 900; color: #991b1b; margin: 0;">${registrationCode}</p>
-                        <p style="font-size: 9px; font-weight: 700; color: #94a3b8; margin: 5px 0 0 0; font-style: italic;">Generado: ${today}</p>
+                        <div class="res-box">Resolución Nº 162/2026</div>
+                        <p style="font-size: 18px; font-weight: 900; color: #991b1b; margin: 0;">${registrationCode}</p>
+                        <p style="font-size: 9px; color: #94a3b8; margin: 5px 0 0 0;">Fecha Emisión: ${today}</p>
                     </div>
                 </div>
 
-                <div class="grid">
-                    <div class="left">
-                        <div class="photo-placeholder">
-                            ${photo ? `<img src="${photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="color: #cbd5e1; font-size: 60px;">👤</div>`}
+                <div style="text-align: center; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #f1f5f9;">
+                    <p style="font-size: 9px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
+                        REQUISITOS PARA EL EXAMEN DE ADMISIÓN - CARRERA DE MEDICINA
+                    </p>
+                </div>
+
+                <div class="main-grid">
+                    <div class="left-col">
+                        <div class="photo-box">
+                            ${photo ? `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">👤</span>`}
                         </div>
-                        <div style="margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 15px; border: 1px solid #f1f5f9; text-align: center;">
-                            <p style="font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin: 0 0 5px 0;">Cédula de Identidad</p>
+                        <div class="info-banner">
+                            <p style="font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin: 0 0 4px 0;">Cédula Identidad</p>
                             <p style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0;">${studentData.cedula}</p>
                         </div>
                     </div>
-                    <div class="right">
-                        <div>
-                            <h2 style="font-size: 28px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase; letter-spacing: -1px;">${studentData.nombre} ${studentData.apellido}</h2>
-                            <p style="font-size: 11px; font-weight: 700; color: #64748b; margin: 5px 0 0 0;">${studentData.correo} • ${studentData.telefono}</p>
+                    <div class="right-col">
+                        <h2 style="font-size: 22px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${studentData.nombre} ${studentData.apellido}</h2>
+                        <p style="font-size: 10px; color: #64748b; font-weight: 700; margin: 4px 0 20px 0;">${studentData.correo} • ${studentData.telefono}</p>
+                        
+                        <div class="phase-box">
+                            <p style="font-size: 8px; font-weight: 900; color: #991b1b; text-transform: uppercase; margin: 0 0 5px 0;">Programa Académico</p>
+                            <p style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${studentData.carrera}</p>
+                            <p style="font-size: 10px; color: #991b1b; font-weight: 700; margin: 5px 0 0 0; text-transform: uppercase;">${studentData.sede}</p>
                         </div>
 
-                        <div class="info-box">
-                            <p style="font-size: 8px; font-weight: 900; color: #991b1b; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 1px;">Carrera a Cursar</p>
-                            <p style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase; line-height: 1.2;">${studentData.carrera}</p>
-                            <p style="font-size: 10px; font-weight: 700; color: #991b1b; margin: 8px 0 0 0; text-transform: uppercase;">${studentData.sede}</p>
-                        </div>
-
-                        <div style="margin-top: 30px;">
-                            <p style="font-size: 10px; font-weight: 900; color: #1e293b; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">Estatus de Expediente</p>
-                            ${docListHtml}
-                        </div>
+                        <div style="font-size: 10px; font-weight: 900; color: #1e293b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Estatus del Expediente Digital</div>
+                        ${docListHtml}
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; padding-top: 30px; border-top: 2px solid #f1f5f9;">
-                    <div style="max-width: 60%; font-size: 10px; color: #94a3b8; font-style: italic; line-height: 1.6;">
-                        <p>Este documento es un comprobante de INSCRIPCIÓN VIRTUAL. El postulante debe presentarse en la Sede con los documentos físicos originales para la validación definitiva de su matrícula según el cronograma oficial de la UNAMIS.</p>
+                <div class="signatures">
+                    <div class="sig-box">
+                        <p style="font-size: 10px; font-weight: 900; color: #1e293b; margin-top: 15px; text-transform: uppercase;">Secretario General</p>
+                        <p style="font-size: 8px; color: #94a3b8; font-weight: 700;">UNAMIS • Rectorado</p>
+                    </div>
+                    <div class="sig-box">
+                        <p style="font-size: 10px; font-weight: 900; color: #1e293b; margin-top: 15px; text-transform: uppercase;">Rector</p>
+                        <p style="font-size: 8px; color: #94a3b8; font-weight: 700;">UNAMIS • Rectorado</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #f1f5f9; pt: 20px;">
+                    <div style="max-width: 60%; font-size: 9px; color: #94a3b8; font-style: italic; line-height: 1.5;">
+                        Este documento certifica la recepción digital de los documentos según Resol. 162/2026. La validez legal definitiva se obtiene con la verificación física y firma de las autoridades.
                     </div>
                     <div style="text-align: right;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://unamis.edu.py/verificar/${registrationCode}" style="width: 80px; height: 80px; margin-bottom: 5px;">
-                        <p style="font-size: 8px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px;">Validación QR</p>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://unamis.edu.py/verificar/${registrationCode}" style="width: 60px; height: 60px;">
                     </div>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 30px;">
-                <button onclick="window.print()" style="background: #991b1b; color: white; border: none; padding: 15px 40px; border-radius: 20px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Imprimir / Guardar como PDF</button>
+            <div style="text-align: center; margin-top: 20px;" class="no-print">
+                <button onclick="window.print()" style="background: #991b1b; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px;">Imprimir / Guardar PDF</button>
             </div>
         </body>
         </html>

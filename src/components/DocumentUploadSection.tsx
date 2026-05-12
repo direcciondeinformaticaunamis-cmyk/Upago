@@ -16,8 +16,10 @@ import {
     ArrowLeft,
     Eye as Visibility,
     Trash2 as Delete,
-    ShieldCheck as VerifiedUser
+    ShieldCheck as VerifiedUser,
+    LockIcon
 } from 'lucide-react';
+import { useEffect } from 'react';
 import AppButton from './ui/AppButton';
 import SectionTitle from './ui/SectionTitle';
 import ProgressBar from './ui/ProgressBar';
@@ -28,10 +30,11 @@ interface DocumentItem {
     id: string;
     label: string;
     description: string;
-    status: 'pending' | 'uploaded';
+    status: 'pending' | 'uploaded' | 'verified' | 'rejected';
     fileNames: string[];
     downloadUrl?: string;
     isSigned?: boolean;
+    phase: 1 | 2 | 3;
 }
 
 interface StudentData {
@@ -56,115 +59,65 @@ interface DocumentUploadSectionProps {
 
 const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentData, photo, onFinish }) => {
     const [documents, setDocuments] = useState<DocumentItem[]>(() => {
-        const baseDocs: DocumentItem[] = [
-            {
-                id: 'cedula',
-                label: 'Cédula de Identidad (Ambos Lados)',
-                description: 'Copia autenticada por escribanía pública.',
-                status: 'pending',
-                fileNames: []
-            },
-            {
-                id: 'foto',
-                label: 'Foto tipo carnet (2 unidades)',
-                description: 'Formato digital nítido de alta resolución.',
-                status: 'pending',
-                fileNames: []
-            }
-        ];
-
+        // --- CASO DOCENTE / CONCURSANTE (MEDICINA Y OTROS) ---
         if (studentData.tipoUsuario === 'concursante_docente') {
             return [
-                {
-                    id: 'cv',
-                    label: 'Currículum Vitae',
-                    description: 'Actualizado en formato digital PDF.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'cedula',
-                    label: 'Cédula de Identidad Civil Vigente',
-                    description: 'Fotocopia autenticada por Escribanía Pública.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'titulos',
-                    label: 'Certificado de Estudios y Títulos (Grado y Postgrado)',
-                    description: 'Fotocopia autenticada por Escribanía Pública.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'certificados_cursos',
-                    label: 'Certificados de Cursos o Talleres',
-                    description: 'Fotocopia simple vinculados a las funciones del cargo.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'declaracion_jurada',
-                    label: 'Declaración Jurada',
-                    description: 'De no hallarse en inhabilidades previstas en las leyes y reglamentos.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'antecedente_judicial',
-                    label: 'Certificado de Antecedente Judicial',
-                    description: 'Documento original o digital válido.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'antecedente_policial',
-                    label: 'Certificado de Antecedente Policial',
-                    description: 'Documento original o digital válido.',
-                    status: 'pending',
-                    fileNames: []
-                }
-            ];
-        } else {
-            return [
-                {
-                    id: 'cedula',
-                    label: 'Fotocopia de Cédula de Identidad',
-                    description: 'O fotocopia de Pasaporte para postulantes extranjeros.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'estudio',
-                    label: 'Certificado de Estudios de la Educación Media',
-                    description: 'Actualizado acorde a las exigencias del MEC.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'titulo',
-                    label: 'Fotocopia del Título de Bachiller',
-                    description: 'Expedido acorde a las exigencias del MEC.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'psicologico',
-                    label: 'Certificado de Evaluación Psicológica',
-                    description: 'Perfil sicológico y funcional del interesado al EI.',
-                    status: 'pending',
-                    fileNames: []
-                },
-                {
-                    id: 'extranjeros_docs',
-                    label: 'Documentación para Extranjeros (Si aplica)',
-                    description: 'Carné de Residencia y Certificado Analítico de Estudios legalizado y reconocido por el MEC.',
-                    status: 'pending',
-                    fileNames: []
-                }
+                { id: 'cv', label: 'a) Currículum vitae actualizado', description: 'Formato PDF, debidamente firmado y actualizado.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'cedula', label: 'b) Fotocopia autenticada por Escribanía de la C.I.', description: 'Cédula de identidad civil vigente (ambos lados).', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'titulos', label: 'c) Fotocopia autenticada de Certificados y Títulos', description: 'Títulos de grado universitario y postgrado autenticados.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'cursos', label: 'd) Fotocopia simple de certificados de cursos/talleres', description: 'Vinculados a las funciones del cargo a concursar.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'declaracion_jurada', label: 'e) Declaración jurada de no hallarse en inhabilidades', description: 'Previstas en las leyes y reglamentos vigentes.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'antecedente_judicial', label: 'f) Certificado de antecedente judicial', description: 'Documento original o digital válido y vigente.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'antecedente_policial', label: 'g) Certificado de antecedente policial', description: 'Documento original o digital válido y vigente.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'comprobante_pago', label: 'h) Pago del arancel de inscripción', description: 'Correspondiente por asignatura. Se habilita tras validación académica.', status: 'pending', fileNames: [], phase: 2 }
             ];
         }
+
+        // --- CASO POSTULANTE ESTUDIANTE: MEDICINA ---
+        if (studentData.carrera.includes('Medicina')) {
+            return [
+                { id: 'cedula', label: '1. Fotocopia de Cédula de Identidad', description: 'Copia nítida vigente.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'estudio', label: '2. Certificado de Estudios (Educación Media)', description: 'Legalizado por las instituciones encargadas.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'titulo', label: '3. Fotocopia del Título de Bachiller', description: 'Legalizado por las instituciones encargadas.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'antecedente_policial', label: '4. Certificado de Antecedente Policial', description: 'Original o digital válido.', status: 'pending', fileNames: [], phase: 1 },
+                { id: 'comprobante_pago', label: '5. Comprobante de Pago (Arancel)', description: 'Habilitado tras validación académica.', status: 'pending', fileNames: [], phase: 2 }
+            ];
+        }
+
+        // --- CASO POR DEFECTO: OTROS ESTUDIANTES ---
+        return [
+            { id: 'cedula', label: 'Fotocopia de Cédula de Identidad', description: 'O Pasaporte para extranjeros.', status: 'pending', fileNames: [], phase: 1 },
+            { id: 'estudio', label: 'Certificado de Estudios de la Educación Media', description: 'Acorde a exigencias del MEC.', status: 'pending', fileNames: [], phase: 1 },
+            { id: 'titulo', label: 'Fotocopia del Título de Bachiller', description: 'Acorde a exigencias del MEC.', status: 'pending', fileNames: [], phase: 1 }
+        ] as DocumentItem[];
     });
+
+    useEffect(() => {
+        const fetchDocumentStatuses = async () => {
+            try {
+                const response = await fetch(`api.php?docs=${studentData.cedula}`);
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    setDocuments(prev => prev.map(doc => {
+                        const cloudDoc = data.find(d => d.tipo_documento === doc.id);
+                        if (cloudDoc) {
+                            return {
+                                ...doc,
+                                status: cloudDoc.estado === 'validado' ? 'verified' : 'uploaded',
+                                fileNames: [cloudDoc.archivo_nombre]
+                            };
+                        }
+                        return doc;
+                    }));
+                }
+            } catch (err) {
+                console.error("Error fetching docs:", err);
+            }
+        };
+
+        fetchDocumentStatuses();
+    }, [studentData.cedula]);
 
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -210,8 +163,17 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
         }
     };
 
-    const completedCount = documents.filter(doc => doc.status === 'uploaded').length;
-    const pendingDocuments = documents.filter(doc => doc.status !== 'uploaded');
+    const completedCount = documents.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
+    const pendingDocuments = documents.filter(doc => doc.status !== 'uploaded' && doc.status !== 'verified');
+    
+    // Para Medicina, verificamos si la fase 1 está lista (aprobada por admin)
+    const isPhase1Approved = studentData.carrera === 'Medicina' 
+        ? documents.filter(doc => doc.phase === 1).every(doc => doc.status === 'verified')
+        : true;
+
+    // ¿Están todos los de Fase 1 subidos (aunque no aprobados)?
+    const isPhase1Uploaded = documents.filter(doc => doc.phase === 1).every(doc => doc.status === 'uploaded' || doc.status === 'verified');
+
     const isFullyComplete = pendingDocuments.length === 0;
     const progressPercent = (completedCount / documents.length) * 100;
 
@@ -337,11 +299,12 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                         <div className="flex-1 text-center md:text-left min-w-0">
                             <h3 className="text-sm font-bold text-slate-800 mb-1 truncate">{doc.label}</h3>
                             <div className="text-[11px] font-medium text-slate-500 leading-tight space-y-1">
-                                {doc.status === 'uploaded' ? (
+                                {doc.status === 'uploaded' || doc.status === 'verified' ? (
                                     <div className="flex flex-col gap-1.5">
                                         {doc.fileNames.map((name, index) => (
-                                            <div key={index} className="flex items-center gap-2 text-emerald-600 font-bold italic">
-                                                <CheckCircle2 size={12} /> {name}
+                                            <div key={index} className={`flex items-center gap-2 font-bold italic ${doc.status === 'verified' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                {doc.status === 'verified' ? <VerifiedUser size={12} /> : <CheckCircle2 size={12} />} {name}
+                                                {doc.status === 'verified' && <span className="ml-1 text-[8px] bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">Verificado</span>}
                                             </div>
                                         ))}
                                     </div>
@@ -350,6 +313,14 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                                 )}
                             </div>
                         </div>
+
+                        {/* Estado Bloqueado para Medicina */}
+                        {studentData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved && (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl text-slate-400 border border-slate-200">
+                                <Lock size={14} />
+                                <span className="text-[10px] font-black uppercase tracking-tighter">Bloqueado</span>
+                            </div>
+                        )}
 
                         {/* Actions & Security */}
                         <div className="flex items-center gap-3 ml-auto">
@@ -392,12 +363,13 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                                 />
                             )}
                             <AppButton
-                                variant={doc.status === 'uploaded' ? 'secondary' : 'primary'}
+                                variant={doc.status === 'uploaded' || doc.status === 'verified' ? 'secondary' : 'primary'}
                                 size="sm"
-                                icon={doc.status === 'uploaded' ? Plus : Upload}
+                                icon={doc.status === 'uploaded' || doc.status === 'verified' ? Plus : Upload}
                                 onClick={() => triggerUpload(doc.id)}
+                                disabled={studentData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved}
                             >
-                                {doc.status === 'uploaded' ? 'Adjuntar Otro' : 'Adjuntar'}
+                                {doc.status === 'uploaded' || doc.status === 'verified' ? 'Adjuntar Otro' : 'Adjuntar'}
                             </AppButton>
                         </div>
 
@@ -410,6 +382,20 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                         />
                     </div>
                 ))}
+                {studentData.carrera === 'Medicina' && isPhase1Uploaded && !isPhase1Approved && (
+                    <div className="mt-8 bg-blue-50 border border-blue-200 rounded-3xl p-6 flex items-start gap-4 animate-pulse">
+                        <div className="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/20">
+                            <Clock size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-blue-900 font-black tracking-tighter text-sm uppercase">Expediente en Revisión Académica</h4>
+                            <p className="text-blue-700 text-xs font-medium leading-relaxed mt-1">
+                                Los 4 documentos iniciales han sido recibidos. El Área Académica está validando su información. 
+                                Una vez aprobados, se habilitará el botón de **Pago de Arancel** para continuar con su inscripción.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="mt-16 p-10 bg-slate-50/50 rounded-[2rem] border border-slate-200/60 text-center flex flex-col items-center">

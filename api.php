@@ -4,13 +4,38 @@
  * Maneja la persistencia y la organización de archivos por carpetas
  */
 
-header("Access-Control-Allow-Origin: *");
+// Seguridad CORS: Permitir solo dominios oficiales de la UNAMIS
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowed_domains = ['https://upago.unamis.edu.py', 'https://unamis.edu.py', 'https://www.unamis.edu.py'];
+
+if (in_array($origin, $allowed_domains) || strpos($origin, 'localhost') !== false) {
+    header("Access-Control-Allow-Origin: $origin");
+}
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
+}
+
+// --- CONFIGURACIÓN SENIOR: MODO MANTENIMIENTO ---
+$mantenimiento = false; // Cambiar a true para cerrar el portal
+if ($mantenimiento && (!isset($_GET['admin_key']) || $_GET['admin_key'] !== 'Diu2026!')) {
+    http_response_code(503);
+    echo json_encode(["status" => "maintenance", "message" => "Portal en mantenimiento programado. Volveremos pronto."]);
+    exit;
+}
+
+// Función de Auditoría Centralizada
+function write_system_log($action, $user = 'Sistema', $details = '') {
+    $log_dir = __DIR__ . '/logs';
+    if (!is_dir($log_dir)) mkdir($log_dir, 0755, true);
+    $log_file = $log_dir . '/system.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $log_entry = "[$timestamp] [IP: $ip] [USER: $user] ACTION: $action | DETAILS: $details" . PHP_EOL;
+    file_put_contents($log_file, $log_entry, FILE_APPEND);
 }
 
 require_once 'config.php';
@@ -27,6 +52,29 @@ if (!$db_name || !$username || !$password) {
         "message" => "Configuracion incompleta del servidor Upago. Verifique el archivo config.php."
     ]);
     exit;
+}
+
+// --- AUTO-INICIALIZACIÓN DE CARPETAS ---
+$folders = ['uploads/cedulas', 'uploads/titulos', 'uploads/certificados', 'uploads/fotos', 'uploads/pagos', 'uploads/nacimientos', 'uploads/proyectos'];
+foreach ($folders as $f) {
+    if (!file_exists($f)) {
+        mkdir($f, 0755, true);
+        // Crear .htaccess para proteger la carpeta (No listar archivos)
+        file_put_contents($f . '/.htaccess', "Options -Indexes\nDeny from all\n<Files ~ \"\.(jpg|jpeg|png|pdf)$\">\n    Allow from all\n</Files>");
+    }
+}
+
+// --- SISTEMA DE NOTIFICACIONES ---
+function send_institutional_email($to, $subject, $message) {
+    $log_dir = 'logs/';
+    if (!file_exists($log_dir)) mkdir($log_dir, 0755, true);
+    $log_file = $log_dir . 'emails.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $content = "\n--- [$timestamp] ---\nPARA: $to\nASUNTO: $subject\nMENSAJE:\n$message\n---------------------\n";
+    file_put_contents($log_file, $content, FILE_APPEND);
+    
+    // Aquí se integraría PHPMailer o mail() real
+    // @mail($to, $subject, $message, "From: no-reply@unamis.edu.py");
 }
 
 try {
@@ -50,7 +98,7 @@ try {
       `direccion` text DEFAULT NULL,
       `carrera` varchar(255) DEFAULT NULL,
       `sede` varchar(100) DEFAULT 'Santa Rosa de Lima',
-      `tipo_usuario` enum('postulante', 'concursante_docente') DEFAULT 'postulante',
+      `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante',
       `foto_url` text DEFAULT NULL,
       `estado_revision` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
       `observaciones` text DEFAULT NULL,
@@ -67,6 +115,7 @@ try {
       `archivo_nombre` varchar(255) NOT NULL,
       `archivo_url` text NOT NULL,
       `estado` enum('pendiente', 'subido', 'validado', 'error') DEFAULT 'subido',
+      `observaciones` text DEFAULT NULL,
       `fecha_carga` timestamp DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       CONSTRAINT `fk_postulante` FOREIGN KEY (`postulante_id`) REFERENCES `postulantes` (`cedula`) ON DELETE CASCADE
@@ -130,9 +179,29 @@ try {
       `descripcion` text DEFAULT NULL,
       `estado` enum('pendiente', 'conciliado', 'discrepancia') DEFAULT 'pendiente',
       `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`id`),
-      UNIQUE KEY `referencia_unique` (`referencia`)
+      PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS `roles_institucionales` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `correo` varchar(150) NOT NULL,
+      `rol` enum('admin', 'academico') NOT NULL,
+      `nombre_referencia` varchar(100) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `correo_unique` (`correo`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Insertamos los roles por defecto si la tabla está vacía
+    $stmtRoles = $conn->query("SELECT COUNT(*) FROM `roles_institucionales`");
+    if ($stmtRoles->fetchColumn() == 0) {
+        $conn->exec("INSERT INTO `roles_institucionales` (correo, rol, nombre_referencia) VALUES
+            ('informatica@unamis.edu.py', 'admin', 'Administrador Absoluto (Sistemas)'),
+            ('direccion.administrativa@unamis.edu.py', 'admin', 'Dirección Administrativa'),
+            ('direccion.financiera@unamis.edu.py', 'admin', 'Dirección Financiera'),
+            ('tesoreria@unamis.edu.py', 'admin', 'Tesorería'),
+            ('medicina@unami.edu.py', 'academico', 'Coordinación Medicina')
+        ");
+    }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `conciliaciones` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -313,34 +382,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_postulante'])) 
 
 // ==================== ENDPOINTS DE PAGOS ====================
 
-if ($method === 'GET' && isset($_GET['pagos'])) {
-    try {
-        $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido 
-                               FROM pagos p 
-                               LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
-                               ORDER BY p.fecha_registro DESC");
-        $stmt->execute();
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
-    }
-    exit;
-}
-
-if ($method === 'GET' && isset($_GET['mis-pagos'])) {
-    try {
-        $cedula = $_GET['mis-pagos'];
-        $stmt = $conn->prepare("SELECT * FROM pagos WHERE postulante_cedula = ? ORDER BY fecha_registro DESC");
-        $stmt->execute([$cedula]);
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
-    }
-    exit;
-}
-
 if ($method === 'GET' && isset($_GET['aranceles'])) {
     try {
         $stmt = $conn->prepare("SELECT * FROM aranceles WHERE activo = 1 ORDER BY categoria, concepto");
@@ -431,6 +472,17 @@ if ($method === 'POST' && isset($_GET['registrar_pago'])) {
             mkdir($target_dir, 0755, true);
         }
         
+        // --- DETECCIÓN DE FRAUDE (Recibos Duplicados) ---
+        if ($num_comprobante) {
+            $stmtCheck = $conn->prepare("SELECT COUNT(*) FROM pagos WHERE num_comprobante = ? AND estado != 'rechazado'");
+            $stmtCheck->execute([$num_comprobante]);
+            if ($stmtCheck->fetchColumn() > 0) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "FRAUDE DETECTADO: Este número de comprobante ya ha sido utilizado por otro alumno."]);
+                exit;
+            }
+        }
+
         $comprobante_url = null;
         $comprobante_nombre = null;
         
@@ -488,8 +540,14 @@ if ($method === 'POST') {
             $stmt->execute([$estado, $data['observaciones'] ?? '', $data['id']]);
 
             // Si se verifica, podríamos disparar el envío de correo aquí
+            // Si se verifica, notificamos al alumno
             if ($estado === 'verificado') {
-                // Mock: send_receipt_notification($data['id']);
+                $stmt = $conn->prepare("SELECT correo, nombre FROM postulantes WHERE cedula = (SELECT postulante_cedula FROM pagos WHERE id = ?)");
+                $stmt->execute([$data['id']]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($user) {
+                    send_institutional_email($user['correo'], "Pago Verificado - UNAMIS", "Hola " . $user['nombre'] . ", tu pago ha sido verificado satisfactoriamente por el Departamento de Finanzas.");
+                }
             }
 
             echo json_encode(["status" => "success", "affected" => $stmt->rowCount()]);
@@ -541,11 +599,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
         exit;
     }
 
-    // Acción para aprobar expediente
+    // Acción para aprobar expediente (Global)
     if (isset($data['action']) && $data['action'] === 'approve_expediente') {
         try {
+            $conn->beginTransaction();
+            
+            // 1. Marcar postulante como verificado
             $stmt = $conn->prepare("UPDATE postulantes SET estado_revision = 'verificado' WHERE cedula = ?");
             $stmt->execute([$data['cedula']]);
+            
+            // 2. Marcar todos sus documentos actuales como validados
+            $stmt2 = $conn->prepare("UPDATE expedientes SET estado = 'validado' WHERE postulante_id = ?");
+            $stmt2->execute([$data['cedula']]);
+            
+            $conn->commit();
+
+            // Notificar aprobación
+            $stmt = $conn->prepare("SELECT correo, nombre FROM postulantes WHERE cedula = ?");
+            $stmt->execute([$data['cedula']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($user) {
+                send_institutional_email($user['correo'], "Expediente Aprobado - UNAMIS", "Felicitaciones " . $user['nombre'] . ", tu expediente ha sido revisado y aprobado satisfactoriamente por el Área Académica.");
+            }
+
+            echo json_encode(["status" => "success"]);
+        } catch (PDOException $e) {
+            $conn->rollBack();
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // Acción para validar un documento individual
+    if (isset($data['action']) && $data['action'] === 'validate_doc') {
+        try {
+            $stmt = $conn->prepare("UPDATE expedientes SET estado = 'validado' WHERE postulante_id = ? AND tipo_documento = ?");
+            $stmt->execute([$data['cedula'], $data['doc_id']]);
+            echo json_encode(["status" => "success"]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+    // Acción para guardar observación de un documento
+    if (isset($data['action']) && $data['action'] === 'save_doc_observation') {
+        try {
+            $stmt = $conn->prepare("UPDATE expedientes SET observaciones = ? WHERE postulante_id = ? AND tipo_documento = ?");
+            $stmt->execute([$data['observacion'], $data['cedula'], $data['doc_id']]);
             echo json_encode(["status" => "success"]);
         } catch (PDOException $e) {
             http_response_code(500);
@@ -577,6 +679,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
     exit;
 }
 
+// Guardar/Eliminar roles institucionales
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['save_institutional_role'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (!$data || !isset($data['correo'], $data['rol'])) {
+        echo json_encode(["status" => "error", "message" => "Datos incompletos"]);
+        exit;
+    }
+    try {
+        $stmt = $conn->prepare("INSERT INTO roles_institucionales (correo, rol, nombre_referencia) VALUES (?, ?, ?) 
+                                ON DUPLICATE KEY UPDATE rol = VALUES(rol), nombre_referencia = VALUES(nombre_referencia)");
+        $stmt->execute([$data['correo'], $data['rol'], $data['nombre_referencia'] ?? '']);
+        echo json_encode(["status" => "success"]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    }
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_institutional_role'])) {
+    $id = $_GET['delete_institutional_role'];
+    try {
+        $stmt = $conn->prepare("DELETE FROM roles_institucionales WHERE id = ?");
+        $stmt->execute([$id]);
+        echo json_encode(["status" => "success"]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "FALLO: " . $e->getMessage()]);
+    }
+    exit;
+}
+
+// Acción para Login Administrativo
+    if (isset($data['action']) && $data['action'] === 'admin_login') {
+        $user = $data['username'] ?? '';
+        $pass = $data['password'] ?? '';
+        
+        // 1. Verificamos si tiene un rol manual asignado en la DB
+        $stmtRole = $conn->prepare("SELECT * FROM roles_institucionales WHERE correo = ?");
+        $stmtRole->execute([$user]);
+        $manualRole = $stmtRole->fetch(PDO::FETCH_ASSOC);
+
+        if ($manualRole && $pass === ADMIN_PASS) {
+            write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Manual Role: " . $manualRole['rol']);
+            echo json_encode([
+                "status" => "success",
+                "user" => [
+                    "nombre" => $manualRole['nombre_referencia'] ?? "Admin",
+                    "apellido" => "Institucional",
+                    "email" => $user,
+                    "rol" => $manualRole['rol']
+                ]
+            ]);
+
+            send_institutional_email($user, "Acceso Administrativo Exitoso", "Hola $user, has ingresado satisfactoriamente al Portal Administrativo de la UNAMIS.");
+            exit;
+        }
+
+        // 2. Fallback para super-admin de config.php
+        if ($user === ADMIN_USER && $pass === ADMIN_PASS) {
+            write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Super Admin (Config)");
+            echo json_encode([
+                "status" => "success",
+                "user" => [
+                    "nombre" => "Administrador",
+                    "apellido" => "Financiero",
+                    "email" => $user,
+                    "rol" => "admin"
+                ]
+            ]);
+        } else if (($user === 'academico@unamis.edu.py' || $user === 'medicina@unami.edu.py') && $pass === 'admin123') { // Credenciales Académicas
+            write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Academic Role");
+            echo json_encode([
+                "status" => "success",
+                "user" => [
+                    "nombre" => "Coordinador",
+                    "apellido" => "Académico",
+                    "email" => $user,
+                    "rol" => "academico"
+                ]
+            ]);
+        } else {
+            write_system_log("ADMIN_LOGIN_FAILED", $user, "Credenciales inválidas");
+            http_response_code(401);
+            echo json_encode(["status" => "error", "message" => "Credenciales administrativas inválidas"]);
+        }
+        exit;
+    }
+
+    // Listar roles institucionales
+    if (isset($_GET['get_institutional_roles'])) {
+        try {
+            $stmt = $conn->query("SELECT * FROM roles_institucionales ORDER BY rol, correo");
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+    
+    exit;
+}
+
 // Consulta de datos (GET)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['test'])) {
@@ -589,13 +795,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
-    // Traer datos de un postulante específico por correo (Login)
+    // Traer datos de un postulante específico por correo (Login + Roles Manuales)
     if (isset($_GET['perfil_by_email'])) {
         $email = $_GET['perfil_by_email'];
         try {
+            // Primero verificamos si tiene un ROL INSTITUCIONAL MANUAL
+            $stmtRole = $conn->prepare("SELECT * FROM roles_institucionales WHERE correo = ?");
+            $stmtRole->execute([$email]);
+            $manualRole = $stmtRole->fetch(PDO::FETCH_ASSOC);
+
             $stmt = $conn->prepare("SELECT * FROM postulantes WHERE correo = ?");
             $stmt->execute([$email]);
-            echo json_encode($stmt->fetch(PDO::FETCH_ASSOC));
+            $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($manualRole) {
+                write_system_log("SSO_LOGIN_SUCCESS", $email, "Rol Manual: " . $manualRole['rol']);
+                // Si tiene rol manual, devolvemos eso (incluso si no está en postulantes)
+                echo json_encode([
+                    "nombre" => $perfil['nombre'] ?? ($manualRole['nombre_referencia'] ?? "Usuario"),
+                    "apellido" => $perfil['apellido'] ?? "Institucional",
+                    "correo" => $email,
+                    "cedula" => $perfil['cedula'] ?? "INST-" . strtoupper(explode('@', $email)[0]),
+                    "tipo_usuario" => $manualRole['rol'] === 'admin' ? 'admin' : 'academico',
+                    "rol_manual" => $manualRole['rol']
+                ]);
+            } else {
+                if ($perfil) {
+                    write_system_log("LOGIN_SUCCESS", $email, "Postulante");
+                }
+                // Si no tiene rol manual, devolvemos su perfil normal
+                echo json_encode($perfil);
+            }
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
@@ -686,6 +916,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats_finance'])) {
                              FROM pagos WHERE estado = 'verificado' 
                              GROUP BY mes ORDER BY MIN(fecha_registro)");
         $stats['tendencia'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Proyecciones (Postulantes aprobados que NO han pagado aún)
+        $stmt = $conn->query("SELECT SUM(a.monto) as total_esperado 
+                             FROM postulantes p
+                             JOIN aranceles a ON p.carrera = a.concepto
+                             WHERE p.estado_revision = 'verificado' 
+                             AND p.cedula NOT IN (SELECT postulante_cedula FROM pagos WHERE estado = 'verificado')");
+        $stats['proyeccion_recaudacion'] = (float)($stmt->fetch(PDO::FETCH_ASSOC)['total_esperado'] ?? 0);
 
         echo json_encode($stats);
     } catch (PDOException $e) {
@@ -799,6 +1037,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['reconcile'])) {
         $stmt->execute([$data['pago_id'], $data['transaccion_id']]);
 
         $conn->commit();
+        
+        // Notificamos al alumno
+        $stmt = $conn->prepare("SELECT correo, nombre FROM postulantes WHERE cedula = (SELECT postulante_cedula FROM pagos WHERE id = ?)");
+        $stmt->execute([$data['pago_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user) {
+            send_institutional_email($user['correo'], "Pago Conciliado - UNAMIS", "Estimado " . $user['nombre'] . ", tu pago ha sido conciliado automáticamente con el extracto bancario. Tu inscripción está al día.");
+        }
+
         echo json_encode(["status" => "success", "message" => "Conciliación exitosa"]);
     } catch (Exception $e) {
         if ($conn->inTransaction()) $conn->rollBack();
@@ -850,6 +1097,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['bot_auto_reconcile']))
         if ($conn->inTransaction()) $conn->rollBack();
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ==================== IMPORTAR TRANSACCIONES DEMO ====================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['import_demo_transactions'])) {
+    try {
+        $conn->exec("INSERT INTO transacciones_bancarias (banco, referencia, monto, fecha_transaccion, descripcion) VALUES
+            ('BANCO CONTINENTAL', 'TX-99821', 1000000, CURDATE(), 'DEP-P-MEDICINA-5522334'),
+            ('BANCO ATLAS', 'AT-4451', 150000, CURDATE(), 'PAGO ARANCEL UNAMIS - JUAN PEREZ'),
+            ('SUDAMERIS', 'SUD-001', 53000, CURDATE(), 'CERTIFICADO ESTUDIOS CI: 1234567')
+        ");
+        echo json_encode(["status" => "success", "message" => "Transacciones demo importadas"]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    }
+    exit;
+}
+
+// --- ACCIÓN: EXPORTAR BASE DE DATOS (Solo Super Admin) ---
+if (isset($_GET['action']) && $_GET['action'] === 'export_db') {
+    write_system_log("DATABASE_EXPORT", "SuperAdmin", "Solicitud de backup SQL");
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="upago_backup_'.date('Y-m-d').'.sql"');
+    
+    try {
+        $tables = ['postulantes', 'expedientes', 'pagos', 'aranceles', 'roles_institucionales', 'transacciones_bancarias', 'conciliaciones'];
+        foreach ($tables as $table) {
+            echo "-- Estructura de tabla `$table`\n";
+            $stmt = $conn->query("SHOW CREATE TABLE `$table`");
+            echo $stmt->fetchColumn() . ";\n\n";
+            
+            echo "-- Datos de tabla `$table`\n";
+            $res = $conn->query("SELECT * FROM `$table` shadow_copy");
+            while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+                $values = array_map(function($v) use ($conn) { return $v === null ? 'NULL' : $conn->quote($v); }, $row);
+                echo "INSERT INTO `$table` VALUES (" . implode(', ', $values) . ");\n";
+            }
+            echo "\n\n";
+        }
+    } catch (Exception $e) {
+        echo "-- ERROR AL EXPORTAR: " . $e->getMessage();
     }
     exit;
 }

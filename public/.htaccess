@@ -4,9 +4,9 @@
 RewriteEngine On
 RewriteBase /
 
-# 2. Forzar HTTPS (Opcional, Hostinger suele hacerlo, pero asegura)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# 2. Forzar HTTPS (Obligatorio para seguridad)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # 3. REDIRECCIÓN SPA (React Router / Browser State)
 # Si el archivo o directorio solicitado no existe, servir index.html

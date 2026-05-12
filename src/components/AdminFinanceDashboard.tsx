@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, Receipt, CheckCircle } from '@mui/icons-material';
+import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, Receipt, CheckCircle, Storage } from '@mui/icons-material';
 
 import BankReconciliation from './aranceles/BankReconciliation';
 import FinancialReports from './aranceles/FinancialReports';
@@ -8,6 +8,7 @@ import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
 import NotificationCenter from './NotificationCenter';
 import { FinanceService, Payment, FinanceStats } from '../services/FinanceService';
 import InstitutionalAnalytics from './aranceles/InstitutionalAnalytics';
+import SystemSettings from './SystemSettings';
 
 interface AdminDashboardProps {
     user: { nombre: string; apellido: string; email: string; rol: string };
@@ -15,8 +16,9 @@ interface AdminDashboardProps {
 }
 
 const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas' | 'postulantes'>('dashboard');
+    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas' | 'postulantes' | 'config'>('dashboard');
     const [payments, setPayments] = useState<Payment[]>([]);
+    const [postulantes, setPostulantes] = useState<any[]>([]);
     const [stats, setStats] = useState<FinanceStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -30,12 +32,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                 FinanceService.getPostulantes()
             ]);
             
-            // Guardamos los postulantes dentro del estado de payments de forma temporal o en uno nuevo
-            // Para simplicidad en este paso, lo asocio a payments como propiedad extra
-            const pData = pagosData || [];
-            (pData as any).allPostulantes = postulantesData || [];
-            
-            setPayments(pData);
+            setPayments(pagosData || []);
+            setPostulantes(postulantesData || []);
             setStats(statsData);
         } catch (error) {
             console.error('Error loading admin finance data:', error);
@@ -69,6 +67,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                         { id: 'reportes', label: 'Reportes', icon: Assessment },
                         { id: 'metricas', label: 'Métricas', icon: TrendingUp },
                         { id: 'facturas', label: 'Facturas', icon: Receipt },
+                        { id: 'config', label: 'Configuración', icon: Settings },
                     ].map((item) => (
                         <button 
                             key={item.id}
@@ -247,6 +246,13 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 <History className="text-[#800020]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#800020]">Bitácora</span>
                                             </button>
+                                            <button 
+                                                onClick={() => window.location.href = `${window.location.origin}/api.php?action=export_db`}
+                                                className="flex flex-col items-center justify-center p-4 bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors gap-2 group border border-slate-700"
+                                            >
+                                                <Storage className="text-emerald-400" />
+                                                <span className="text-[10px] font-bold uppercase text-white group-hover:text-emerald-400">Respaldo SQL</span>
+                                            </button>
                                             <button className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group">
                                                 <Mail className="text-[#800020]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#800020]">Avisos</span>
@@ -368,8 +374,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {/* Aquí usaremos una variable postulantes que cargaremos en loadData */}
-                                        {(payments as any).allPostulantes?.map((post: any) => (
+                                        {postulantes?.map((post: any) => (
                                             <tr key={post.cedula} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="px-8 py-5">
                                                     <p className="text-sm font-bold text-slate-800">{post.nombre} {post.apellido}</p>
@@ -392,6 +397,10 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    ) : activeSection === 'config' ? (
+                        <div className="-m-8 bg-slate-50/50 min-h-screen p-8">
+                            <SystemSettings />
                         </div>
                     ) : (
                         <div className="-m-8 bg-slate-50/50 min-h-screen">

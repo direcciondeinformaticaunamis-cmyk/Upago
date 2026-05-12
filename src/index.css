@@ -154,3 +154,11 @@
                 linear-gradient(135deg, var(--primary), #a91c3d) border-box;
   }
 }
+
+@media print {
+  aside, header, button, .no-print { display: none !important; }
+  main { margin-left: 0 !important; padding: 0 !important; }
+  #printable-report { display: block !important; width: 100% !important; }
+  table { border: 1px solid #000 !important; }
+  th, td { border: 1px solid #000 !important; padding: 5px !important; }
+}

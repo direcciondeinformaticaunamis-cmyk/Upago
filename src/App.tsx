@@ -55,36 +55,29 @@ const App: React.FC = () => {
         setError(undefined);
         
         try {
-            // Caso especial para admin y académico si no están en la BD aún
-            if (email === 'academico@unamis.edu.py' && password === 'admin123') {
+            // Intentar Login Administrativo primero
+            const adminResponse = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'admin_login',
+                    username: email,
+                    password: password
+                })
+            });
+
+            if (adminResponse.ok) {
+                const adminData = await adminResponse.json();
                 setCurrentUser({
-                    nombre: 'Coordinador',
-                    apellido: 'Académico',
-                    email: email,
-                    cedula: 'ADMIN-ACAD',
-                    rol: 'academico'
+                    ...adminData.user,
+                    cedula: adminData.user.rol === 'admin' ? 'ADMIN-FIN' : 'ADMIN-ACAD'
                 });
-                setView('academic');
+                setView(adminData.user.rol === 'admin' ? 'admin' : 'academic');
                 setLoading(false);
                 return;
             }
 
-            if (email === 'finanzas@unamis.edu.py' && password === 'admin123') {
-                setCurrentUser({
-                    nombre: 'Admin',
-                    apellido: 'Finanzas',
-                    email: email,
-                    cedula: 'ADMIN-FIN',
-                    rol: 'finance'
-                });
-                setView('admin');
-                setLoading(false);
-                return;
-            }
-
-            // Para estudiantes, buscamos por perfil en la API
-            // En un entorno real, aquí iría una validación de password real.
-            // Por ahora consultamos el perfil por correo si existe.
+            // Si falla el login admin, probamos como estudiante
             const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
             const data = await response.json();
 
@@ -94,11 +87,14 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
+                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante')),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data // Incluimos carrera, sede, etc.
                 } as any);
-                setView('student');
+                
+                if (data.tipo_usuario === 'admin') setView('admin');
+                else if (data.tipo_usuario === 'academico') setView('academic');
+                else setView('student');
             } else {
                 setError('Usuario no encontrado o credenciales inválidas.');
             }
@@ -162,11 +158,14 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
+                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante')),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data
                 } as any);
-                setView('student');
+
+                if (data.tipo_usuario === 'admin') setView('admin');
+                else if (data.tipo_usuario === 'academico') setView('academic');
+                else setView('student');
                 return true; // Existe
             }
             return false; // No existe, debe completar registro

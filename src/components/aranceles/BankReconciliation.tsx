@@ -62,12 +62,20 @@ const BankReconciliation: React.FC = () => {
         loadRecords();
     }, []);
 
-    const handleImport = () => {
+    const handleImport = async () => {
         setIsImporting(true);
-        setTimeout(async () => {
+        try {
+            await fetch('api.php?import_demo_transactions=true', { method: 'POST' });
             await loadRecords();
+            setChatMessages(prev => [...prev, { 
+                role: 'bot', 
+                text: 'Se han importado registros del estado bancario (Demo). Ahora puedes ver los matches detectados por la IA.' 
+            }]);
+        } catch (err) {
+            console.error("Error importing demo data:", err);
+        } finally {
             setIsImporting(false);
-        }, 1500);
+        }
     };
 
     const handleApproveAll = async () => {

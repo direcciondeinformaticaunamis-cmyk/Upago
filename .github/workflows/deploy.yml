@@ -75,9 +75,13 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          # Excluir archivos que no deben sobreescribirse en el servidor
+          # 🛡️ EXCLUSIONES CRÍTICAS PARA PRODUCCIÓN
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             uploads/**
+            logs/**
+            temp/**
+            .htaccess
+
