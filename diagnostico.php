@@ -1,11 +1,29 @@
-<?php/** * Herramienta de Diagnóstico - Upago UNAMIS */header("Content-Type: text/plain; charset=UTF-8");echo "=== DIAGNÓSTICO DE SISTEMA UPAGO ===\n\n";echo "1. Información del Servidor:\n";echo "   PHP Versión: " . phpversion() . "\n";echo "   Software: " . $_SERVER['SERVER_SOFTWARE'] . "\n";echo "   Raíz: " . $_SERVER['DOCUMENT_ROOT'] . "\n\n";echo "2. Extensiones Requeridas:\n";$extensions = ["pdo", "pdo_mysql", "json", "fileinfo"];foreach ($extensions as $ext) {    echo "   $ext: " . (extension_loaded($ext) ? "Habilitada [OK]" : "NO ENCONTRADA [!] ") . "\n";}echo "\n";echo "3. Prueba de Conexión a Base de Datos:\n";$config_ready = true;require_once 'config.php';$host = DB_HOST;$db_name = DB_NAME;$username = DB_USER;$password = DB_PASS;if (!$db_name || !$username || !$password) {    $config_ready = false;    echo "   STATUS: CONFIGURACION INCOMPLETA [!]\n";    echo "   AYUDA: Verifique el archivo config.php en el servidor.\n";}if ($config_ready) {
-echo "\n4. Listado de Archivos (Raiz):\n";
-$files = scandir('.');
-foreach ($files as $file) {
-    echo "   $file\n";
+<?php
+/**
+ * Herramienta de Diagnóstico - Upago UNAMIS
+ */
+header("Content-Type: text/plain; charset=UTF-8");
+echo "=== DIAGNOSTICO DE SISTEMA UPAGO ===\n\n";
+
+echo "1. Informacion del Servidor:\n";
+echo "   PHP Version: " . phpversion() . "\n";
+echo "   Software: " . $_SERVER['SERVER_SOFTWARE'] . "\n";
+echo "   Raiz: " . $_SERVER['DOCUMENT_ROOT'] . "\n\n";
+
+echo "2. Extensiones Requeridas:\n";
+$extensions = ["pdo", "pdo_mysql", "json", "fileinfo"];
+foreach ($extensions as $ext) {
+    echo "   $ext: " . (extension_loaded($ext) ? "Habilitada [OK]" : "NO ENCONTRADA [!] ") . "\n";
 }
 
-echo "\n5. Contenido de assets/:\n";
+echo "\n3. Listado de Archivos (Raiz):\n";
+$files = scandir('.');
+foreach ($files as $file) {
+    $type = is_dir($file) ? "[DIR ]" : "[FILE]";
+    echo "   $type $file\n";
+}
+
+echo "\n4. Contenido de assets/:\n";
 if (is_dir('assets')) {
     $assets = scandir('assets');
     foreach ($assets as $asset) {
@@ -13,4 +31,19 @@ if (is_dir('assets')) {
     }
 } else {
     echo "   [!] Directorio assets no encontrado\n";
+}
+
+echo "\n5. Prueba de Conexion a Base de Datos:\n";
+if (file_exists('config.php')) {
+    require_once 'config.php';
+    echo "   config.php: Encontrado [OK]\n";
+    try {
+        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        echo "   DB STATUS: CONECTADO [OK]\n";
+    } catch (Exception $e) {
+        echo "   DB STATUS: ERROR DE CONEXION [!] - " . $e->getMessage() . "\n";
+    }
+} else {
+    echo "   config.php: NO ENCONTRADO [!]\n";
 }
