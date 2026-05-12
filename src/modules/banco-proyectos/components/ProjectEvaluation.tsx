@@ -26,7 +26,11 @@ const ProjectEvaluation = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('api-banco.php?action=get_projects')
+        fetch('api-banco.php?action=get_projects', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+            }
+        })
             .then(res => res.json())
             .then(data => {
                 // Filter for projects in 'en_revision' or 'borrador' for demo
@@ -46,7 +50,10 @@ const ProjectEvaluation = () => {
     const submitEvaluation = () => {
         fetch('api-banco.php?action=save_evaluation', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+            },
             body: JSON.stringify({
                 proyecto_id: selectedProject.id,
                 puntaje: totalScore,
@@ -62,7 +69,11 @@ const ProjectEvaluation = () => {
                     setScores({});
                     // Reload projects
                     setLoading(true);
-                    fetch('api-banco.php?action=get_projects')
+                    fetch('api-banco.php?action=get_projects', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                        }
+                    })
                         .then(r => r.json())
                         .then(d => { setPendingProjects(d); setLoading(false); });
                 }

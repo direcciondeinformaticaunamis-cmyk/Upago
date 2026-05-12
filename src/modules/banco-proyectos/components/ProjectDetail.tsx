@@ -48,7 +48,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ id, onBack }) => {
     const [comments, setComments] = React.useState<any[]>([]);
 
     React.useEffect(() => {
-        fetch(`api-banco.php?action=get_project_detail&id=${id}`)
+        fetch(`api-banco.php?action=get_project_detail&id=${id}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+            }
+        })
             .then(res => res.json())
             .then(data => {
                 setProject(data);
@@ -63,7 +67,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ id, onBack }) => {
 
         fetch('api-banco.php?action=add_comment', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+            },
             body: JSON.stringify({
                 proyecto_id: id,
                 comentario: newComment

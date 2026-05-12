@@ -70,7 +70,10 @@ const RegistrationForm = () => {
         try {
             const response = await fetch('api-banco.php?action=save_project', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                },
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -83,6 +86,9 @@ const RegistrationForm = () => {
                     fileData.append('file', formData.archivo_resolucion);
                     await fetch(`api-banco.php?action=upload_file&id=${projectId}&type=resolucion&nro=${formData.resolucion_nro}`, {
                         method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                        },
                         body: fileData
                     });
                 }

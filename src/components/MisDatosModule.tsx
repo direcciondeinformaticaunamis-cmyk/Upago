@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PersonalDataForm from './PersonalDataForm';
 import DocumentUploadSection from './DocumentUploadSection';
-import { CheckCircle, AccessTime as Clock, Error as ErrorIcon, Description, Person, School, ArrowRight } from '@mui/icons-material';
+import MedicinePrintForm from './MedicinePrintForm';
+import { CheckCircle, AccessTime as Clock, Error as ErrorIcon, Description, Person, School, ArrowRight, Print } from '@mui/icons-material';
 
 interface MisDatosModuleProps {
     user?: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; estado_expediente?: 'pendiente' | 'aprobado' | 'rechazado'; };
@@ -21,17 +22,51 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         nombre: user?.nombre || '',
         apellido: user?.apellido || '',
         cedula: user?.cedula || '',
+        ruc: '',
         correo: user?.email || '',
         telefono: '',
         fechaNacimiento: '',
+        lugarNacimientoCiudad: '',
+        lugarNacimientoDepto: '',
+        nacionalidad: 'Paraguaya',
+        paisOrigen: 'Paraguay',
         genero: '',
+        estadoCivil: 'Soltero',
         direccion: '',
+        barrio: '',
         carrera: '',
         sede: '',
         tipoUsuario: 'postulante' as 'postulante' | 'concursante_docente',
+        
+        // Salud
+        grupoSanguineo: '',
+        alergico: '',
+        seguroMedico: 'Ninguno',
+        esZurdo: false,
+        discapacidad: 'Ninguna',
+        discapacidadDetalle: '',
+        necesitaAdecuacion: false,
+        adecuacionDetalle: '',
+        enfermedadCronica: '',
+
+        // Académico/Laboral
+        colegioNombre: '',
+        colegioCiudad: '',
+        colegioDistrito: '',
+        colegioDepto: '',
+        colegioTipo: 'Público',
+        bachillerTipo: 'Científico',
+        bachillerDetalle: '',
+        egresoAnio: new Date().getFullYear() - 1,
+        egresoPromedio: 0,
+        trabaja: false,
+        empresaNombre: '',
+        cargo: '',
+        horarioLaboral: '',
     });
     const [photo, setPhoto] = useState<string | null>(null);
     const [errors, setErrors] = useState<string[]>([]);
+    const [showPrintForm, setShowPrintForm] = useState(false);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -50,7 +85,8 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         
         // Guardar datos en la base de datos antes de pasar al siguiente paso
         try {
-            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
+            const response = await fetch(`${baseUrl}/api.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -82,6 +118,16 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                         <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Mi Expediente</h2>
                         <p className="text-slate-500">Resumen de sus datos personales y documentos digitales.</p>
                     </div>
+
+                    {/* Botón de Impresión para Medicina */}
+                    {formData.carrera === 'Medicina' && (
+                        <button 
+                            onClick={() => setShowPrintForm(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-[#800020] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                        >
+                            <Print fontSize="small" /> Imprimir Formulario Oficial
+                        </button>
+                    )}
                     
                     {estado === 'aprobado' ? (
                         <div className="bg-emerald-50 text-emerald-700 px-6 py-4 rounded-2xl flex items-center gap-4 border border-emerald-200">
@@ -190,6 +236,13 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                     studentData={formData}
                     photo={photo}
                     onFinish={handleFinish}
+                />
+            )}
+
+            {showPrintForm && (
+                <MedicinePrintForm 
+                    data={formData} 
+                    onClose={() => setShowPrintForm(false)} 
                 />
             )}
         </div>

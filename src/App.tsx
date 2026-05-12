@@ -55,8 +55,9 @@ const App: React.FC = () => {
         setError(undefined);
         
         try {
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
             // Intentar Login Administrativo primero
-            const adminResponse = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+            const adminResponse = await fetch(`${baseUrl}/api.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -68,6 +69,9 @@ const App: React.FC = () => {
 
             if (adminResponse.ok) {
                 const adminData = await adminResponse.json();
+                if (adminData.token) {
+                    localStorage.setItem('upago_token', adminData.token);
+                }
                 setCurrentUser({
                     ...adminData.user,
                     cedula: adminData.user.rol === 'admin' ? 'ADMIN-FIN' : 'ADMIN-ACAD'
@@ -78,7 +82,11 @@ const App: React.FC = () => {
             }
 
             // Si falla el login admin, probamos como estudiante
-            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
+            const response = await fetch(`${baseUrl}/api.php?perfil_by_email=${encodeURIComponent(email)}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                }
+            });
             const data = await response.json();
 
             if (data && data.cedula) {
@@ -110,9 +118,13 @@ const App: React.FC = () => {
         setLoading(true);
         setError(undefined);
         try {
-            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php`, {
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
+            const response = await fetch(`${baseUrl}/api.php`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                },
                 body: JSON.stringify(data)
             });
 
@@ -140,6 +152,7 @@ const App: React.FC = () => {
     };
 
     const handleLogout = () => {
+        localStorage.removeItem('upago_token');
         setCurrentUser(null);
         setView('auth');
     };
@@ -148,7 +161,8 @@ const App: React.FC = () => {
         setLoading(true);
         setError(undefined);
         try {
-            const response = await fetch(`${import.meta.env.DEV ? 'http://localhost:8001' : ''}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
+            const response = await fetch(`${baseUrl}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
             const data = await response.json();
 
             if (data && data.cedula) {

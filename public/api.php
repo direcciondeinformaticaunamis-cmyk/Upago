@@ -39,6 +39,7 @@ function write_system_log($action, $user = 'Sistema', $details = '') {
 }
 
 require_once 'config.php';
+require_once 'security.php';
 
 $host = DB_HOST;
 $db_name = DB_NAME;
@@ -91,14 +92,47 @@ try {
       `nombre` varchar(100) NOT NULL,
       `apellido` varchar(100) NOT NULL,
       `cedula` varchar(20) NOT NULL,
+      `ruc` varchar(20) DEFAULT NULL,
       `correo` varchar(150) NOT NULL,
       `telefono` varchar(50) DEFAULT NULL,
       `fecha_nacimiento` date DEFAULT NULL,
+      `lugar_nacimiento_ciudad` varchar(100) DEFAULT NULL,
+      `lugar_nacimiento_depto` varchar(100) DEFAULT NULL,
+      `nacionalidad` varchar(100) DEFAULT 'Paraguaya',
+      `pais_origen` varchar(100) DEFAULT 'Paraguay',
       `genero` varchar(20) DEFAULT NULL,
+      `estado_civil` varchar(50) DEFAULT NULL,
       `direccion` text DEFAULT NULL,
+      `barrio` varchar(100) DEFAULT NULL,
       `carrera` varchar(255) DEFAULT NULL,
       `sede` varchar(100) DEFAULT 'Santa Rosa de Lima',
       `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante',
+      
+      /* Datos de Salud */
+      `grupo_sanguineo` varchar(10) DEFAULT NULL,
+      `alergico` varchar(255) DEFAULT NULL,
+      `seguro_medico` varchar(100) DEFAULT NULL,
+      `es_zurdo` tinyint(1) DEFAULT 0,
+      `discapacidad` varchar(100) DEFAULT 'Ninguna',
+      `discapacidad_detalle` text DEFAULT NULL,
+      `necesita_adecuacion` tinyint(1) DEFAULT 0,
+      `adecuacion_detalle` text DEFAULT NULL,
+      `enfermedad_cronica` varchar(255) DEFAULT NULL,
+      
+      /* Antecedentes Académicos/Laborales */
+      `colegio_nombre` varchar(255) DEFAULT NULL,
+      `colegio_ciudad` varchar(100) DEFAULT NULL,
+      `colegio_distrito` varchar(100) DEFAULT NULL,
+      `colegio_depto` varchar(100) DEFAULT NULL,
+      `colegio_tipo` varchar(50) DEFAULT NULL,
+      `bachiller_tipo` varchar(100) DEFAULT NULL,
+      `egreso_anio` int(4) DEFAULT NULL,
+      `egreso_promedio` decimal(4,2) DEFAULT NULL,
+      `trabaja` tinyint(1) DEFAULT 0,
+      `empresa_nombre` varchar(255) DEFAULT NULL,
+      `cargo` varchar(150) DEFAULT NULL,
+      `horario_laboral` varchar(100) DEFAULT NULL,
+
       `foto_url` text DEFAULT NULL,
       `estado_revision` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
       `observaciones` text DEFAULT NULL,
@@ -106,6 +140,45 @@ try {
       PRIMARY KEY (`id`),
       UNIQUE KEY `cedula_unique` (`cedula`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Ejecutar ALTER TABLE para asegurar que las columnas existan si la tabla ya fue creada
+    $cols = [
+        "ruc" => "varchar(20) DEFAULT NULL",
+        "lugar_nacimiento_ciudad" => "varchar(100) DEFAULT NULL",
+        "lugar_nacimiento_depto" => "varchar(100) DEFAULT NULL",
+        "pais_origen" => "varchar(100) DEFAULT 'Paraguay', nacionalidad varchar(100) DEFAULT 'Paraguaya'",
+        "estado_civil" => "varchar(50) DEFAULT NULL",
+        "barrio" => "varchar(100) DEFAULT NULL",
+        "grupo_sanguineo" => "varchar(10) DEFAULT NULL",
+        "alergico" => "varchar(255) DEFAULT NULL",
+        "seguro_medico" => "varchar(100) DEFAULT NULL",
+        "es_zurdo" => "tinyint(1) DEFAULT 0",
+        "discapacidad" => "varchar(100) DEFAULT 'Ninguna'",
+        "discapacidad_detalle" => "text DEFAULT NULL",
+        "necesita_adecuacion" => "tinyint(1) DEFAULT 0",
+        "adecuacion_detalle" => "text DEFAULT NULL",
+        "enfermedad_cronica" => "varchar(255) DEFAULT NULL",
+        "colegio_nombre" => "varchar(255) DEFAULT NULL",
+        "colegio_ciudad" => "varchar(100) DEFAULT NULL",
+        "colegio_distrito" => "varchar(100) DEFAULT NULL",
+        "colegio_depto" => "varchar(100) DEFAULT NULL",
+        "colegio_tipo" => "varchar(50) DEFAULT NULL",
+        "bachiller_tipo" => "varchar(100) DEFAULT NULL",
+        "egreso_anio" => "int(4) DEFAULT NULL",
+        "egreso_promedio" => "decimal(4,2) DEFAULT NULL",
+        "trabaja" => "tinyint(1) DEFAULT 0",
+        "empresa_nombre" => "varchar(255) DEFAULT NULL",
+        "cargo" => "varchar(150) DEFAULT NULL",
+        "horario_laboral" => "varchar(100) DEFAULT NULL"
+    ];
+
+    foreach ($cols as $col => $def) {
+        try {
+            $conn->exec("ALTER TABLE `postulantes` ADD COLUMN `$col` $def");
+        } catch (Exception $e) {
+            // Probablemente la columna ya existe
+        }
+    }
 
     // Tabla Expedientes
     $conn->exec("CREATE TABLE IF NOT EXISTS `expedientes` (
@@ -298,7 +371,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['admin_login'])) {
     $pass = $data['password'] ?? '';
     
     if ($user === ADMIN_USER && $pass === ADMIN_PASS) {
-        echo json_encode(["status" => "success", "token" => bin2hex(random_bytes(16)), "nombre" => "Director"]);
+        $token = generate_token(["email" => $user, "rol" => "admin", "nombre" => "Director"]);
+        echo json_encode(["status" => "success", "token" => $token, "nombre" => "Director"]);
     } else {
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Credenciales incorrectas"]);
@@ -310,6 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['admin_login'])) {
 
 // Actualizar estado y observaciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update_status'])) {
+    require_admin();
     $raw = file_get_contents("php://input");
     $data = json_decode($raw, true);
     
@@ -342,6 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update_status'])) {
 
 // Eliminar Documento (y archivo físico)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_doc'])) {
+    require_admin('admin');
     $doc_id = $_GET['delete_doc'];
     try {
         $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE id = ?");
@@ -362,6 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_doc'])) {
 
 // Eliminar Postulante (Completo)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_postulante'])) {
+    require_admin('admin');
     $cedula = $_GET['delete_postulante'];
     try {
         $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE postulante_id = ?");
@@ -413,6 +490,7 @@ if ($method === 'GET' && isset($_GET['stats'])) {
 }
 
 if ($method === 'POST' && isset($_GET['save_arancel'])) {
+    require_admin('admin');
     try {
         $raw = file_get_contents("php://input");
         $data = json_decode($raw, true);
@@ -560,6 +638,7 @@ if ($method === 'POST') {
     }
 
     if (isset($_POST['delete_pago'])) {
+        require_admin('admin');
         try {
             $id = $_POST['id'] ?? null;
             if (!$id) {
@@ -601,6 +680,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
 
     // Acción para aprobar expediente (Global)
     if (isset($data['action']) && $data['action'] === 'approve_expediente') {
+        require_admin();
         try {
             $conn->beginTransaction();
             
@@ -666,21 +746,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['file'])) {
     $genero = $data['genero'] ?? null;
     $direccion = $data['direccion'] ?? null;
     
-    $stmt = $conn->prepare("INSERT INTO postulantes (nombre, apellido, cedula, correo, telefono, fecha_nacimiento, genero, direccion, carrera, sede, tipo_usuario) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
-                            ON DUPLICATE KEY UPDATE nombre=?, apellido=?, correo=?, telefono=?, fecha_nacimiento=?, genero=?, direccion=?, carrera=?, sede=?, tipo_usuario=?");
-    $stmt->execute([
-        $data['nombre'], $data['apellido'], $data['cedula'], $correo, $telefono, 
-        $fecha_nacimiento, $genero, $direccion, $carrera, $sede, $tipo_usuario,
-        $data['nombre'], $data['apellido'], $correo, $telefono, 
-        $fecha_nacimiento, $genero, $direccion, $carrera, $sede, $tipo_usuario
-    ]);
+    $fields = [
+        'nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 
+        'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 
+        'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario',
+        'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 
+        'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica',
+        'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 
+        'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 
+        'cargo', 'horario_laboral'
+    ];
+
+    $placeholders = implode(',', array_fill(0, count($fields), '?'));
+    $updates = implode(',', array_map(fn($f) => "$f=VALUES($f)", $fields));
+
+    $sql = "INSERT INTO postulantes (" . implode(',', $fields) . ") VALUES ($placeholders) 
+            ON DUPLICATE KEY UPDATE $updates";
+    
+    $stmt = $conn->prepare($sql);
+    
+    $values = [];
+    foreach ($fields as $f) {
+        $values[] = $data[$f] ?? $data[str_replace('_', '', ucwords($f, '_'))] ?? null;
+    }
+
+    $stmt->execute($values);
     echo json_encode(["status" => "success", "id" => $data['cedula']]);
     exit;
 }
 
 // Guardar/Eliminar roles institucionales
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['save_institutional_role'])) {
+    require_admin('admin');
     $data = json_decode(file_get_contents("php://input"), true);
     if (!$data || !isset($data['correo'], $data['rol'])) {
         echo json_encode(["status" => "error", "message" => "Datos incompletos"]);
@@ -723,8 +820,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_institutional_r
 
         if ($manualRole && $pass === ADMIN_PASS) {
             write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Manual Role: " . $manualRole['rol']);
+            $token = generate_token([
+                "email" => $user,
+                "rol" => $manualRole['rol'],
+                "nombre" => $manualRole['nombre_referencia'] ?? "Admin"
+            ]);
             echo json_encode([
                 "status" => "success",
+                "token" => $token,
                 "user" => [
                     "nombre" => $manualRole['nombre_referencia'] ?? "Admin",
                     "apellido" => "Institucional",
@@ -740,8 +843,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_institutional_r
         // 2. Fallback para super-admin de config.php
         if ($user === ADMIN_USER && $pass === ADMIN_PASS) {
             write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Super Admin (Config)");
+            $token = generate_token(["email" => $user, "rol" => "admin", "nombre" => "Administrador"]);
             echo json_encode([
                 "status" => "success",
+                "token" => $token,
                 "user" => [
                     "nombre" => "Administrador",
                     "apellido" => "Financiero",

@@ -28,7 +28,11 @@ const AdvancedSearch = ({ onViewDetail }: { onViewDetail: (id: number) => void }
 
     const fetchProjects = async () => {
         try {
-            const res = await fetch('api-banco.php?action=get_projects');
+            const res = await fetch('api-banco.php?action=get_projects', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                }
+            });
             const data = await res.json();
             setProjects(data);
         } catch (e) {

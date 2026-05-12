@@ -30,11 +30,12 @@ jobs:
       - name: 🔨 Build de la aplicación
         run: npm run build
 
-      # 5. Copiar api.php, api-banco.php y .htaccess al directorio dist para que se suban junto con el frontend
+      # 5. Copiar backend PHP y .htaccess al dist para que se suban junto con el frontend
       - name: 📋 Copiar backend PHP y .htaccess al dist
         run: |
           cp api.php dist/api.php
           cp api-banco.php dist/api-banco.php
+          cp security.php dist/security.php
           cp diagnostico.php dist/diagnostico.php
           cp .htaccess dist/.htaccess
           cp *.sql dist/
@@ -51,6 +52,7 @@ jobs:
 
           define('ADMIN_USER',  '${{ secrets.ADMIN_USER }}');
           define('ADMIN_PASS',  '${{ secrets.ADMIN_PASS }}');
+          define('JWT_SECRET',  '${{ secrets.JWT_SECRET }}');
 
           define('UPLOAD_BASE', 'uploads/');
           define('MAX_FILE_SIZE', 5242880);
@@ -83,5 +85,4 @@ jobs:
             uploads/**
             logs/**
             temp/**
-            .htaccess
 

@@ -34,7 +34,11 @@ const AdminFinanceDashboard: React.FC = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch('api.php?stats_finance');
+                const res = await fetch('api.php?stats_finance', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+                    }
+                });
                 const data = await res.json();
                 setStatsData(data);
             } catch (e) {

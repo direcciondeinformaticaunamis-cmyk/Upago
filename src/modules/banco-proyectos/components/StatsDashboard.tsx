@@ -19,7 +19,11 @@ const StatsDashboard = () => {
     const [stats, setStats] = useState<any>(null);
 
     useEffect(() => {
-        fetch('api-banco.php?action=stats')
+        fetch('api-banco.php?action=stats', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
+            }
+        })
             .then(res => res.json())
             .then(data => setStats(data))
             .catch(err => console.error(err));

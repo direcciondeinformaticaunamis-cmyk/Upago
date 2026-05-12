@@ -8,6 +8,12 @@ export const fetchApi = async (params: string = '', options: RequestInit = {}) =
     const url = params ? `${API_URL}?${params}` : API_URL;
     const headers: Record<string, string> = { ...options.headers as any };
     
+    // Automatically add Authorization token if available
+    const token = localStorage.getItem('upago_token');
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     if (!(options.body instanceof FormData) && !headers['Content-Type']) {
         headers['Content-Type'] = 'application/json';
     }

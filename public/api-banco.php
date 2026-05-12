@@ -26,6 +26,8 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
 });
 
 require_once 'config.php';
+require_once 'security.php';
+
 
 $host = DB_HOST;
 $db_name = DB_NAME;
@@ -76,6 +78,7 @@ $action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'save_project':
+        require_admin();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') break;
         $data = json_decode(file_get_contents("php://input"), true);
         if (!$data) {
@@ -109,6 +112,7 @@ switch ($action) {
         exit;
 
     case 'upload_file':
+        require_admin();
         if (!isset($_FILES['file']) || !isset($_GET['id'])) {
             echo json_encode(["status" => "error", "message" => "Datos de carga insuficientes"]);
             exit;
@@ -134,6 +138,7 @@ switch ($action) {
         exit;
 
     case 'save_evaluation':
+        require_admin('admin');
         $data = json_decode(file_get_contents('php://input'), true);
         if (!$data || !isset($data['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Datos inválidos"]);
@@ -161,6 +166,7 @@ switch ($action) {
         exit;
 
     case 'add_comment':
+        require_admin();
         $data = json_decode(file_get_contents('php://input'), true);
         if (!$data || !isset($data['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Datos inválidos"]);
@@ -181,6 +187,7 @@ switch ($action) {
         exit;
 
     case 'add_version':
+        require_admin();
         if (!isset($_FILES['file']) || !isset($_GET['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Faltan archivos o ID"]);
             exit;
