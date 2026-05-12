@@ -14,7 +14,8 @@ import {
     FileText,
     Upload,
     X,
-    Download
+    Download,
+    School
 } from 'lucide-react';
 import AppInput from './ui/AppInput';
 import AppButton from './ui/AppButton';
