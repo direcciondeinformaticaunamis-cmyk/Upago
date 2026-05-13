@@ -166,7 +166,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         <div className="p-2 bg-[#d5e3fc] rounded-lg text-[#515f74]">
                                             <Group style={{fontSize: 20}} />
                                         </div>
-                                        <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest">Estudiantes</span>
+                                        <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest">Postulantes</span>
                                     </div>
                                     <h3 className="text-[#43474f] text-sm font-semibold mb-1">Registrados hoy</h3>
                                     <p className="text-3xl font-extrabold text-[#800020]">{stats?.registrados_hoy || 0}</p>
@@ -271,7 +271,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-[#f2f4f6]">
-                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Estudiante</th>
+                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Postulante</th>
                                                 <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Concepto</th>
                                                 <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Monto</th>
                                                 <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Estado</th>

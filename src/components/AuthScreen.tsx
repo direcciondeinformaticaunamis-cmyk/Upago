@@ -78,7 +78,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
                                 Si aún no posee cuenta institucional **(@unamis.edu.py)**, debe realizar el registro manual.
                             </p>
                             <p className="text-[11px] text-white/60 italic">
-                                Válido para: Postulantes a Estudiantes, Encargados de Cátedra y Auxiliares.
+                                Válido para: Postulantes, Encargados de Cátedra y Auxiliares.
                             </p>
                         </div>
 
@@ -197,7 +197,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
                                             className="w-full px-5 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#800020]/20 transition-all outline-none text-slate-600 text-sm font-bold"
                                             required
                                         >
-                                            <option value="postulante">Estudiante</option>
+                                            <option value="postulante">Postulante</option>
                                             <option value="concursante_docente">Docente Titular / Cátedra</option>
                                             <option value="auxiliar_docente">Auxiliar de Cátedra</option>
                                         </select>

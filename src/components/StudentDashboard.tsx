@@ -47,7 +47,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
 <style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #800020;padding-bottom:20px;margin-bottom:30px}.logo{font-size:32px;font-weight:bold;color:#800020}.monto{font-size:28px;font-weight:bold;color:#800020;margin:20px 0}</style></head>
 <body><div class="header"><div class="logo">UNIVERSIDAD NACIONAL DE MISIONES</div><div>BOLETA OFICIAL DE PAGO</div></div>
 <p><strong>Número:</strong> ${pago.numero_boleta}</p><p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}</p>
-<p><strong>Estudiante:</strong> ${user.nombre} ${user.apellido}</p><p><strong>Email:</strong> ${user.email}</p>
+<p><strong>Postulante:</strong> ${user.nombre} ${user.apellido}</p><p><strong>Email:</strong> ${user.email}</p>
 <p><strong>Concepto:</strong> ${pago.concepto}</p><div class="monto">Gs. ${pago.monto.toLocaleString()}</div>
 <p><small>Esta boleta es válida con el sello de Tesorería UNAMIS</small></p></body></html>`;
     };

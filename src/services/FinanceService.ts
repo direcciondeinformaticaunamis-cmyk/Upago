@@ -41,7 +41,7 @@ export interface ReconciliationItem {
     banco: string;
     estado: 'pendiente' | 'conciliado' | 'discrepancia';
     match: {
-        estudiante: string;
+        postulante: string;
         concepto: string;
         pago_id: number;
         puntaje: number;

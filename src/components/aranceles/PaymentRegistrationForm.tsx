@@ -171,7 +171,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                             <p className="text-xl font-bold text-[#001738]">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })} — {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estudiante</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Postulante</p>
                             <p className="text-xl font-bold text-[#001738] uppercase truncate">{form.nombre || 'No especificado'}</p>
                             <p className="text-sm text-slate-500 font-medium mt-1">DNI: {form.cedula ? form.cedula.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3') : 'XX.XXX.XXX'}</p>
                         </div>
@@ -300,7 +300,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     <section className="bg-white p-8 rounded-[1.5rem] border border-slate-100 shadow-sm">
                         <div className="flex items-center gap-3 mb-8">
                             <User size={20} className="text-[#001738]" />
-                            <h3 className="text-base font-bold text-[#001738]">Datos del Estudiante</h3>
+                            <h3 className="text-base font-bold text-[#001738]">Datos del Postulante</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
@@ -314,7 +314,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Dirección del Estudiante</label>
+                                <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Dirección del Postulante</label>
                                 <input 
                                     type="text" 
                                     placeholder="Calle, N° de casa, Ciudad"

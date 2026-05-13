@@ -20,7 +20,7 @@ const App: React.FC = () => {
         apellido: string;
         email: string;
         cedula: string;
-        rol: 'estudiante' | 'docente' | 'admin' | 'finance' | 'academico';
+        rol: 'postulante' | 'docente' | 'admin' | 'finance' | 'academico';
         expediente_aprobado?: boolean;
     } | null>(null);
     const [loading, setLoading] = useState(false);
@@ -95,7 +95,7 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante')),
+                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante')),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data // Incluimos carrera, sede, etc.
                 } as any);
@@ -172,7 +172,7 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante')),
+                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante')),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data
                 } as any);

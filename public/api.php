@@ -29,13 +29,21 @@ if ($mantenimiento && (!isset($_GET['admin_key']) || $_GET['admin_key'] !== 'Diu
 
 // Función de Auditoría Centralizada
 function write_system_log($action, $user = 'Sistema', $details = '') {
-    $log_dir = __DIR__ . '/logs';
-    if (!is_dir($log_dir)) mkdir($log_dir, 0755, true);
-    $log_file = $log_dir . '/system.log';
-    $timestamp = date('Y-m-d H:i:s');
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    $log_entry = "[$timestamp] [IP: $ip] [USER: $user] ACTION: $action | DETAILS: $details" . PHP_EOL;
-    file_put_contents($log_file, $log_entry, FILE_APPEND);
+    try {
+        $log_dir = __DIR__ . '/logs';
+        if (!is_dir($log_dir)) {
+            @mkdir($log_dir, 0755, true);
+        }
+        if (!is_dir($log_dir)) return; // Silencioso si no se puede crear
+        
+        $log_file = $log_dir . '/system.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $log_entry = "[$timestamp] [IP: $ip] [USER: $user] ACTION: $action | DETAILS: $details" . PHP_EOL;
+        @file_put_contents($log_file, $log_entry, FILE_APPEND);
+    } catch (Exception $e) {
+        // Fallback silencioso para logs
+    }
 }
 
 require_once 'config.php';
@@ -272,7 +280,7 @@ try {
             ('direccion.administrativa@unamis.edu.py', 'admin', 'Dirección Administrativa'),
             ('direccion.financiera@unamis.edu.py', 'admin', 'Dirección Financiera'),
             ('tesoreria@unamis.edu.py', 'admin', 'Tesorería'),
-            ('medicina@unami.edu.py', 'academico', 'Coordinación Medicina')
+            ('medicina@unamis.edu.py', 'academico', 'Coordinación Medicina')
         ");
     }
 
@@ -854,7 +862,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_institutional_r
                     "rol" => "admin"
                 ]
             ]);
-        } else if (($user === 'academico@unamis.edu.py' || $user === 'medicina@unami.edu.py') && $pass === 'admin123') { // Credenciales Académicas
+        } else if (($user === 'academico@unamis.edu.py' || $user === 'medicina@unamis.edu.py') && $pass === 'admin123') { // Credenciales Académicas
             write_system_log("ADMIN_LOGIN_SUCCESS", $user, "Academic Role");
             echo json_encode([
                 "status" => "success",
@@ -917,19 +925,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 write_system_log("SSO_LOGIN_SUCCESS", $email, "Rol Manual: " . $manualRole['rol']);
                 // Si tiene rol manual, devolvemos eso (incluso si no está en postulantes)
                 echo json_encode([
-                    "nombre" => $perfil['nombre'] ?? ($manualRole['nombre_referencia'] ?? "Usuario"),
-                    "apellido" => $perfil['apellido'] ?? "Institucional",
+                    "nombre" => ($perfil && isset($perfil['nombre'])) ? $perfil['nombre'] : ($manualRole['nombre_referencia'] ?? "Usuario"),
+                    "apellido" => ($perfil && isset($perfil['apellido'])) ? $perfil['apellido'] : "Institucional",
                     "correo" => $email,
-                    "cedula" => $perfil['cedula'] ?? "INST-" . strtoupper(explode('@', $email)[0]),
+                    "cedula" => ($perfil && isset($perfil['cedula'])) ? $perfil['cedula'] : "INST-" . strtoupper(explode('@', $email)[0]),
                     "tipo_usuario" => $manualRole['rol'] === 'admin' ? 'admin' : 'academico',
                     "rol_manual" => $manualRole['rol']
                 ]);
             } else {
                 if ($perfil) {
                     write_system_log("LOGIN_SUCCESS", $email, "Postulante");
+                    echo json_encode($perfil);
+                } else {
+                    echo json_encode(null);
                 }
-                // Si no tiene rol manual, devolvemos su perfil normal
-                echo json_encode($perfil);
             }
         } catch (PDOException $e) {
             http_response_code(500);

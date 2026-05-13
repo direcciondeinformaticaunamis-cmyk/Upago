@@ -6,7 +6,7 @@ export interface Expediente {
     nombre: string;
     cedula: string;
     carrera: string;
-    tipo: 'estudiante' | 'docente';
+    tipo: 'postulante' | 'docente';
     sede?: string;
     fechaEnvio: string;
     estado: 'pendiente' | 'aprobado' | 'rechazado';
@@ -30,7 +30,7 @@ export const AcademicService = {
             cedula: p.cedula,
             carrera: p.carrera || 'No especificada',
             sede: p.sede || 'Santa Rosa de Lima',
-            tipo: p.tipo_usuario === 'concursante_docente' ? 'docente' : 'estudiante',
+            tipo: p.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante',
             fechaEnvio: p.fecha_registro ? p.fecha_registro.split(' ')[0] : '2024-05-08',
             estado: p.expediente_aprobado ? 'aprobado' : 'pendiente',
             documentos: [] // Docs will be loaded on demand or handled separately
