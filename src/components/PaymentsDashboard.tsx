@@ -234,7 +234,7 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                             <thead className="bg-slate-50/50">
                                 <tr>
                                     <th className="pl-12 pr-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Fecha</th>
-                                    <th className="px-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Estudiante</th>
+                                    <th className="px-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Postulante</th>
                                     <th className="px-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Concepto</th>
                                     <th className="px-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Monto</th>
                                     <th className="px-6 py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Estado</th>
@@ -366,7 +366,7 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                             <div className="p-8 space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Estudiante</p>
+                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Postulante</p>
                                         <p className="text-lg font-black text-slate-800">{selectedPago.nombre} {selectedPago.apellido}</p>
                                     </div>
                                     <div>

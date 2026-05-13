@@ -129,7 +129,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
         setUploadedDocs(prev => prev.filter(d => d.id !== docId));
     };
 
-    const studentDocs: DocumentItem[] = [
+    const postulanteDocs: DocumentItem[] = [
         { id: 'cedula', label: 'Cédula de Identidad', required: true, description: 'Copia de ambos lados.' },
         { id: 'nacimiento', label: 'Certificado de Nacimiento', required: true, description: 'Original o copia autenticada.' },
         { id: 'titulo', label: 'Título/ Certificado', required: true, description: 'Copia del título de educación media.' },
@@ -155,7 +155,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
 
     const isLenguaSantaRosa = formData.carrera === 'Lic. en Enseñanza de Lengua y Literatura Castellana' && formData.sede === 'Sede Santa Rosa de Lima';
 
-    let docs = formData.tipoUsuario === 'concursante_docente' ? teacherDocs : studentDocs;
+    let docs = formData.tipoUsuario === 'concursante_docente' ? teacherDocs : postulanteDocs;
     if (formData.tipoUsuario === 'postulante' && isLenguaSantaRosa) {
         docs = lenguaSantaRosaDocs;
     }
