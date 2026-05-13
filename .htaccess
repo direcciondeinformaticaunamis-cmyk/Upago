@@ -63,3 +63,12 @@ Options -Indexes
     ExpiresByType text/javascript "access plus 1 month"
     ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
+
+# 8. PREVENIR CACHÉ EN INDEX.HTML (Evita problemas de bundles obsoletos)
+<Files "index.html">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </IfModule>
+</Files>
