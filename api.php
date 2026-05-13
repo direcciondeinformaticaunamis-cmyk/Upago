@@ -142,8 +142,43 @@ try {
       UNIQUE KEY `cedula_unique` (`cedula`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-    $cols_mig = ["ruc" => "varchar(20) DEFAULT NULL", "lugar_nacimiento_ciudad" => "varchar(100) DEFAULT NULL", "lugar_nacimiento_depto" => "varchar(100) DEFAULT NULL", "pais_origen" => "varchar(100) DEFAULT 'Paraguay', nacionalidad varchar(100) DEFAULT 'Paraguaya'", "estado_civil" => "varchar(50) DEFAULT NULL", "barrio" => "varchar(100) DEFAULT NULL", "grupo_sanguineo" => "varchar(10) DEFAULT NULL", "alergico" => "varchar(255) DEFAULT NULL", "seguro_medico" => "varchar(100) DEFAULT NULL", "es_zurdo" => "tinyint(1) DEFAULT 0", "discapacidad" => "varchar(100) DEFAULT 'Ninguna'", "discapacidad_detalle" => "text DEFAULT NULL", "necesita_adecuacion" => "tinyint(1) DEFAULT 0", "adecuacion_detalle" => "text DEFAULT NULL", "enfermedad_cronica" => "varchar(255) DEFAULT NULL", "colegio_nombre" => "varchar(255) DEFAULT NULL", "colegio_ciudad" => "varchar(100) DEFAULT NULL", "colegio_distrito" => "varchar(100) DEFAULT NULL", "colegio_depto" => "varchar(100) DEFAULT NULL", "colegio_tipo" => "varchar(50) DEFAULT NULL", "bachiller_tipo" => "varchar(100) DEFAULT NULL", "egreso_anio" => "int(4) DEFAULT NULL", "egreso_promedio" => "decimal(4,2) DEFAULT NULL", "trabaja" => "tinyint(1) DEFAULT 0", "empresa_nombre" => "varchar(255) DEFAULT NULL", "cargo" => "varchar(150) DEFAULT NULL", "horario_laboral" => "varchar(100) DEFAULT NULL"];
-    foreach ($cols_mig as $col => $def) { try { $conn->exec("ALTER TABLE `postulantes` ADD COLUMN `$col` $def"); } catch (Exception $e) {} }
+    $cols_mig = [
+        "ruc" => "varchar(20) DEFAULT NULL",
+        "lugar_nacimiento_ciudad" => "varchar(100) DEFAULT NULL",
+        "lugar_nacimiento_depto" => "varchar(100) DEFAULT NULL",
+        "pais_origen" => "varchar(100) DEFAULT 'Paraguay'",
+        "nacionalidad" => "varchar(100) DEFAULT 'Paraguaya'",
+        "estado_civil" => "varchar(50) DEFAULT NULL",
+        "barrio" => "varchar(100) DEFAULT NULL",
+        "grupo_sanguineo" => "varchar(10) DEFAULT NULL",
+        "alergico" => "varchar(255) DEFAULT NULL",
+        "seguro_medico" => "varchar(100) DEFAULT NULL",
+        "es_zurdo" => "tinyint(1) DEFAULT 0",
+        "discapacidad" => "varchar(100) DEFAULT 'Ninguna'",
+        "discapacidad_detalle" => "text DEFAULT NULL",
+        "necesita_adecuacion" => "tinyint(1) DEFAULT 0",
+        "adecuacion_detalle" => "text DEFAULT NULL",
+        "enfermedad_cronica" => "varchar(255) DEFAULT NULL",
+        "colegio_nombre" => "varchar(255) DEFAULT NULL",
+        "colegio_ciudad" => "varchar(100) DEFAULT NULL",
+        "colegio_distrito" => "varchar(100) DEFAULT NULL",
+        "colegio_depto" => "varchar(100) DEFAULT NULL",
+        "colegio_tipo" => "varchar(50) DEFAULT NULL",
+        "bachiller_tipo" => "varchar(100) DEFAULT NULL",
+        "egreso_anio" => "int(4) DEFAULT NULL",
+        "egreso_promedio" => "decimal(4,2) DEFAULT NULL",
+        "trabaja" => "tinyint(1) DEFAULT 0",
+        "empresa_nombre" => "varchar(255) DEFAULT NULL",
+        "cargo" => "varchar(150) DEFAULT NULL",
+        "horario_laboral" => "varchar(100) DEFAULT NULL"
+    ];
+    foreach ($cols_mig as $col => $def) { 
+        try { 
+            $conn->exec("ALTER TABLE `postulantes` ADD COLUMN `$col` $def"); 
+        } catch (Exception $e) {
+            // Columna ya existe o error menor
+        } 
+    }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `expedientes` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -313,13 +348,13 @@ if ($method === 'POST') {
     if ($data && isset($data['cedula'])) {
         $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral'];
         $placeholders = implode(',', array_fill(0, count($fields), '?'));
-        $updates = implode(',', array_map(fn($f) => "$f=VALUES($f)", $fields));
+        $updates = implode(',', array_map(function($f) { return "$f=VALUES($f)"; }, $fields));
         $stmt = $conn->prepare("INSERT INTO postulantes (" . implode(',', $fields) . ") VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updates");
         $values = []; 
         foreach ($fields as $f) { 
             $camel = str_replace('_', '', ucwords($f, '_'));
             $camel = lcfirst($camel);
-            $values[] = $data[$f] ?? $data[$camel] ?? null; 
+            $values[] = isset($data[$f]) ? $data[$f] : (isset($data[$camel]) ? $data[$camel] : null); 
         }
         $stmt->execute($values);
         echo json_encode(["status" => "success", "id" => $data['cedula']]); exit;
