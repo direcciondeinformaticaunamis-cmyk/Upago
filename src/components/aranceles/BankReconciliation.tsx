@@ -207,7 +207,7 @@ const BankReconciliation: React.FC = () => {
                             <thead>
                                 <tr className="border-b border-slate-100">
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Fecha</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Estudiante / Detalle</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Postulante / Detalle</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Banco</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Ref. Pago</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Monto</th>
@@ -222,7 +222,7 @@ const BankReconciliation: React.FC = () => {
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
                                                 <div>
-                                                    <p className="text-sm font-bold text-[#001738]">{row.match ? row.match.estudiante : 'No identificado'}</p>
+                                                    <p className="text-sm font-bold text-[#001738]">{row.match ? row.match.postulante : 'No identificado'}</p>
                                                     <p className="text-[11px] text-slate-400 mt-0.5">{row.detalle}</p>
                                                 </div>
                                                 {row.match && (

@@ -90,7 +90,7 @@ const FinancialReports: React.FC = () => {
                         <tr>
                             <th>ID Transacción</th>
                             <th>Fecha de Pago</th>
-                            <th>Postulante / Estudiante</th>
+                            <th>Postulante</th>
                             <th>Concepto</th>
                             <th style="text-align: right;">Monto (Gs.)</th>
                         </tr>
@@ -241,7 +241,7 @@ const FinancialReports: React.FC = () => {
                     <div className="space-y-4 flex-1">
                         <div className="p-4 border border-white/10 rounded-lg bg-white/5 flex justify-between items-center">
                             <div>
-                                <p className="text-sm font-bold">Estudiantes Registrados Hoy</p>
+                                <p className="text-sm font-bold">Postulantes Registrados Hoy</p>
                                 <p className="text-[10px] text-white/60 mt-0.5">Ingresos al sistema</p>
                             </div>
                             <span className="text-xl font-black">{stats?.registrados_hoy || 0}</span>
@@ -277,7 +277,7 @@ const FinancialReports: React.FC = () => {
                         <thead>
                             <tr className="bg-[#f8fafc] border-b border-slate-100">
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Estudiante / Cédula</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Postulante / Cédula</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado</th>
