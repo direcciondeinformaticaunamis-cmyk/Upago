@@ -48,7 +48,7 @@ class NotificationService {
         this.notify();
         
         // Simular envío de WhatsApp/Email en consola
-        console.log(`%c [NOTIFICACIÓN ENVIADA] To: Estudiante | Type: ${type} `, 'background: #800020; color: #fff; font-weight: bold;');
+        console.log(`%c [NOTIFICACIÓN ENVIADA] To: Estudiante | Type: ${type} `, 'background: #a31e32; color: #fff; font-weight: bold;');
         console.log(`Título: ${title}`);
         console.log(`Mensaje: ${message}`);
     }

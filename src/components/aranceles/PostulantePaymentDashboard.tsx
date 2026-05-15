@@ -9,16 +9,16 @@ import { FinanceService, Payment } from '../../services/FinanceService';
 import { API_BASE_URL } from '../../services/ApiService';
 
 interface Props {
-    studentName?: string;
-    studentCedula?: string;
+    postulanteName?: string;
+    postulanteCedula?: string;
     carrera?: string;
     onNavigateUpload?: () => void;
     onLogout?: () => void;
 }
 
-const StudentPaymentDashboard: React.FC<Props> = ({
-    studentName = 'Estudiante',
-    studentCedula,
+const PostulantePaymentDashboard: React.FC<Props> = ({
+    postulanteName = 'Postulante',
+    postulanteCedula,
     carrera = 'Carrera no especificada',
     onNavigateUpload,
     onLogout
@@ -29,15 +29,15 @@ const StudentPaymentDashboard: React.FC<Props> = ({
     const [isLoading, setIsLoading] = useState(true);
 
     const loadPayments = async () => {
-        if (!studentCedula) return;
+        if (!postulanteCedula) return;
         setIsLoading(true);
         try {
             const data = await FinanceService.getPagos();
-            // Filtrar por la cédula del estudiante logueado
-            const studentPayments = data.filter(p => p.postulante_cedula === studentCedula);
-            setPayments(studentPayments);
+            // Filtrar por la cédula del postulante logueado
+            const postulantePayments = data.filter(p => p.postulante_cedula === postulanteCedula);
+            setPayments(postulantePayments);
         } catch (error) {
-            console.error('Error loading student payments:', error);
+            console.error('Error loading postulante payments:', error);
         } finally {
             setIsLoading(false);
         }
@@ -45,7 +45,7 @@ const StudentPaymentDashboard: React.FC<Props> = ({
 
     useEffect(() => {
         loadPayments();
-    }, [studentCedula]);
+    }, [postulanteCedula]);
 
     const totalPaid = payments.filter(p => p.estado === 'verificado').reduce((s, p) => s + p.monto, 0);
     const pendingCount = payments.filter(p => p.estado === 'pendiente').length;
@@ -77,25 +77,25 @@ const StudentPaymentDashboard: React.FC<Props> = ({
             <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-8 bg-[#a31e32] rounded-full" />
+                        <div className="w-1 h-8 bg-[var(--primary)] rounded-full" />
                         <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Mis Pagos</h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-3">
                         <span className="flex items-center gap-2 text-slate-500 text-sm font-medium">
-                            <User size={14} className="text-[#a31e32]" /> {studentName}
+                            <User size={14} className="text-[var(--primary)]" /> {postulanteName}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300" />
                         <span className="flex items-center gap-2 text-slate-500 text-sm">
-                            <School size={14} className="text-[#a31e32]" /> {carrera}
+                            <School size={14} className="text-[var(--primary)]" /> {carrera}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">CI: {studentCedula}</span>
+                        <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">CI: {postulanteCedula}</span>
                     </div>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setShowUploadModal(true)}
-                        className="flex items-center gap-2 px-5 py-3 bg-[#a31e32] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#a31e32]/25 hover:bg-[#7a1424] active:scale-95 transition-all"
+                        className="flex items-center gap-2 px-5 py-3 bg-[var(--primary)] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[var(--primary)]/25 hover:bg-[var(--primary-dark)] active:scale-95 transition-all"
                     >
                         <Plus size={18} /> Subir Comprobante
                     </button>
@@ -107,10 +107,10 @@ const StudentPaymentDashboard: React.FC<Props> = ({
 
             {/* Summary Bento */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group hover:bg-[#a31e32] transition-all duration-300 cursor-default">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group hover:bg-[var(--primary)] transition-all duration-300 cursor-default">
                     <div className="flex justify-between items-start mb-4">
                         <div className="p-2 bg-red-50 rounded-xl group-hover:bg-white/15 transition-colors">
-                            <Wallet size={20} className="text-[#a31e32] group-hover:text-white transition-colors" />
+                            <Wallet size={20} className="text-[var(--primary)] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white/60 transition-colors">Total Pagado</span>
                     </div>
@@ -166,7 +166,7 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                 <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                     {isLoading ? (
                         <div className="p-20 flex flex-col items-center justify-center gap-4">
-                            <RefreshCw className="animate-spin text-[#a31e32]" size={32} />
+                            <RefreshCw className="animate-spin text-[var(--primary)]" size={32} />
                             <p className="text-slate-500 font-medium">Cargando tus pagos...</p>
                         </div>
                     ) : (
@@ -190,7 +190,7 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                                     >
                                         <td className="pl-8 pr-4 py-5 text-sm font-medium text-slate-600">{new Date(p.fecha_registro).toLocaleDateString()}</td>
                                         <td className="px-4 py-5">
-                                            <p className="text-sm font-black text-[#a31e32]">{p.concepto}</p>
+                                            <p className="text-sm font-black text-[var(--primary)]">{p.concepto}</p>
                                             <p className="text-[10px] text-slate-400 font-medium">{p.nombre} {p.apellido}</p>
                                         </td>
                                         <td className="px-4 py-5 text-right">
@@ -198,7 +198,7 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                                         </td>
                                         <td className="px-4 py-5 text-center">{estadoBadge(p.estado)}</td>
                                         <td className="pl-4 pr-8 py-5 text-right">
-                                            <button className="text-[#a31e32] p-2 rounded-xl hover:bg-red-50 transition-colors">
+                                            <button className="text-[var(--primary)] p-2 rounded-xl hover:bg-red-50 transition-colors">
                                                 <Eye size={18} />
                                             </button>
                                         </td>
@@ -255,7 +255,7 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                                     </div>
                                     <div className="col-span-2">
                                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Monto</p>
-                                        <p className="text-3xl font-black text-[#a31e32] tracking-tighter">{formatGs(selected.monto)}</p>
+                                        <p className="text-3xl font-black text-[var(--primary)] tracking-tighter">{formatGs(selected.monto)}</p>
                                     </div>
                                 </div>
                                 {selected.comprobante_url && (
@@ -290,14 +290,14 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                             className="bg-white w-full max-w-sm rounded-3xl shadow-2xl relative overflow-hidden"
                         >
                             <div className="p-8 text-center">
-                                <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-[#a31e32]">
+                                <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-[var(--primary)]">
                                     <Upload size={32} />
                                 </div>
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter mb-2">Registrar Pago</h3>
                                 <p className="text-sm text-slate-500 mb-8 leading-relaxed">¿Deseas subir un nuevo comprobante de pago para su verificación?</p>
                                 <button
                                     onClick={() => { setShowUploadModal(false); onNavigateUpload?.(); }}
-                                    className="w-full p-4 bg-[#a31e32] text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#7a1424] transition-colors"
+                                    className="w-full p-4 bg-[var(--primary)] text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[var(--primary-dark)] transition-colors"
                                 >
                                     Ir al Formulario <ChevronRight size={18} />
                                 </button>
@@ -313,4 +313,4 @@ const StudentPaymentDashboard: React.FC<Props> = ({
     );
 };
 
-export default StudentPaymentDashboard;
+export default PostulantePaymentDashboard;

@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 
 interface VoucherTemplateProps {
-    studentData: any;
+    postulanteData: any;
     documents: any[];
     registrationCode: string;
     photo: string | null;
 }
 
 const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
-    studentData,
+    postulanteData,
     documents,
     registrationCode,
     photo
@@ -88,7 +88,7 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
 
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Identificación</p>
-                        <p className="text-sm font-black text-slate-800 uppercase tabular-nums tracking-wide">{studentData.cedula}</p>
+                        <p className="text-sm font-black text-slate-800 uppercase tabular-nums tracking-wide">{postulanteData.cedula}</p>
                     </div>
                 </div>
 
@@ -96,18 +96,18 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
                 <div className="md:col-span-2 space-y-8">
                     <div>
                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-2">
-                            {studentData.nombre} {studentData.apellido}
+                            {postulanteData.nombre} {postulanteData.apellido}
                         </h2>
                         <div className="flex flex-wrap gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            <span className="flex items-center gap-1.5"><Mail size={12} className="text-primary" /> {studentData.correo}</span>
-                            <span className="flex items-center gap-1.5"><Phone size={12} className="text-primary" /> {studentData.telefono}</span>
+                            <span className="flex items-center gap-1.5"><Mail size={12} className="text-primary" /> {postulanteData.correo}</span>
+                            <span className="flex items-center gap-1.5"><Phone size={12} className="text-primary" /> {postulanteData.telefono}</span>
                         </div>
                     </div>
 
                     <div className="p-6 bg-primary-soft/50 rounded-3xl border border-primary/10">
                         <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-3">Carrera Destino</p>
-                        <p className="text-base font-black text-slate-800 uppercase leading-snug">{studentData.carrera}</p>
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-2">{studentData.sede}</p>
+                        <p className="text-base font-black text-slate-800 uppercase leading-snug">{postulanteData.carrera}</p>
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-2">{postulanteData.sede}</p>
                     </div>
 
                     <div className="space-y-4">
@@ -179,7 +179,7 @@ const VoucherTemplate: React.FC<VoucherTemplateProps> = ({
 };
 
 // Simple standalone version for printing
-export const generateVoucherHTML = (studentData: any, documents: any[], registrationCode: string, photo: string | null) => {
+export const generateVoucherHTML = (postulanteData: any, documents: any[], registrationCode: string, photo: string | null) => {
     // In a real app we might use a library, but for a clean "Crimson" look 1:1, 
     // we can use a string-based template that mirrors the component if needed, 
     // or just use window.print on the component if it's mounted.
@@ -207,7 +207,7 @@ export const generateVoucherHTML = (studentData: any, documents: any[], registra
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Resolución 162/2026 - ${studentData.cedula}</title>
+            <title>Resolución 162/2026 - ${postulanteData.cedula}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
             <style>
                 body { font-family: 'Inter', sans-serif; background: #fff; margin: 0; padding: 20px; }
@@ -260,17 +260,17 @@ export const generateVoucherHTML = (studentData: any, documents: any[], registra
                         </div>
                         <div class="info-banner">
                             <p style="font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin: 0 0 4px 0;">Cédula Identidad</p>
-                            <p style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0;">${studentData.cedula}</p>
+                            <p style="font-size: 14px; font-weight: 900; color: #1e293b; margin: 0;">${postulanteData.cedula}</p>
                         </div>
                     </div>
                     <div class="right-col">
-                        <h2 style="font-size: 22px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${studentData.nombre} ${studentData.apellido}</h2>
-                        <p style="font-size: 10px; color: #64748b; font-weight: 700; margin: 4px 0 20px 0;">${studentData.correo} • ${studentData.telefono}</p>
+                        <h2 style="font-size: 22px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${postulanteData.nombre} ${postulanteData.apellido}</h2>
+                        <p style="font-size: 10px; color: #64748b; font-weight: 700; margin: 4px 0 20px 0;">${postulanteData.correo} • ${postulanteData.telefono}</p>
                         
                         <div class="phase-box">
                             <p style="font-size: 8px; font-weight: 900; color: #991b1b; text-transform: uppercase; margin: 0 0 5px 0;">Programa Académico</p>
-                            <p style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${studentData.carrera}</p>
-                            <p style="font-size: 10px; color: #991b1b; font-weight: 700; margin: 5px 0 0 0; text-transform: uppercase;">${studentData.sede}</p>
+                            <p style="font-size: 16px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">${postulanteData.carrera}</p>
+                            <p style="font-size: 10px; color: #991b1b; font-weight: 700; margin: 5px 0 0 0; text-transform: uppercase;">${postulanteData.sede}</p>
                         </div>
 
                         <div style="font-size: 10px; font-weight: 900; color: #1e293b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Estatus del Expediente Digital</div>

@@ -347,7 +347,7 @@ const ArancelesConfig: React.FC = () => {
                 <div>
                     <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Nota importante</h4>
                     <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
-                        Los cambios realizados en los aranceles se reflejarán instantáneamente para todos los estudiantes al momento de registrar un nuevo pago. 
+                        Los cambios realizados en los aranceles se reflejarán instantáneamente para todos los postulantes al momento de registrar un nuevo pago. 
                         Se recomienda marcar como "Inactivo" en lugar de eliminar aranceles antiguos para mantener la integridad histórica de los reportes.
                     </p>
                 </div>

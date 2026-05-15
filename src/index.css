@@ -5,61 +5,56 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}
-
 :root {
-  --primary: #800020;
-  --primary-light: #9b1c31;
-  --primary-dark: #5a0015;
-  --primary-50: rgba(128, 0, 32, 0.05);
-  --primary-100: rgba(128, 0, 32, 0.1);
+  /* Institutional Burgundy - Refined */
+  --primary: #a31e32;
+  --primary-light: #c42b45;
+  --primary-dark: #7a1424;
+  --primary-50: rgba(163, 30, 50, 0.03);
+  --primary-100: rgba(163, 30, 50, 0.08);
   
-  --background: #f8fafc;
+  /* Neutral Palette - Ultra Clean */
+  --background: #fcfcfd;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
   
-  --border-subtle: #e2e8f0;
-  --border: #cbd5e1;
+  --border-subtle: #f1f5f9;
+  --border: #e2e8f0;
   
-  --text: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
+  --text: #020617;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-light: #cbd5e1;
   
-  --success: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.1);
+  /* Accent colors - Refined */
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.05);
   
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.1);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.05);
   
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.05);
   
-  --info: #3b82f6;
-  --info-soft: rgba(59, 130, 246, 0.1);
+  --info: #2563eb;
+  --info-soft: rgba(37, 99, 235, 0.05);
 
+  /* Radius - More Modern */
+  --radius-2xl: 32px;
   --radius-xl: 24px;
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
-  --radius-xs: 6px;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  /* Shadows - Layered & Premium */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 30px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
+  --shadow-premium: 0 32px 64px -15px rgba(163, 30, 50, 0.08);
   
-  --glass: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
 }
 
 @layer base {
@@ -68,7 +63,7 @@
   }
   
   body {
-    @apply font-sans bg-slate-50 text-slate-900 antialiased min-h-screen relative overflow-x-hidden;
+    @apply font-sans bg-[var(--background)] text-[var(--text)] antialiased min-h-screen relative overflow-x-hidden;
     line-height: 1.6;
     font-family: 'Inter', sans-serif;
   }
@@ -80,6 +75,15 @@
 }
 
 @layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .glass {
     background: var(--glass);
     backdrop-filter: blur(20px);
@@ -92,39 +96,39 @@
   }
   
   .shadow-premium {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-premium);
   }
 
   .shadow-premium-hover {
-    box-shadow: 0 40px 60px rgba(128, 0, 32, 0.12);
+    box-shadow: 0 40px 80px rgba(163, 30, 50, 0.12);
   }
   
   .shadow-card {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
   }
   
   .shadow-float {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
   }
 
   .bg-primary-soft {
-    background-color: rgba(128, 0, 32, 0.05);
+    background-color: var(--primary-50);
   }
 
   .bg-success-soft {
-    background-color: rgba(16, 185, 129, 0.1);
+    background-color: var(--success-soft);
   }
   
   .bg-warning-soft {
-    background-color: rgba(245, 158, 11, 0.1);
+    background-color: var(--warning-soft);
   }
   
   .bg-danger-soft {
-    background-color: rgba(239, 68, 68, 0.08);
+    background-color: var(--danger-soft);
   }
   
   .text-gradient {
-    background: linear-gradient(135deg, var(--primary) 0%, #a91c3d 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -151,7 +155,7 @@
   .border-gradient {
     border: 2px solid transparent;
     background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, var(--primary), #a91c3d) border-box;
+                linear-gradient(135deg, var(--primary), var(--primary-light)) border-box;
   }
 }
 

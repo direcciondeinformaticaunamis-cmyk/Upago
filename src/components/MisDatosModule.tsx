@@ -123,7 +123,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                     {formData.carrera === 'Medicina' && (
                         <button 
                             onClick={() => setShowPrintForm(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-[#800020] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                            className="flex items-center gap-2 px-6 py-3 bg-[#a31e32] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                         >
                             <Print fontSize="small" /> Imprimir Formulario Oficial
                         </button>
@@ -233,7 +233,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                 />
             ) : (
                 <DocumentUploadSection
-                    studentData={formData}
+                    postulanteData={formData}
                     photo={photo}
                     onFinish={handleFinish}
                 />

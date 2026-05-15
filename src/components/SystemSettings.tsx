@@ -76,12 +76,12 @@ const SystemSettings: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-[#800020] tracking-tight mb-2">Configuración de Personal</h1>
+                    <h1 className="text-3xl font-black text-[#a31e32] tracking-tight mb-2">Configuración de Personal</h1>
                     <p className="text-slate-500 text-sm font-medium">Asignación manual de roles para cuentas institucionales de la UNAMIS.</p>
                 </div>
-                <div className="bg-[#800020]/5 px-4 py-2 rounded-xl border border-[#800020]/10 flex items-center gap-3">
-                    <Shield className="text-[#800020]" size={20} />
-                    <span className="text-[11px] font-black text-[#800020] uppercase tracking-widest">Control de Acceso Seguro</span>
+                <div className="bg-[#a31e32]/5 px-4 py-2 rounded-xl border border-[#a31e32]/10 flex items-center gap-3">
+                    <Shield className="text-[#a31e32]" size={20} />
+                    <span className="text-[11px] font-black text-[#a31e32] uppercase tracking-widest">Control de Acceso Seguro</span>
                 </div>
             </div>
 
@@ -89,7 +89,7 @@ const SystemSettings: React.FC = () => {
                 {/* Formulario de Asignación */}
                 <div className="lg:col-span-1 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 h-fit">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-[#800020] rounded-xl flex items-center justify-center text-white">
+                        <div className="w-10 h-10 bg-[#a31e32] rounded-xl flex items-center justify-center text-white">
                             <Plus size={20} />
                         </div>
                         <h2 className="text-lg font-bold text-slate-800">Asignar Nuevo Rol</h2>
@@ -104,7 +104,7 @@ const SystemSettings: React.FC = () => {
                                 value={newEmail}
                                 onChange={(e) => setNewEmail(e.target.value)}
                                 placeholder="ejemplo@unamis.edu.py"
-                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#800020] outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#a31e32] outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -114,7 +114,7 @@ const SystemSettings: React.FC = () => {
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
                                 placeholder="Nombre del funcionario o oficina"
-                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#800020] outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#a31e32] outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -122,13 +122,13 @@ const SystemSettings: React.FC = () => {
                             <select 
                                 value={newRole}
                                 onChange={(e) => setNewRole(e.target.value as any)}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#800020] outline-none appearance-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:bg-white focus:border-[#a31e32] outline-none appearance-none transition-all"
                             >
                                 <option value="academico">Coordinador Académico</option>
                                 <option value="admin">Finanzas / Administrador</option>
                             </select>
                         </div>
-                        <button type="submit" className="w-full py-4 bg-[#800020] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#800020]/20 hover:bg-[#5a0015] transition-all">
+                        <button type="submit" className="w-full py-4 bg-[#a31e32] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#a31e32]/20 hover:bg-[#5a0015] transition-all">
                             Confirmar Asignación
                         </button>
                     </form>
@@ -173,7 +173,7 @@ const SystemSettings: React.FC = () => {
                                         <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
                                             <td className="px-8 py-5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${r.rol === 'admin' ? 'bg-[#800020] text-white' : 'bg-blue-600 text-white'}`}>
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${r.rol === 'admin' ? 'bg-[#a31e32] text-white' : 'bg-blue-600 text-white'}`}>
                                                         <Mail size={18} />
                                                     </div>
                                                     <div>
@@ -183,7 +183,7 @@ const SystemSettings: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5 text-center">
-                                                <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${r.rol === 'admin' ? 'bg-red-50 text-[#800020] border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full ${r.rol === 'admin' ? 'bg-red-50 text-[#a31e32] border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
                                                     {r.rol === 'admin' ? 'ADMIN / FINANZAS' : 'COORDINADOR ACADÉMICO'}
                                                 </span>
                                             </td>

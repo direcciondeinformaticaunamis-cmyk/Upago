@@ -20,24 +20,24 @@ interface Arancel {
 
 
 interface Props {
-    studentName?: string;
-    studentCedula?: string;
+    postulanteName?: string;
+    postulanteCedula?: string;
     onSuccess: () => void;
     onBack?: () => void;
-    mode?: 'student' | 'admin';
+    mode?: 'postulante' | 'admin';
 }
 
 const PaymentRegistrationForm: React.FC<Props> = ({ 
-    studentName = '', 
-    studentCedula = '', 
+    postulanteName = '', 
+    postulanteCedula = '', 
     onSuccess, 
     onBack,
-    mode = 'student'
+    mode = 'postulante'
 }) => {
     const [concepto, setConcepto] = useState('matricula');
     const [form, setForm] = useState({
-        nombre: studentName, 
-        cedula: studentCedula, 
+        nombre: postulanteName, 
+        cedula: postulanteCedula, 
         telefono: '',
         direccion: '', 
         carrera: TODAS_LAS_CARRERAS[0], 
@@ -83,7 +83,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         if (!form.numComprobante.trim()) e.push('numComprobante');
         if (!form.fechaPago) e.push('fechaPago');
         if (!form.monto.trim()) e.push('monto');
-        if (mode === 'student' && !file) e.push('file');
+        if (mode === 'postulante' && !file) e.push('file');
         setErrors(e);
         return e.length === 0;
     };
@@ -296,7 +296,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                         </div>
                     </section>
 
-                    {/* Section 2: Datos del Estudiante */}
+                    {/* Section 2: Datos del Postulante */}
                     <section className="bg-white p-8 rounded-[1.5rem] border border-slate-100 shadow-sm">
                         <div className="flex items-center gap-3 mb-8">
                             <User size={20} className="text-[#001738]" />

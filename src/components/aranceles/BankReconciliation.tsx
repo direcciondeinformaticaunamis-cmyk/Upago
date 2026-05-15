@@ -313,14 +313,14 @@ const BankReconciliation: React.FC = () => {
 
                 {/* Pendientes de Conciliar */}
                 <div className="bg-white border border-slate-100 p-6 rounded-[1.5rem] shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[160px]">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#800020]"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#a31e32]"></div>
                     <div className="pl-3">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Pendientes de Conciliar</p>
                         <h3 className="text-4xl font-black text-[#001738] tracking-tight">
                             {stats.pendientes_conciliar} Registros
                         </h3>
                     </div>
-                    <div className="flex items-center gap-2 mt-6 text-[#800020] text-[11px] font-black pl-3">
+                    <div className="flex items-center gap-2 mt-6 text-[#a31e32] text-[11px] font-black pl-3">
                         <AlertTriangle size={14} /> 
                         <span>Requiere atención administrativa</span>
                     </div>
@@ -414,7 +414,7 @@ const BankReconciliation: React.FC = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsBotOpen(!isBotOpen)}
-                    className="w-14 h-14 bg-[#800020] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(128,0,32,0.4)] hover:bg-[#5a0015] transition-colors relative"
+                    className="w-14 h-14 bg-[#a31e32] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(128,0,32,0.4)] hover:bg-[#7a1424] transition-colors relative"
                 >
                     <Bot size={24} />
                 </motion.button>

@@ -282,7 +282,7 @@ const RegistrationForm = () => {
                                             <option value="director">Director</option>
                                             <option value="co-director">Co-Director</option>
                                             <option value="investigador">Investigador</option>
-                                            <option value="estudiante">Estudiante</option>
+                                            <option value="postulante">Postulante</option>
                                         </select>
                                         <input
                                             type="email"

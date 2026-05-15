@@ -44,7 +44,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
 
     const generarBoletaHTML = (pago: Pago) => {
         return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BOLETA ${pago.numero_boleta}</title>
-<style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #800020;padding-bottom:20px;margin-bottom:30px}.logo{font-size:32px;font-weight:bold;color:#800020}.monto{font-size:28px;font-weight:bold;color:#800020;margin:20px 0}</style></head>
+<style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #a31e32;padding-bottom:20px;margin-bottom:30px}.logo{font-size:32px;font-weight:bold;color:#a31e32}.monto{font-size:28px;font-weight:bold;color:#a31e32;margin:20px 0}</style></head>
 <body><div class="header"><div class="logo">UNIVERSIDAD NACIONAL DE MISIONES</div><div>BOLETA OFICIAL DE PAGO</div></div>
 <p><strong>Número:</strong> ${pago.numero_boleta}</p><p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}</p>
 <p><strong>Postulante:</strong> ${user.nombre} ${user.apellido}</p><p><strong>Email:</strong> ${user.email}</p>
@@ -73,17 +73,17 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
             <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#e6e8ea] p-6 space-y-4 z-40">
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-8 h-8 rounded-lg bg-[#800020] flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-[#a31e32] flex items-center justify-center">
                             <span className="text-white font-bold text-sm">U</span>
                         </div>
-                        <span className="text-lg font-black text-[#800020] tracking-tight">UNAMIS</span>
+                        <span className="text-lg font-black text-[#a31e32] tracking-tight">UNAMIS</span>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
-                        <div className="w-10 h-10 rounded-full bg-[#800020] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-[#a31e32] flex items-center justify-center">
                             <User className="text-white" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-[#800020]">
+                            <p className="text-xs font-bold text-[#a31e32]">
                                 {user.rol === 'concursante_docente' ? 'Portal del Concursante' : 'Portal del Postulante'}
                             </p>
                             <p className="text-[10px] text-[#43474f]">UNAMIS Institucional</p>
@@ -91,15 +91,15 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     </div>
                 </div>
                 <nav className="flex-1 space-y-1">
-                    <button onClick={() => setActiveSection('datos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'datos' ? 'bg-white shadow-sm text-[#800020]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
+                    <button onClick={() => setActiveSection('datos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'datos' ? 'bg-white shadow-sm text-[#a31e32]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
                         <Dashboard style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Mis Datos</span>
                     </button>
-                    <button onClick={() => setActiveSection('pagos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'pagos' ? 'bg-white shadow-sm text-[#800020]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
+                    <button onClick={() => setActiveSection('pagos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'pagos' ? 'bg-white shadow-sm text-[#a31e32]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
                         <Wallet style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Pagos</span>
                     </button>
-                    <button onClick={() => setActiveSection('documentos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'documentos' ? 'bg-white shadow-sm text-[#800020]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
+                    <button onClick={() => setActiveSection('documentos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'documentos' ? 'bg-white shadow-sm text-[#a31e32]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
                         <Description style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Trámites</span>
                     </button>
@@ -111,7 +111,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                 <button 
                     onClick={() => setShowModalPago(true)} 
                     disabled={!user.expediente_aprobado}
-                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${user.expediente_aprobado ? 'bg-gradient-to-r from-[#800020] to-[#5a0015]' : 'bg-slate-400 cursor-not-allowed'}`}
+                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${user.expediente_aprobado ? 'bg-gradient-to-r from-[#a31e32] to-[#7a1424]' : 'bg-slate-400 cursor-not-allowed'}`}
                     title={!user.expediente_aprobado ? 'Requiere aprobación de expediente' : ''}
                 >
                     <CloudUpload style={{fontSize: 18}} />
@@ -130,12 +130,12 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                 {/* TopAppBar */}
                 <header className="bg-white docked full-width top-0 z-50 flex justify-between items-center w-full px-6 md:px-12 py-4 max-w-full mx-auto">
                     <div className="flex items-center gap-8">
-                        <h1 className="text-2xl font-bold text-[#800020] tracking-tight">UNAMIS</h1>
+                        <h1 className="text-2xl font-bold text-[#a31e32] tracking-tight">UNAMIS</h1>
                         <nav className="hidden lg:flex items-center gap-6">
-                            <button onClick={() => setActiveSection('pagos')} className={`text-sm font-medium transition-colors ${activeSection === 'pagos' ? 'text-[#800020] border-b-2 border-[#800020] pb-1 font-bold' : 'text-[#43474f] hover:text-[#800020]'}`}>Mis Pagos</button>
-                            <button onClick={() => setActiveSection('editar_datos')} className={`text-sm font-medium transition-colors ${activeSection === 'editar_datos' ? 'text-[#800020] border-b-2 border-[#800020] pb-1 font-bold' : 'text-[#43474f] hover:text-[#800020]'}`}>Editar/Cargar Datos</button>
-                            <button onClick={() => setActiveSection('documentos_digitales')} className={`text-sm font-medium transition-colors ${activeSection === 'documentos_digitales' ? 'text-[#800020] border-b-2 border-[#800020] pb-1 font-bold' : 'text-[#43474f] hover:text-[#800020]'}`}>Expediente Digital</button>
-                            <button className="text-[#43474f] hover:text-[#800020] transition-colors text-sm font-medium">Certificados</button>
+                            <button onClick={() => setActiveSection('pagos')} className={`text-sm font-medium transition-colors ${activeSection === 'pagos' ? 'text-[#a31e32] border-b-2 border-[#a31e32] pb-1 font-bold' : 'text-[#43474f] hover:text-[#a31e32]'}`}>Mis Pagos</button>
+                            <button onClick={() => setActiveSection('editar_datos')} className={`text-sm font-medium transition-colors ${activeSection === 'editar_datos' ? 'text-[#a31e32] border-b-2 border-[#a31e32] pb-1 font-bold' : 'text-[#43474f] hover:text-[#a31e32]'}`}>Editar/Cargar Datos</button>
+                            <button onClick={() => setActiveSection('documentos_digitales')} className={`text-sm font-medium transition-colors ${activeSection === 'documentos_digitales' ? 'text-[#a31e32] border-b-2 border-[#a31e32] pb-1 font-bold' : 'text-[#43474f] hover:text-[#a31e32]'}`}>Expediente Digital</button>
+                            <button className="text-[#43474f] hover:text-[#a31e32] transition-colors text-sm font-medium">Certificados</button>
                         </nav>
                     </div>
                     <div className="flex items-center gap-4">
@@ -144,7 +144,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                             <Help />
                         </button>
                         <div className="h-8 w-[1px] bg-[#f2f4f6] mx-2"></div>
-                        <div className="w-8 h-8 rounded-full bg-[#800020] flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-[#a31e32] flex items-center justify-center">
                             <User className="text-white" style={{fontSize: 16}} />
                         </div>
                     </div>
@@ -167,7 +167,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                             {/* Student Profile Summary */}
                             <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <h2 className="text-3xl md:text-4xl font-black text-[#800020] tracking-tight mb-2">
+                            <h2 className="text-3xl md:text-4xl font-black text-[#a31e32] tracking-tight mb-2">
                                 {user.rol === 'concursante_docente' ? 'Mis Concursos' : 'Mis Pagos'}
                             </h2>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -186,7 +186,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                         </div>
                         <button 
                             onClick={() => setActiveSection('registro_pago')} 
-                            className="px-6 py-3 rounded-md font-bold shadow-lg flex items-center gap-2 self-start md:self-auto transition-transform bg-gradient-to-br from-[#800020] to-[#5a0015] text-white active:scale-95"
+                            className="px-6 py-3 rounded-md font-bold shadow-lg flex items-center gap-2 self-start md:self-auto transition-transform bg-gradient-to-br from-[#a31e32] to-[#7a1424] text-white active:scale-95"
                         >
                             <AddCircle />
                             Subir Nuevo Comprobante
@@ -195,15 +195,15 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
 
                     {/* Account Summary - Bento Grid */}
                     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-xl shadow-[0px_24px_48px_rgba(25,28,30,0.04)] flex flex-col justify-between group hover:bg-[#800020] transition-colors duration-300">
+                        <div className="bg-white p-6 rounded-xl shadow-[0px_24px_48px_rgba(25,28,30,0.04)] flex flex-col justify-between group hover:bg-[#a31e32] transition-colors duration-300">
                             <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-[#800020]/5 rounded-lg group-hover:bg-white/10 transition-colors">
-                                    <AccountBalanceWallet className="text-[#800020] group-hover:text-white" />
+                                <div className="p-2 bg-[#a31e32]/5 rounded-lg group-hover:bg-white/10 transition-colors">
+                                    <AccountBalanceWallet className="text-[#a31e32] group-hover:text-white" />
                                 </div>
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#43474f] group-hover:text-[#d5e3ff] transition-colors">Total Pagado</span>
                             </div>
                             <div>
-                                <p className="text-2xl font-black text-[#800020] group-hover:text-white transition-colors">{totalPagado.toLocaleString()} PYG</p>
+                                <p className="text-2xl font-black text-[#a31e32] group-hover:text-white transition-colors">{totalPagado.toLocaleString()} PYG</p>
                                 <p className="text-xs text-[#43474f] mt-1 group-hover:text-white/70 transition-colors">Ciclo Lectivo 2024</p>
                             </div>
                         </div>
@@ -219,7 +219,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 <p className="text-xs text-[#ba1a1a] font-semibold mt-1">Saldo: {pendienteMonto.toLocaleString()} PYG</p>
                             </div>
                         </div>
-                        <div className="bg-[#800020] p-6 rounded-xl shadow-[0px_24px_48px_rgba(128,0,32,0.1)] flex flex-col justify-between relative overflow-hidden">
+                        <div className="bg-[#a31e32] p-6 rounded-xl shadow-[0px_24px_48px_rgba(128,0,32,0.1)] flex flex-col justify-between relative overflow-hidden">
                             <div className="absolute -right-4 -top-4 opacity-10">
                                 <CalendarToday style={{fontSize: 120}} />
                             </div>
@@ -239,7 +239,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     {/* Payment History Table */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-[#800020]">Historial de Pagos</h3>
+                            <h3 className="text-xl font-bold text-[#a31e32]">Historial de Pagos</h3>
                             <div className="flex items-center gap-2">
                                 <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[#43474f] bg-[#e6e8ea] rounded-full hover:bg-[#e0e3e5] transition-colors">
                                     <FilterListAlt className="text-sm" />
@@ -267,7 +267,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                         <tr key={pago.id} className="hover:bg-[#e6e8ea] transition-colors group">
                                             <td className="px-6 py-4 text-sm font-medium text-[#191c1e]">{pago.fecha_pago || ''}</td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm font-bold text-[#800020]">{pago.concepto}</p>
+                                                <p className="text-sm font-bold text-[#a31e32]">{pago.concepto}</p>
                                                 <p className="text-[10px] text-[#43474f]">Ciclo 2024</p>
                                             </td>
                                             <td className="px-6 py-4 text-sm font-bold text-right font-mono">{pago.monto.toLocaleString()}</td>
@@ -296,7 +296,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 {pago.estado === 'verificado' ? (
-                                                    <button onClick={() => descargarBoleta(pago)} className="text-[#800020] hover:bg-[#800020]/5 p-2 rounded-lg transition-colors" title="Descargar Recibo">
+                                                    <button onClick={() => descargarBoleta(pago)} className="text-[#a31e32] hover:bg-[#a31e32]/5 p-2 rounded-lg transition-colors" title="Descargar Recibo">
                                                         <ReceiptLong />
                                                     </button>
                                                 ) : (
@@ -315,11 +315,11 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     {/* Support Cards */}
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                         <div className="flex gap-4 p-6 bg-[#d5e3fc]/30 rounded-xl">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#800020] shadow-sm">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#a31e32] shadow-sm">
                                 <SupportAgent />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[#800020] mb-1">¿Necesitas ayuda con tus pagos?</h4>
+                                <h4 className="font-bold text-[#a31e32] mb-1">¿Necesitas ayuda con tus pagos?</h4>
                                 <p className="text-sm text-[#43474f] leading-relaxed">Si tienes problemas con la validación de tus comprobantes, contacta a Tesorería al (021) 123-4567 o escribe a pagos@unamis.edu.py</p>
                             </div>
                         </div>
@@ -328,7 +328,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 <InfoIcon />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[#800020] mb-1">Políticas de Pago</h4>
+                                <h4 className="font-bold text-[#a31e32] mb-1">Políticas de Pago</h4>
                                 <p className="text-sm text-[#43474f] leading-relaxed">Recuerda que los pagos realizados vía transferencia bancaria pueden tardar hasta 48 horas hábiles en ser validados por nuestro equipo administrativo.</p>
                             </div>
                         </div>
@@ -352,7 +352,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                         </div>
                     ) : (
                         <div className="text-center py-20 text-[#43474f] bg-white rounded-xl shadow-sm border border-[#e6e8ea]">
-                            <h2 className="text-2xl font-bold mb-2 text-[#800020]">Sección en construcción</h2>
+                            <h2 className="text-2xl font-bold mb-2 text-[#a31e32]">Sección en construcción</h2>
                             <p>Esta sección estará disponible próximamente.</p>
                         </div>
                     )}
@@ -361,15 +361,15 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
 
             {/* BottomNavBar for Mobile */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#c3c6d1]/10 px-6 py-3 flex justify-between items-center z-50">
-                <button onClick={() => setActiveSection('datos')} className={`flex flex-col items-center gap-1 ${activeSection === 'datos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('datos')} className={`flex flex-col items-center gap-1 ${activeSection === 'datos' ? 'text-[#a31e32]' : 'text-[#43474f]'}`}>
                     <Dashboard />
                     <span className="text-[10px] font-medium">Mis Datos</span>
                 </button>
-                <button onClick={() => setActiveSection('pagos')} className={`flex flex-col items-center gap-1 ${activeSection === 'pagos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('pagos')} className={`flex flex-col items-center gap-1 ${activeSection === 'pagos' ? 'text-[#a31e32]' : 'text-[#43474f]'}`}>
                     <Wallet />
                     <span className="text-[10px] font-bold">Pagos</span>
                 </button>
-                <button onClick={() => setActiveSection('documentos')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('documentos')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos' ? 'text-[#a31e32]' : 'text-[#43474f]'}`}>
                     <Description />
                     <span className="text-[10px] font-medium">Trámites</span>
                 </button>

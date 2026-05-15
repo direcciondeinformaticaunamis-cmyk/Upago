@@ -37,7 +37,7 @@ interface DocumentItem {
     phase: 1 | 2 | 3;
 }
 
-interface StudentData {
+interface PostulanteData {
     nombre: string;
     apellido: string;
     cedula: string;
@@ -52,15 +52,15 @@ interface StudentData {
 }
 
 interface DocumentUploadSectionProps {
-    studentData: StudentData;
+    postulanteData: PostulanteData;
     photo: string | null;
     onFinish?: () => void;
 }
 
-const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentData, photo, onFinish }) => {
+const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulanteData, photo, onFinish }) => {
     const [documents, setDocuments] = useState<DocumentItem[]>(() => {
         // --- CASO DOCENTE / CONCURSANTE (MEDICINA Y OTROS) ---
-        if (studentData.tipoUsuario === 'concursante_docente') {
+        if (postulanteData.tipoUsuario === 'concursante_docente') {
             return [
                 { id: 'cv', label: 'a) Currículum vitae actualizado', description: 'Formato PDF, debidamente firmado y actualizado.', status: 'pending', fileNames: [], phase: 1 },
                 { id: 'cedula', label: 'b) Fotocopia autenticada por Escribanía de la C.I.', description: 'Cédula de identidad civil vigente (ambos lados).', status: 'pending', fileNames: [], phase: 1 },
@@ -73,8 +73,8 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
             ];
         }
 
-        // --- CASO POSTULANTE ESTUDIANTE: MEDICINA ---
-        if (studentData.carrera.includes('Medicina')) {
+        // --- CASO POSTULANTE: MEDICINA ---
+        if (postulanteData.carrera.includes('Medicina')) {
             return [
                 { id: 'cedula', label: '1. Fotocopia de Cédula de Identidad', description: 'Copia nítida vigente.', status: 'pending', fileNames: [], phase: 1 },
                 { id: 'estudio', label: '2. Certificado de Estudios (Educación Media)', description: 'Legalizado por las instituciones encargadas.', status: 'pending', fileNames: [], phase: 1 },
@@ -95,7 +95,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
     useEffect(() => {
         const fetchDocumentStatuses = async () => {
             try {
-                const response = await fetch(`api.php?docs=${studentData.cedula}`);
+                const response = await fetch(`api.php?docs=${postulanteData.cedula}`);
                 const data = await response.json();
                 
                 if (Array.isArray(data)) {
@@ -117,7 +117,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
         };
 
         fetchDocumentStatuses();
-    }, [studentData.cedula]);
+    }, [postulanteData.cedula]);
 
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -128,12 +128,12 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                 doc.id === id ? { ...doc, status: 'uploaded', fileNames: [...doc.fileNames, file.name], isSigned: true } : doc
             ));
 
-            securityService.log(`Carga de archivo: ${file.name} en ${id}`, 'Estudiante');
+            securityService.log(`Carga de archivo: ${file.name} en ${id}`, 'Postulante');
 
             const formData = new FormData();
             formData.append('file', file);
             formData.append('type', id);
-            formData.append('postulante_id', studentData.cedula);
+            formData.append('postulante_id', postulanteData.cedula);
 
             try {
                 const response = await fetch('api.php', {
@@ -190,7 +190,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
 
                 <p className="text-slate-500 max-w-lg mx-auto leading-relaxed mb-6 font-medium">
                     Su expediente digital ha sido procesado y enviado a la **Sede Santa Rosa**.
-                    Recibirá un comprobante detallado en su correo **{studentData.correo}**.
+                    Recibirá un comprobante detallado en su correo **{postulanteData.correo}**.
                 </p>
 
                 {!isFullyComplete && (
@@ -215,7 +215,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                 <div className="bg-slate-50/80 rounded-3xl border border-slate-200 p-8 mb-12 max-w-md mx-auto space-y-4">
                     <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-slate-400">
                         <span>Postulante</span>
-                        <span className="text-slate-800">{studentData.nombre} {studentData.apellido}</span>
+                        <span className="text-slate-800">{postulanteData.nombre} {postulanteData.apellido}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-slate-400">
                         <span>Código de Trámite</span>
@@ -233,7 +233,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                         icon={ExternalLink}
                         onClick={() => {
                             const regCode = `UNAMIS-2026-REG${Math.floor(Math.random() * 9000) + 1000}`;
-                            const html = generateVoucherHTML(studentData, documents, regCode, photo);
+                            const html = generateVoucherHTML(postulanteData, documents, regCode, photo);
                             const win = window.open('', '_blank');
                             if (win) {
                                 win.document.write(html);
@@ -340,7 +340,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                                                 const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este documento?');
                                                 if (confirmDelete) {
                                                     setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: 'pending', fileNames: [] } : d));
-                                                    securityService.log(`Eliminación: ${doc.label}`, 'Estudiante');
+                                                    securityService.log(`Eliminación: ${doc.label}`, 'Postulante');
                                                 }
                                             }}
                                             className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-full transition-all"
@@ -367,7 +367,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                                 size="sm"
                                 icon={doc.status === 'uploaded' || doc.status === 'verified' ? Plus : Upload}
                                 onClick={() => triggerUpload(doc.id)}
-                                disabled={studentData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved}
+                                disabled={postulanteData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved}
                             >
                                 {doc.status === 'uploaded' || doc.status === 'verified' ? 'Adjuntar Otro' : 'Adjuntar'}
                             </AppButton>
@@ -382,7 +382,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ studentDa
                         />
                     </div>
                 ))}
-                {studentData.carrera === 'Medicina' && isPhase1Uploaded && !isPhase1Approved && (
+                {postulanteData.carrera === 'Medicina' && isPhase1Uploaded && !isPhase1Approved && (
                     <div className="mt-8 bg-blue-50 border border-blue-200 rounded-3xl p-6 flex items-start gap-4 animate-pulse">
                         <div className="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/20">
                             <Clock size={20} />

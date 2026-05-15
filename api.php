@@ -77,13 +77,57 @@ foreach ($folders_init as $f) {
 
 // --- SISTEMA DE NOTIFICACIONES ---
 function send_institutional_email($to, $subject, $message) {
-    $log_dir = 'logs/';
+    // 1. Guardar en Log de Auditoría (Respaldo)
+    $log_dir = __DIR__ . '/logs/';
     if (!file_exists($log_dir)) @mkdir($log_dir, 0755, true);
     $log_file = $log_dir . 'emails.log';
     $timestamp = date('Y-m-d H:i:s');
-    $content = "\n--- [$timestamp] ---\nPARA: $to\nASUNTO: $subject\nMENSAJE:\n$message\n---------------------\n";
+    $content = "\n--- [$timestamp] ---\nPARA: $to\nASUNTO: $subject\nMENSAJE:\n" . strip_tags($message) . "\n---------------------\n";
     @file_put_contents($log_file, $content, FILE_APPEND);
+
+    // 2. Enviar Correo Real HTML
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: Secretaria de Tecnologias UNAMIS <informatica@unamis.edu.py>\r\n";
+    $headers .= "Reply-To: informatica@unamis.edu.py\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion();
+
+    // Plantilla HTML Premium Institucional
+    $html_message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 40px; }
+            .container { max-w-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e6e8ea; }
+            .header { background: #a31e32; padding: 30px; text-align: center; color: white; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+            .content { padding: 40px; color: #43474f; line-height: 1.6; }
+            .footer { background: #f2f4f6; padding: 20px; text-align: center; font-size: 12px; color: #737780; border-top: 1px solid #e6e8ea; }
+            .btn { display: inline-block; background: #a31e32; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+            .highlight { background: #fdf2f4; padding: 15px; border-left: 4px solid #a31e32; border-radius: 4px; margin: 20px 0; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>UNAMIS</h1>
+                <p style='margin-top: 5px; opacity: 0.8; font-size: 14px;'>Portal Digital Institucional</p>
+            </div>
+            <div class='content'>
+                $message
+            </div>
+            <div class='footer'>
+                &copy; " . date('Y') . " Universidad Nacional de Misiones. Todos los derechos reservados.<br>
+                Este es un mensaje automático, por favor no responda a este correo.
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+
+    @mail($to, $subject, $html_message, $headers);
 }
+
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password, [
@@ -335,6 +379,58 @@ if ($method === 'POST') {
         http_response_code(401); echo json_encode(["status" => "error", "message" => "Credenciales inválidas"]); exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'migrate_user') {
+        try {
+            $cedula = $data['cedula'] ?? '';
+            $nuevo_correo = $data['nuevo_correo'] ?? '';
+            $admin_user = $data['admin_user'] ?? 'superadmin';
+
+            if (!str_ends_with(strtolower($nuevo_correo), '@unamis.edu.py')) {
+                throw new Exception("El correo debe ser @unamis.edu.py");
+            }
+
+            // Obtener el correo personal anterior
+            $stmtGet = $conn->prepare("SELECT nombre, apellido, correo FROM postulantes WHERE cedula = ?");
+            $stmtGet->execute([$cedula]);
+            $user_data = $stmtGet->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user_data) throw new Exception("Usuario no encontrado.");
+            $correo_personal = $user_data['correo'];
+
+            // Actualizar la base de datos
+            $stmtUpdate = $conn->prepare("UPDATE postulantes SET correo = ?, tipo_usuario = CASE WHEN tipo_usuario = 'postulante' THEN 'postulante' ELSE tipo_usuario END WHERE cedula = ?");
+            $stmtUpdate->execute([$nuevo_correo, $cedula]);
+
+            // Generar un ID de suscripción temporal para Microsoft 365 (Simulado)
+            $temp_password = "UNAMIS" . rand(1000, 9999) . "*";
+
+            // Enviar el correo al correo personal antiguo notificando el cambio
+            $asunto = "¡Bienvenido a tu cuenta institucional UNAMIS!";
+            $mensajeHTML = "
+                <h2 style='color: #a31e32;'>¡Hola {$user_data['nombre']} {$user_data['apellido']}!</h2>
+                <p>Tu expediente ha sido procesado con éxito y hemos activado tu nueva identidad institucional.</p>
+                <div class='highlight'>
+                    <p style='margin: 0 0 5px 0;'><strong>Tu nuevo correo es:</strong></p>
+                    <p style='margin: 0; font-size: 18px; color: #a31e32;'>$nuevo_correo</p>
+                </div>
+                <p>A partir de ahora, todo acceso al Portal Digital, Aulas Virtuales y servicios de Microsoft 365 debe realizarse exclusivamente con esta nueva cuenta.</p>
+                <p><strong>Clave temporal:</strong> $temp_password <em>(Se te pedirá cambiarla al iniciar sesión por primera vez en Microsoft)</em></p>
+                <a href='https://upago.unamis.edu.py' class='btn'>Ingresar al Portal Institucional</a>
+                <p style='margin-top: 30px; font-size: 13px; color: #737780;'>Si tienes problemas de acceso, contacta a informatica@unamis.edu.py</p>
+            ";
+
+            send_institutional_email($correo_personal, $asunto, $mensajeHTML);
+            write_system_log("MIGRATE_USER", $admin_user, "Migró CI $cedula al correo $nuevo_correo");
+
+            echo json_encode(["status" => "success", "message" => "Cuenta migrada exitosamente. Se ha notificado al usuario."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+
     if (isset($_GET['registrar_pago'])) {
         try {
             $cedula = $_POST['postulante_cedula'] ?? ''; $concepto = $_POST['concepto'] ?? ''; $monto = $_POST['monto'] ?? 0;
@@ -346,6 +442,13 @@ if ($method === 'POST') {
     }
 
     if ($data && isset($data['cedula'])) {
+        $correo_registro = $data['correo'] ?? ($data['email'] ?? '');
+        if (str_ends_with(strtolower($correo_registro), '@unamis.edu.py')) {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "No se permite el registro manual con dominios institucionales (@unamis.edu.py). Utilice el acceso Microsoft SSO."]);
+            exit;
+        }
+
         $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral'];
         $placeholders = implode(',', array_fill(0, count($fields), '?'));
         $updates = implode(',', array_map(function($f) { return "$f=VALUES($f)"; }, $fields));
@@ -390,5 +493,40 @@ if ($method === 'GET') {
     }
     if (isset($_GET['aranceles'])) { $stmt = $conn->query("SELECT * FROM aranceles WHERE activo = 1"); echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit; }
     if (isset($_GET['stats'])) { $stmt = $conn->query("SELECT COUNT(*) as total, SUM(CASE WHEN estado = 'verificado' THEN monto ELSE 0 END) as total_recaudado FROM pagos"); echo json_encode($stmt->fetch(PDO::FETCH_ASSOC)); exit; }
+    
+    // Obtener usuarios manuales (externos) para el panel de migración
+    if (isset($_GET['get_external_users'])) {
+        // Buscamos usuarios cuyo correo NO termine en @unamis.edu.py
+        $stmt = $conn->query("SELECT id, nombre, apellido, cedula, correo as correo_actual, tipo_usuario as tipo, DATE_FORMAT(fecha_registro, '%Y-%m-%d') as fecha_registro, 'activo' as estado FROM postulantes WHERE correo NOT LIKE '%@unamis.edu.py' ORDER BY fecha_registro DESC");
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
+    // Endpoint para Auditoría de Logs (Solo SuperAdmin debería llamar esto en la práctica)
+    if (isset($_GET['system_logs'])) {
+        $log_file = __DIR__ . '/logs/system.log';
+        if (file_exists($log_file)) {
+            // Leer las últimas 500 líneas para no saturar
+            $lines = file($log_file);
+            $lines = array_slice($lines, -500);
+            $parsed_logs = [];
+            foreach (array_reverse($lines) as $line) {
+                if (preg_match('/\[(.*?)\] \[IP: (.*?)\] \[USER: (.*?)\] ACTION: (.*?) \| DETAILS: (.*)/', $line, $matches)) {
+                    $parsed_logs[] = [
+                        "timestamp" => $matches[1],
+                        "ip" => $matches[2],
+                        "user" => $matches[3],
+                        "action" => $matches[4],
+                        "details" => trim($matches[5])
+                    ];
+                }
+            }
+            echo json_encode(["status" => "success", "data" => $parsed_logs]);
+        } else {
+            echo json_encode(["status" => "success", "data" => []]);
+        }
+        exit;
+    }
 }
+
 http_response_code(404); echo json_encode(["status" => "error", "message" => "No encontrado"]);

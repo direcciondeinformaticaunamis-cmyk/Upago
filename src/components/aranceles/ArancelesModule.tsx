@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Wallet, Database, BarChart3, Info, LogOut, Settings2 } from 'lucide-react';
-import StudentPaymentDashboard from './StudentPaymentDashboard';
+import PostulantePaymentDashboard from './PostulantePaymentDashboard';
 import PaymentRegistrationForm from './PaymentRegistrationForm';
 import OfficialReceipt from './OfficialReceipt';
 import AdminFinanceDashboard from './AdminFinanceDashboard';
@@ -12,9 +12,9 @@ import FinancialReports from './FinancialReports';
 import ArancelesConfig from './ArancelesConfig';
 
 type ArancelesView = 
-    | 'student-dashboard' 
-    | 'student-form' 
-    | 'student-receipt' 
+    | 'postulante-dashboard' 
+    | 'postulante-form' 
+    | 'postulante-receipt' 
     | 'admin-dashboard' 
     | 'admin-register' 
     | 'admin-reconcile' 
@@ -23,17 +23,17 @@ type ArancelesView =
     | 'admin-config';
 
 interface Props {
-    mode: 'student' | 'admin';
-    studentData?: {
+    mode: 'postulante' | 'admin';
+    postulanteData?: {
         nombre: string;
         cedula: string;
         carrera: string;
     };
 }
 
-const ArancelesModule: React.FC<Props> = ({ mode, studentData }) => {
+const ArancelesModule: React.FC<Props> = ({ mode, postulanteData }) => {
     const [currentView, setCurrentView] = useState<ArancelesView>(
-        mode === 'student' ? 'student-dashboard' : 'admin-dashboard'
+        mode === 'postulante' ? 'postulante-dashboard' : 'admin-dashboard'
     );
 
     const handleNavigate = (view: ArancelesView) => {
@@ -128,25 +128,25 @@ const ArancelesModule: React.FC<Props> = ({ mode, studentData }) => {
 
     return (
         <div className="w-full">
-            {currentView === 'student-dashboard' && (
-                <StudentPaymentDashboard 
-                    studentName={studentData?.nombre}
-                    carrera={studentData?.carrera}
-                    onNavigateUpload={() => handleNavigate('student-form')}
+            {currentView === 'postulante-dashboard' && (
+                <PostulantePaymentDashboard 
+                    postulanteName={postulanteData?.nombre}
+                    carrera={postulanteData?.carrera}
+                    onNavigateUpload={() => handleNavigate('postulante-form')}
                 />
             )}
 
-            {currentView === 'student-form' && (
+            {currentView === 'postulante-form' && (
                 <PaymentRegistrationForm 
-                    studentName={studentData?.nombre}
-                    studentCedula={studentData?.cedula}
-                    onSuccess={() => handleNavigate('student-dashboard')}
+                    postulanteName={postulanteData?.nombre}
+                    postulanteCedula={postulanteData?.cedula}
+                    onSuccess={() => handleNavigate('postulante-dashboard')}
                 />
             )}
 
-            {currentView === 'student-receipt' && (
+            {currentView === 'postulante-receipt' && (
                 <OfficialReceipt 
-                    onClose={() => handleNavigate('student-dashboard')}
+                    onClose={() => handleNavigate('postulante-dashboard')}
                 />
             )}
         </div>

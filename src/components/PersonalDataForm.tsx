@@ -715,7 +715,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                             <a 
                                                 href={doc.templateUrl} 
                                                 download
-                                                className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-[#800020] hover:text-[#5a0015] transition-colors"
+                                                className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <Download size={14} /> Descargar Plantilla

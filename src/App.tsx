@@ -4,14 +4,15 @@ import {
     Lock
 } from 'lucide-react';
 import AuthScreen from './components/AuthScreen';
-import StudentDashboard from './components/StudentDashboard';
+import PostulanteDashboard from './components/PostulanteDashboard';
 import AdminFinanceDashboard from './components/AdminFinanceDashboard';
 import AcademicDashboard from './components/AcademicDashboard';
+import SuperAdminDashboard from './components/SuperAdminDashboard';
 import { useMsal } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { useEffect } from 'react';
 
-type AppView = 'auth' | 'student' | 'admin' | 'academic';
+type AppView = 'auth' | 'postulante' | 'admin' | 'academic' | 'superadmin';
 
 const App: React.FC = () => {
     const [view, setView] = useState<AppView>('auth');
@@ -20,7 +21,7 @@ const App: React.FC = () => {
         apellido: string;
         email: string;
         cedula: string;
-        rol: 'postulante' | 'docente' | 'admin' | 'finance' | 'academico';
+        rol: 'postulante' | 'docente' | 'admin' | 'finance' | 'academico' | 'superadmin';
         expediente_aprobado?: boolean;
     } | null>(null);
     const [loading, setLoading] = useState(false);
@@ -81,7 +82,7 @@ const App: React.FC = () => {
                 return;
             }
 
-            // Si falla el login admin, probamos como estudiante
+            // Si falla el login admin, probamos como postulante
             const response = await fetch(`${baseUrl}/api.php?perfil_by_email=${encodeURIComponent(email)}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
@@ -90,19 +91,21 @@ const App: React.FC = () => {
             const data = await response.json();
 
             if (data && data.cedula) {
+                const isSuperAdmin = data.correo === 'informatica@unamis.edu.py';
                 setCurrentUser({
                     nombre: data.nombre,
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante')),
+                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante'))),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data // Incluimos carrera, sede, etc.
                 } as any);
                 
-                if (data.tipo_usuario === 'admin') setView('admin');
+                if (isSuperAdmin) setView('superadmin');
+                else if (data.tipo_usuario === 'admin') setView('admin');
                 else if (data.tipo_usuario === 'academico') setView('academic');
-                else setView('student');
+                else setView('postulante');
             } else {
                 setError('Usuario no encontrado o credenciales inválidas.');
             }
@@ -167,19 +170,21 @@ const App: React.FC = () => {
 
             if (data && data.cedula) {
                 // El usuario ya existe, lo logueamos directamente
+                const isSuperAdmin = data.correo === 'informatica@unamis.edu.py';
                 setCurrentUser({
                     nombre: data.nombre,
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante')),
+                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante'))),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data
                 } as any);
 
-                if (data.tipo_usuario === 'admin') setView('admin');
+                if (isSuperAdmin) setView('superadmin');
+                else if (data.tipo_usuario === 'admin') setView('admin');
                 else if (data.tipo_usuario === 'academico') setView('academic');
-                else setView('student');
+                else setView('postulante');
                 return true; // Existe
             }
             return false; // No existe, debe completar registro
@@ -204,9 +209,9 @@ const App: React.FC = () => {
         );
     }
 
-    if (view === 'student' && currentUser) {
+    if (view === 'postulante' && currentUser) {
         return (
-            <StudentDashboard
+            <PostulanteDashboard
                 user={currentUser}
                 onLogout={handleLogout}
             />
@@ -225,6 +230,15 @@ const App: React.FC = () => {
     if (view === 'academic' && currentUser) {
         return (
             <AcademicDashboard
+                user={currentUser}
+                onLogout={handleLogout}
+            />
+        );
+    }
+
+    if (view === 'superadmin' && currentUser) {
+        return (
+            <SuperAdminDashboard
                 user={currentUser}
                 onLogout={handleLogout}
             />
