@@ -343,9 +343,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     ) : activeSection === 'registro_pago' ? (
                         <div className="-mx-6 md:-mx-12 -my-8 bg-slate-50/50 min-h-screen">
                             <PaymentRegistrationForm 
-                                mode="student" 
-                                studentName={`${user.nombre} ${user.apellido}`} 
-                                studentCedula={user.cedula} 
+                                mode="postulante" 
+                                postulanteName={`${user.nombre} ${user.apellido}`} 
+                                postulanteCedula={user.cedula} 
                                 onSuccess={() => setActiveSection('pagos')} 
                                 onBack={() => setActiveSection('pagos')} 
                             />

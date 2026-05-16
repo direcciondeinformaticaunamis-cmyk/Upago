@@ -167,7 +167,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
     const pendingDocuments = documents.filter(doc => doc.status !== 'uploaded' && doc.status !== 'verified');
     
     // Para Medicina, verificamos si la fase 1 está lista (aprobada por admin)
-    const isPhase1Approved = studentData.carrera === 'Medicina' 
+    const isPhase1Approved = postulanteData.carrera === 'Medicina' 
         ? documents.filter(doc => doc.phase === 1).every(doc => doc.status === 'verified')
         : true;
 
@@ -315,7 +315,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                         </div>
 
                         {/* Estado Bloqueado para Medicina */}
-                        {studentData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved && (
+                        {postulanteData.carrera === 'Medicina' && doc.phase > 1 && !isPhase1Approved && (
                             <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl text-slate-400 border border-slate-200">
                                 <Lock size={14} />
                                 <span className="text-[10px] font-black uppercase tracking-tighter">Bloqueado</span>

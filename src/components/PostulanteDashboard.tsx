@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Person as User, Description, AccountBalanceWallet as Wallet, Logout as LogoutIcon, FileUpload as Upload, FileDownload as Download, CheckCircle, AccessTime as Clock, Close as X, Receipt, AssignmentTurnedIn as FileCheck, Add as Plus, Check, Notifications, Help, Settings, Dashboard, AddCircle, CalendarToday, AccountBalanceWallet, PendingActions, FilterList, ReceiptLong, Error as ErrorIcon, Info as InfoIcon, SupportAgent, FilterListAlt, CloudUpload, School, Payment as PaymentIcon, Message as MessageIcon } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import MisDatosModule from './MisDatosModule';
 import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
 import NotificationCenter from './NotificationCenter';
