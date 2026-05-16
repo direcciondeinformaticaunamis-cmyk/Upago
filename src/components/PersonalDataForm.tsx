@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
     User,
     Mail,
@@ -7,14 +7,9 @@ import {
     GraduationCap,
     ArrowRight,
     UploadCloud,
-    Calendar,
     Camera,
     CheckCircle2,
-    Building2,
     FileText,
-    Upload,
-    X,
-    Download,
     School
 } from 'lucide-react';
 import AppInput from './ui/AppInput';
@@ -70,8 +65,6 @@ interface FormData {
     horarioLaboral?: string;
 }
 
-
-
 interface PersonalDataFormProps {
     formData: FormData;
     photo: string | null;
@@ -82,23 +75,8 @@ interface PersonalDataFormProps {
     isLoading?: boolean;
 }
 
-interface UploadedFile {
-    id: string;
-    file: File;
-    preview: string;
-}
-
-interface DocumentItem {
-    id: string;
-    label: string;
-    required: boolean;
-    description: string;
-    templateUrl?: string;
-}
-
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploadedDocs, setUploadedDocs] = useState<UploadedFile[]>([]);
 
     const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -110,55 +88,6 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
             reader.readAsDataURL(file);
         }
     };
-
-    const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>, docId: string) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setUploadedDocs(prev => {
-                    const existing = prev.filter(d => d.id !== docId);
-                    return [...existing, { id: docId, file, preview: reader.result as string }];
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const removeDoc = (docId: string) => {
-        setUploadedDocs(prev => prev.filter(d => d.id !== docId));
-    };
-
-    const postulanteDocs: DocumentItem[] = [
-        { id: 'cedula', label: 'Cédula de Identidad', required: true, description: 'Copia de ambos lados.' },
-        { id: 'nacimiento', label: 'Certificado de Nacimiento', required: true, description: 'Original o copia autenticada.' },
-        { id: 'titulo', label: 'Título/ Certificado', required: true, description: 'Copia del título de educación media.' },
-        { id: 'foto', label: 'Foto Tipo Carnet', required: true, description: 'Formato digital nítido.' },
-    ];
-
-    const teacherDocs: DocumentItem[] = [
-        { id: 'cedula', label: 'Cédula de Identidad', required: true, description: 'Copia autenticada.' },
-        { id: 'titulo', label: 'Título de Grado', required: true, description: 'Copia autenticada.' },
-        { id: 'posgrado', label: 'Título de Posgrado', required: false, description: 'Opcional, si aplica.' },
-        { id: 'cv', label: 'Currículum Vitae', required: true, description: 'Formato libre, actualizado.' },
-    ];
-
-    const lenguaSantaRosaDocs: DocumentItem[] = [
-        { id: 'cedula', label: 'Cédula de Identidad (Ambos Lados)', required: true, description: 'Copia autenticada por escribanía pública.' },
-        { id: 'nacimiento', label: 'Certificado de Nacimiento Original', required: true, description: 'O copia de Identidad Electrónica válida.' },
-        { id: 'titulo', label: 'Título de Profesorado o Equivalente', required: true, description: 'Copia autenticada por escribanía pública.' },
-        { id: 'estudio', label: 'Certificado de Estudio Original (del profesorado o equivalente)', required: true, description: 'O copia autenticada por escribanía pública.' },
-        { id: 'foto', label: 'Foto tipo carnet (2 unidades)', required: true, description: 'Formato digital nítido de alta resolución.' },
-        { id: 'convalidacion', label: 'Solicitud de Convalidación', required: true, description: 'Descargar, llenar, firmar y luego adjuntar.', templateUrl: '/plantillas/solicitud_convalidacion.docx' },
-        { id: 'matriculacion', label: 'Solicitud de Matriculación', required: true, description: 'Descargar, llenar, firmar y luego adjuntar.', templateUrl: '/plantillas/solicitud_matriculacion.docx' },
-    ];
-
-    const isLenguaSantaRosa = formData.carrera === 'Lic. en Enseñanza de Lengua y Literatura Castellana' && formData.sede === 'Sede Santa Rosa de Lima';
-
-    let docs = formData.tipoUsuario === 'concursante_docente' ? teacherDocs : postulanteDocs;
-    if (formData.tipoUsuario === 'postulante' && isLenguaSantaRosa) {
-        docs = lenguaSantaRosaDocs;
-    }
 
     const availableCareers = formData.sede ? getCarrerasPorSede(formData.sede) : [];
 
@@ -428,7 +357,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                 value={formData.carrera}
                                 onChange={(e) => onChange('carrera', e.target.value)}
                                 className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-primary transition-colors appearance-none"
-                                disabled={!formData.sede && availableCareers.length > 50} // Optional UX enhancement
+                                disabled={!formData.sede}
                             >
                                 <option value="">{formData.sede ? 'Seleccionar carrera...' : 'Primero seleccione una sede'}</option>
                                 {availableCareers.map(carrera => (
@@ -674,80 +603,9 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                 )}
             </div>
 
-            {/* Section 3: Documentos */}
-            <section className="mt-16">
-                <SectionTitle
-                    title={formData.tipoUsuario === 'concursante_docente' ? 'Documentos del Concursante' : 'Documentos del Postulante'}
-                    subtitle="Cargue los documentos requeridos en formato digital."
-                    icon={FileText}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {docs.map((doc) => {
-                        const uploaded = uploadedDocs.find(d => d.id === doc.id);
-                        return (
-                            <div
-                                key={doc.id}
-                                className={`relative p-6 rounded-3xl border-2 border-dashed transition-all ${
-                                    uploaded 
-                                        ? 'border-success/30 bg-success-soft/20' 
-                                        : 'border-slate-200 bg-slate-50/50 hover:border-primary/30'
-                                }`}
-                            >
-                                <input
-                                    type="file"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => handleDocUpload(e, doc.id)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                />
-                                <div className="flex items-start gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                                        uploaded ? 'bg-success text-white' : 'bg-slate-200 text-slate-500'
-                                    }`}>
-                                        {uploaded ? <CheckCircle2 size={24} /> : <Upload size={24} />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-slate-800">{doc.label}</p>
-                                        <p className="text-xs text-slate-500 mt-1">
-                                            {doc.description || (doc.required ? 'Requerido' : 'Opcional')}
-                                        </p>
-                                        {doc.templateUrl && !uploaded && (
-                                            <a 
-                                                href={doc.templateUrl} 
-                                                download
-                                                className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Download size={14} /> Descargar Plantilla
-                                            </a>
-                                        )}
-                                        {uploaded && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <img 
-                                                    src={uploaded.preview} 
-                                                    alt={doc.label}
-                                                    className="w-16 h-16 object-cover rounded-lg border border-slate-200" 
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); removeDoc(doc.id); }}
-                                                    className="text-danger text-xs font-bold"
-                                                >
-                                                    <X size={14} /> Eliminar
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
             <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <CheckCircle2 size={14} className="text-success" /> Complete todos los datos y documentos
+                    <CheckCircle2 size={14} className="text-success" /> Verifique que todos los datos sean correctos
                 </div>
                 <AppButton
                     size="lg"
