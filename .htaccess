@@ -64,11 +64,17 @@ Options -Indexes
     ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
 
-# 8. PREVENIR CACHÉ EN INDEX.HTML (Evita problemas de bundles obsoletos)
-<Files "index.html">
-    <IfModule mod_headers.c>
+# 8. PREVENIR CACHÉ EN INDEX.HTML Y LA RAÍZ / (Evita problemas de bundles obsoletos)
+<IfModule mod_headers.c>
+    # Aplicar anti-caché a index.html
+    <Files "index.html">
         Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
         Header set Pragma "no-cache"
         Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
-    </IfModule>
-</Files>
+    </Files>
+    # Aplicar anti-caché específicamente a la petición de la raíz (/)
+    SetEnvIf Request_URI "^/$" IS_ROOT
+    Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate" env=IS_ROOT
+    Header set Pragma "no-cache" env=IS_ROOT
+    Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT" env=IS_ROOT
+</IfModule>
