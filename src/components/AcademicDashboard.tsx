@@ -4,6 +4,8 @@ import MisDatosModule from './MisDatosModule';
 import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';
 import { AcademicService, Expediente } from '../services/AcademicService';
+import DocumentPreviewModal from './DocumentPreviewModal';
+import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
 
 interface AcademicDashboardProps {
     user: { nombre: string; apellido: string; email: string; cedula: string; rol: string };
@@ -11,10 +13,145 @@ interface AcademicDashboardProps {
 }
 
 const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion' | 'reportes'>('admision');
+    const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion' | 'reportes' | 'registro_pago'>('admision');
     const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState<string>('');
     const [expedientes, setExpedientes] = useState<Expediente[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [ventanillaPayment, setVentanillaPayment] = useState<{
+        cedula: string;
+        nombre: string;
+        carrera: string;
+        asignatura?: string;
+        concepto: string;
+    } | null>(null);
+
+    const handleDirectUpload = async (cedula: string, docId: string, asignatura: string | undefined, event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        notificationService.send('Cargando...', 'Subiendo archivo físico desde ventanilla...', 'info');
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', docId);
+        formData.append('postulante_id', cedula);
+        if (asignatura) {
+            formData.append('asignatura', asignatura);
+        }
+
+        try {
+            const response = await fetch('api.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                notificationService.send('Carga Exitosa', `Se cargó '${docId}' correctamente.`, 'success');
+                // Automatically validate the uploaded document immediately since it's uploaded by the administrator at ventanilla!
+                await AcademicService.validateDocument(cedula, docId, asignatura);
+                
+                // Refresh documents in the modal
+                const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
+                setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
+                loadExpedientes();
+            } else {
+                notificationService.send('Error', result.message || 'No se pudo subir el archivo.', 'error');
+            }
+        } catch (err) {
+            console.error('Error uploading:', err);
+            notificationService.send('Error', 'Error de red al intentar subir el archivo.', 'error');
+        }
+    };
+
+    const handleUploadVentanillaPayment = async (
+        cedula: string, 
+        concepto: string, 
+        monto: number, 
+        numComprobante: string, 
+        file: File | null, 
+        asignatura?: string
+    ) => {
+        notificationService.send('Procesando...', 'Registrando pago en caja/ventanilla...', 'info');
+        
+        try {
+            // 1. Prepare FormData to register the payment
+            const formData = new FormData();
+            formData.append('postulante_cedula', cedula);
+            formData.append('concepto', concepto);
+            formData.append('monto', monto.toString());
+            formData.append('num_comprobante', numComprobante);
+            formData.append('estado', 'verificado'); // Verified immediately
+            if (file) {
+                formData.append('comprobante', file);
+            }
+            if (asignatura) {
+                formData.append('asignatura', asignatura);
+            }
+
+            // 2. Call register payment
+            const paymentResult = await fetch('api.php?registrar_pago=1', {
+                method: 'POST',
+                body: formData
+            });
+            const payResJson = await paymentResult.json();
+
+            if (payResJson.status !== 'success') {
+                throw new Error(payResJson.message || 'Error al registrar el pago en caja.');
+            }
+
+            // 3. Now upload the document to expedientes under the type 'comprobante_pago'
+            if (file) {
+                const docFormData = new FormData();
+                docFormData.append('file', file);
+                docFormData.append('type', 'comprobante_pago');
+                docFormData.append('postulante_id', cedula);
+                if (asignatura) {
+                    docFormData.append('asignatura', asignatura);
+                }
+
+                const docResult = await fetch('api.php', {
+                    method: 'POST',
+                    body: docFormData
+                });
+                const docResJson = await docResult.json();
+                if (docResJson.status !== 'success') {
+                    console.warn("El pago se registró, pero no se pudo subir el archivo digital al expediente:", docResJson.message);
+                }
+            } else {
+                // If there's no physical file uploaded, insert a virtual placeholder document in expedientes so it validates
+                const dummyFormData = new FormData();
+                const virtualFile = new File(["Pago en efectivo en ventanilla académica."], "comprobante_efectivo.txt", { type: "text/plain" });
+                dummyFormData.append('file', virtualFile);
+                dummyFormData.append('type', 'comprobante_pago');
+                dummyFormData.append('postulante_id', cedula);
+                if (asignatura) {
+                    dummyFormData.append('asignatura', asignatura);
+                }
+
+                await fetch('api.php', {
+                    method: 'POST',
+                    body: dummyFormData
+                });
+            }
+
+            // 4. Automatically validate the document in the checklist
+            await AcademicService.validateDocument(cedula, 'comprobante_pago', asignatura);
+
+            notificationService.send('Pago Registrado', 'El pago físico en ventanilla y el comprobante han sido validados exitosamente.', 'success');
+            
+            // 5. Close dialog and refresh data
+            setVentanillaPayment(null);
+            const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
+            setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
+            loadExpedientes();
+
+        } catch (err: any) {
+            console.error('Error registering ventanilla payment:', err);
+            notificationService.send('Error', err.message || 'No se pudo registrar el pago.', 'error');
+        }
+    };
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCarrera, setFilterCarrera] = useState('');
     const [filterSede, setFilterSede] = useState('');
@@ -22,6 +159,20 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
     React.useEffect(() => {
         loadExpedientes();
     }, []);
+
+    React.useEffect(() => {
+        if (selectedExpediente && selectedExpediente.cedula) {
+            const loadDocs = async () => {
+                try {
+                    const docs = await AcademicService.getDocsForPostulante(selectedExpediente.cedula);
+                    setSelectedExpediente(prev => prev ? { ...prev, documentos: docs } : null);
+                } catch (error) {
+                    console.error('Error loading documents for expediente:', error);
+                }
+            };
+            loadDocs();
+        }
+    }, [selectedExpediente?.cedula]);
 
     const loadExpedientes = async () => {
         setIsLoading(true);
@@ -50,9 +201,9 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         }
     };
 
-    const handleValidarDocumento = async (cedula: string, docId: string) => {
+    const handleValidarDocumento = async (cedula: string, docId: string, asignatura?: string) => {
         try {
-            await AcademicService.validateDocument(cedula, docId);
+            await AcademicService.validateDocument(cedula, docId, asignatura);
             notificationService.send('Documento Validado', `Se ha marcado como válido.`, 'success');
             // Refresh documents in the modal
             const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
@@ -64,9 +215,9 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         }
     };
 
-    const handleSaveObservation = async (cedula: string, docId: string, obs: string) => {
+    const handleSaveObservation = async (cedula: string, docId: string, obs: string, asignatura?: string) => {
         try {
-            await AcademicService.saveDocumentObservation(cedula, docId, obs);
+            await AcademicService.saveDocumentObservation(cedula, docId, obs, asignatura);
             notificationService.send('Observación Guardada', `Se notificó: ${obs}`, 'info');
             // Refresh
             const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
@@ -113,6 +264,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     <button onClick={() => setActiveSection('nueva_inscripcion')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'nueva_inscripcion' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                         <PersonAdd style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Nueva Inscripción</span>
+                    </button>
+                    <button onClick={() => setActiveSection('registro_pago')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'registro_pago' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                        <Payments style={{fontSize: 20}} />
+                        <span className="text-sm font-medium">Registrar Pago Manual</span>
                     </button>
                     <button onClick={() => setActiveSection('reportes')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'reportes' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                         <Assessment style={{fontSize: 20}} />
@@ -206,9 +361,20 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm text-slate-800">{exp.carrera}</p>
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${exp.tipo === 'docente' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                        {exp.tipo}
-                                                    </span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${exp.tipo === 'docente' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                            {exp.tipo}
+                                                        </span>
+                                                        {(exp.totalDocs ?? 0) > 0 ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                                                                📎 {exp.totalDocs} doc{exp.totalDocs !== 1 ? 's' : ''}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-500">
+                                                                Sin cargas
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-600">{exp.fechaEnvio}</td>
                                                 <td className="px-6 py-4 text-center">
@@ -230,8 +396,23 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                             </tr>
                                         ))}
                                     </tbody>
-                                </table>
-                            </div>
+                                    </table>
+                                 {isLoading && (
+                                     <div className="py-20 text-center">
+                                         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                                         <p className="text-slate-400 text-sm">Cargando expedientes...</p>
+                                     </div>
+                                 )}
+                                 {!isLoading && expedientes.length === 0 && (
+                                     <div className="py-20 text-center">
+                                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                             <Description style={{fontSize: 32, color: '#cbd5e1'}} />
+                                         </div>
+                                         <p className="text-slate-500 font-medium">No hay expedientes registrados aún.</p>
+                                         <p className="text-slate-400 text-sm mt-1">Los postulantes aparecerán aquí una vez que completen su registro.</p>
+                                     </div>
+                                 )}
+                             </div>
                         </>
                     )}
                     {activeSection === 'nueva_inscripcion' && (
@@ -409,6 +590,24 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                             </div>
                         </div>
                     )}
+                    {activeSection === 'registro_pago' && (
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+                            <div className="mb-8 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Registrar Pago Manual (Académico)</h2>
+                                    <p className="text-slate-500 text-sm">Registro manual de comprobantes y derecho a examen de admisión para postulantes de Medicina y otras carreras.</p>
+                                </div>
+                                <button onClick={() => setActiveSection('admision')} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                                    Cancelar
+                                </button>
+                            </div>
+                            <PaymentRegistrationForm 
+                                mode="admin" 
+                                onSuccess={() => setActiveSection('admision')} 
+                                onBack={() => setActiveSection('admision')} 
+                            />
+                        </div>
+                    )}
                 </div>
             </main>
 
@@ -428,49 +627,188 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                         
                         <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
                             <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                <Description style={{fontSize: 20}} /> Documentos Adjuntos
+                                <Description style={{fontSize: 20}} /> Documentos del Expediente
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {selectedExpediente?.documentos?.map((doc) => (
-                                    <div key={doc.id} className="bg-white p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.estado === 'aprobado' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                                            {doc.estado === 'aprobado' ? <CheckCircle /> : <FileCheck />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-slate-800 mb-1">{doc.nombre}</p>
-                                            {doc.observaciones && (
-                                                <p className="text-[10px] text-amber-600 font-medium mb-1 bg-amber-50 px-2 py-0.5 rounded w-fit italic">
-                                                    Nota: {doc.observaciones}
-                                                </p>
-                                            )}
-                                            <div className="flex items-center gap-3">
-                                                <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline font-medium">Ver PDF</a>
-                                                {doc.estado !== 'aprobado' && (
-                                                    <div className="flex gap-2">
-                                                        <button 
-                                                            onClick={() => {
-                                                                notificationService.send('Vision AI', 'Escaneando documento para verificar CI...', 'info');
-                                                                setTimeout(() => notificationService.send('Vision AI', `CI Detectada: ${selectedExpediente.cedula} (Coincidencia 100%)`, 'success'), 2000);
-                                                            }}
-                                                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                                                        >
-                                                            🤖 Smart Scan
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleValidarDocumento(selectedExpediente.cedula, doc.id)}
-                                                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors"
-                                                        >
-                                                            ✓ Validar
-                                                        </button>
+                                {(() => {
+                                    const exp = selectedExpediente;
+                                    if (!exp) return null;
+                                    
+                                    const getRequiredDocs = () => {
+                                        if (exp.tipo === 'docente') {
+                                            return [
+                                                { id: 'cv', nombre: 'a) Currículum vitae actualizado' },
+                                                { id: 'solicitud_participacion', nombre: 'a.1) Nota de Solicitud de Participación en el Concurso' },
+                                                { id: 'cedula', nombre: 'b) Fotocopia autenticada por Escribanía de la C.I.' },
+                                                { id: 'titulos', nombre: 'c) Fotocopia autenticada de Certificados y Títulos' },
+                                                { id: 'cursos', nombre: 'd) Fotocopia simple de certificados de cursos/talleres' },
+                                                { id: 'declaracion_jurada', nombre: 'e) Declaración jurada de no hallarse en inhabilidades' },
+                                                { id: 'antecedente_judicial', nombre: 'f) Certificado de antecedente judicial' },
+                                                { id: 'antecedente_policial', nombre: 'g) Certificado de antecedente policial' },
+                                                { id: 'comprobante_pago', nombre: 'h) Pago del arancel de inscripción' }
+                                            ];
+                                        } else if (exp.carrera?.includes('Medicina')) {
+                                            return [
+                                                { id: 'cedula', nombre: '1. Fotocopia de Cédula de Identidad' },
+                                                { id: 'estudio', nombre: '2. Certificado de Estudios (Educación Media)' },
+                                                { id: 'titulo', nombre: '3. Fotocopia del Título de Bachiller' },
+                                                { id: 'antecedente_policial', nombre: '4. Certificado de Antecedente Policial' },
+                                                { id: 'comprobante_pago', nombre: '5. Comprobante de Pago (Arancel)' }
+                                            ];
+                                        } else {
+                                            return [
+                                                { id: 'cedula', nombre: 'Fotocopia de Cédula de Identidad' },
+                                                { id: 'estudio', nombre: 'Certificado de Estudios de la Educación Media' },
+                                                { id: 'titulo', nombre: 'Fotocopia del Título de Bachiller' },
+                                                { id: 'antecedente_policial', nombre: 'Certificado de Antecedentes Policiales' },
+                                                { id: 'comprobante_pago', nombre: 'Comprobante de Ingreso por Pago de Arancel' }
+                                            ];
+                                        }
+                                    };
+
+                                    const required = getRequiredDocs();
+                                    const cvDoc = exp.documentos?.find(d => d.id === 'cv');
+                                    const cvUrl = cvDoc?.url || '';
+
+                                    const flatDocs: any[] = [];
+                                    required.forEach((req) => {
+                                        const actualDocs = exp.documentos?.filter(d => d.id === req.id) || [];
+                                        if (actualDocs.length === 0) {
+                                            flatDocs.push({ req, actual: undefined });
+                                        }
+                                        actualDocs.forEach(d => { flatDocs.push({ req, actual: d }); });
+                                    }); return flatDocs.map(({ req, actual }) => {
+                                        const uniqueKey = actual ? `${req.id}-${actual.asignatura || 'general'}` : req.id;
+                                        return (
+                                            <div key={uniqueKey} className="bg-white p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${actual && actual.estado === 'aprobado' ? 'bg-emerald-50 text-emerald-600' : actual ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                    {actual && actual.estado === 'aprobado' ? <CheckCircle /> : <FileCheck />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold text-slate-800 mb-1 flex flex-wrap items-center gap-2">
+                                                        {req.nombre}
+                                                        {actual && actual.asignatura && (
+                                                            <span className="text-[8px] bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                                                📚 Carpeta: {actual.asignatura}
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    {actual && actual.observaciones && (
+                                                        <p className="text-[10px] text-amber-600 font-medium mb-1 bg-amber-50 px-2 py-0.5 rounded w-fit italic">
+                                                            Nota: {actual.observaciones}
+                                                        </p>
+                                                    )}
+                                                    {!actual && (
+                                                        <p className="text-[10px] text-red-500 font-semibold mb-1 bg-red-50 px-2 py-0.5 rounded w-fit italic">
+                                                            No cargado / Pendiente
+                                                        </p>
+                                                    )}
+                                                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                                                        {actual ? (
+                                                            <>
+                                                                <button 
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        setPreviewUrl(actual.url);
+                                                                        setPreviewTitle(req.nombre);
+                                                                    }}
+                                                                    className="text-xs text-blue-600 hover:underline font-medium focus:outline-none"
+                                                                >
+                                                                    Ver archivo
+                                                                </button>
+                                                                {actual.estado !== 'aprobado' && (
+                                                                    <div className="flex gap-2">
+                                                                        <button 
+                                                                            onClick={() => {
+                                                                                notificationService.send('Vision AI', 'Escaneando documento para verificar CI...', 'info');
+                                                                                setTimeout(() => notificationService.send('Vision AI', `CI Detectada: ${exp.cedula} (Coincidencia 100%)`, 'success'), 2000);
+                                                                            }}
+                                                                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                                                                        >
+                                                                            🤖 Smart Scan
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => handleValidarDocumento(exp.cedula, req.id, actual.asignatura)}
+                                                                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors"
+                                                                        >
+                                                                            ✓ Validar
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                                {actual.estado === 'aprobado' && (
+                                                                    <span className="text-[10px] font-bold text-emerald-600 italic">Validado</span>
+                                                                )}
+                                                                
+                                                                {/* Reemplazar button */}
+                                                                <label className="text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1">
+                                                                    <UploadFile style={{ fontSize: 12 }} />
+                                                                    Reemplazar
+                                                                    <input 
+                                                                        type="file" 
+                                                                        className="hidden" 
+                                                                        onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
+                                                                    />
+                                                                </label>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {req.id === 'comprobante_pago' ? (
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setVentanillaPayment({
+                                                                                cedula: exp.cedula,
+                                                                                nombre: exp.nombre,
+                                                                                carrera: exp.carrera,
+                                                                                asignatura: undefined,
+                                                                                concepto: exp.carrera?.includes('Medicina') ? 'Examen de Admisión - Medicina (San Ignacio)' : 'Inscripción General'
+                                                                            });
+                                                                        }}
+                                                                        className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm mt-1"
+                                                                    >
+                                                                        <UploadFile style={{ fontSize: 14 }} />
+                                                                        <span>Registrar Pago Ventanilla</span>
+                                                                    </button>
+                                                                ) : (
+                                                                    <label className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 mt-1">
+                                                                        <UploadFile style={{ fontSize: 14 }} />
+                                                                        <span>Subir escaneado (Ventanilla)</span>
+                                                                        <input 
+                                                                            type="file" 
+                                                                            className="hidden" 
+                                                                            onChange={(e) => handleDirectUpload(exp.cedula, req.id, undefined, e)} 
+                                                                        />
+                                                                    </label>
+                                                                )}
+                                                                
+                                                                {exp.tipo === 'docente' && req.id !== 'cv' && (
+                                                                    <button 
+                                                                        onClick={async () => {
+                                                                            if (!cvUrl) {
+                                                                                alert("Debe cargarse primero el Currículum Vitae para poder marcar otros criterios como incluidos en él.");
+                                                                                return;
+                                                                            }
+                                                                            try {
+                                                                                await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl);
+                                                                                notificationService.send('Criterio Aprobado', `Se marcó '${req.nombre}' como incluido en Currículum.`, 'success');
+                                                                                const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
+                                                                                setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
+                                                                            } catch (error) {
+                                                                                console.error('Error marking as included in CV:', error);
+                                                                            }
+                                                                        }}
+                                                                        className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded hover:bg-purple-100 transition-colors shadow-sm border border-purple-200 mt-1"
+                                                                    >
+                                                                        🗂 Incluido en CV
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
-                                                )}
-                                                {doc.estado === 'aprobado' && (
-                                                    <span className="text-[10px] font-bold text-emerald-600 italic">Validado</span>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        );
+                                    });
+                                })()}
                             </div>
 
                             <div className="mt-8 p-5 bg-amber-50 rounded-2xl border border-amber-100">
@@ -487,7 +825,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                     // Buscamos el primer doc pendiente
                                                     const firstDoc = selectedExpediente.documentos?.find(d => d.estado !== 'aprobado');
                                                     if (firstDoc) {
-                                                        handleSaveObservation(selectedExpediente.cedula, firstDoc.id, obs);
+                                                        handleSaveObservation(selectedExpediente.cedula, firstDoc.id, obs, firstDoc.asignatura);
                                                     }
                                                 }
                                             }}
@@ -515,7 +853,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 </button>
                                 {selectedExpediente.estado === 'pendiente' && (
                                     <button 
-                                        onClick={() => handleAprobarExpediente(selectedExpediente.id)}
+                                        onClick={() => handleAprobarExpediente(selectedExpediente.cedula)}
                                         className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex items-center gap-2"
                                     >
                                         <Check /> Aprobar Expediente
@@ -526,6 +864,187 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     </div>
                 </div>
             )}
+
+            <DocumentPreviewModal 
+                isOpen={!!previewUrl} 
+                onClose={() => setPreviewUrl(null)} 
+                url={previewUrl || ''} 
+                title={previewTitle} 
+            />
+
+            {/* Modal de Pago en Ventanilla */}
+            {ventanillaPayment && (
+                <VentanillaPaymentModal 
+                    data={ventanillaPayment} 
+                    onClose={() => setVentanillaPayment(null)} 
+                    onSubmit={handleUploadVentanillaPayment} 
+                />
+            )}
+        </div>
+    );
+};
+
+interface VentanillaPaymentModalProps {
+    data: {
+        cedula: string;
+        nombre: string;
+        carrera: string;
+        asignatura?: string;
+        concepto: string;
+    };
+    onClose: () => void;
+    onSubmit: (cedula: string, concepto: string, monto: number, numComprobante: string, file: File | null, asignatura?: string) => Promise<void>;
+}
+
+const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, onClose, onSubmit }) => {
+    const [concepto, setConcepto] = React.useState(data.concepto);
+    const [monto, setMonto] = React.useState(data.carrera?.includes('Medicina') ? 1000000 : 350000);
+    const [numComprobante, setNumComprobante] = React.useState('');
+    const [file, setFile] = React.useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [error, setError] = React.useState('');
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!numComprobante.trim()) {
+            setError('Por favor ingrese el número de comprobante o referencia de caja.');
+            return;
+        }
+        setError('');
+        setIsSubmitting(true);
+        try {
+            await onSubmit(data.cedula, concepto, monto, numComprobante, file, data.asignatura);
+        } catch (err) {
+            setError('Error al registrar el pago. Intente nuevamente.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+                <div className="p-6 bg-[#800020] text-white flex justify-between items-center">
+                    <div>
+                        <h3 className="text-lg font-black tracking-tight flex items-center gap-2 uppercase">
+                            🏦 Pago Manual Ventanilla
+                        </h3>
+                        <p className="text-white/70 text-xs mt-0.5">Registro oficial de cobranza en caja física / banco</p>
+                    </div>
+                    <button type="button" onClick={onClose} className="p-1.5 hover:bg-white/10 text-white/80 hover:text-white rounded-full transition-colors">
+                        <X />
+                    </button>
+                </div>
+                
+                <form onSubmit={handleFormSubmit} className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-700">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Postulante:</span>
+                            <span className="font-bold text-slate-800 uppercase">{data.nombre}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">CI:</span>
+                            <span className="font-mono font-bold text-slate-800">{data.cedula}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Programa:</span>
+                            <span className="font-bold text-slate-800">{data.carrera}</span>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-bold">
+                            ⚠️ {error}
+                        </div>
+                    )}
+
+                    <div className="space-y-1.5 text-left">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto de Arancel</label>
+                        <select 
+                            value={concepto}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setConcepto(val);
+                                if (val.includes('Medicina')) {
+                                    setMonto(1000000);
+                                } else {
+                                    setMonto(350000);
+                                }
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                        >
+                            <option value="Examen de Admisión - Medicina (San Ignacio)">Examen de Admisión - Medicina (San Ignacio) - Gs. 1.000.000</option>
+                            <option value="Inscripción General - Grado">Inscripción General - Grado - Gs. 350.000</option>
+                            <option value="Derecho a Matrícula Anual">Derecho a Matrícula Anual - Gs. 500.000</option>
+                            <option value="Pago Extraordinario / Otro">Pago Extraordinario / Otro</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1.5 text-left">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto Recaudado (Gs.)</label>
+                        <input 
+                            type="number"
+                            value={monto}
+                            onChange={(e) => setMonto(parseInt(e.target.value) || 0)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                            placeholder="Monto en guaraníes"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1.5 text-left">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Nº Boleta / Comprobante de Caja</label>
+                        <input 
+                            type="text"
+                            value={numComprobante}
+                            onChange={(e) => setNumComprobante(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                            placeholder="Ej. T-100245 o Caja-02"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1.5 text-left">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Foto/Escaneado del Comprobante (Opcional)</label>
+                        <label className="flex flex-col items-center justify-center p-5 border border-dashed rounded-2xl cursor-pointer transition-all border-slate-300 hover:border-[#800020]/30 hover:bg-slate-50">
+                            <input 
+                                type="file" 
+                                className="hidden" 
+                                onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                            />
+                            <span className="text-xs font-bold text-slate-600">Adjuntar archivo digital</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">Imagen o PDF del recibo físico</span>
+                            {file && (
+                                <span className="text-xs font-bold text-emerald-600 mt-2 truncate w-full text-center px-4">
+                                    📎 {file.name}
+                                </span>
+                            )}
+                        </label>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-slate-100">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            disabled={isSubmitting}
+                            className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600 transition-colors text-sm"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 py-3 bg-[#800020] hover:bg-[#600018] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-100 text-sm disabled:opacity-50"
+                        >
+                            {isSubmitting ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <>✓ Registrar y Validar</>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

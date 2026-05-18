@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { FinanceService, Payment } from '../../services/FinanceService';
 import { API_BASE_URL } from '../../services/ApiService';
+import DocumentPreviewModal from '../DocumentPreviewModal';
 
 interface Props {
     studentName?: string;
@@ -25,6 +26,8 @@ const StudentPaymentDashboard: React.FC<Props> = ({
 }) => {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [selected, setSelected] = useState<Payment | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState<string>('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -261,11 +264,22 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                                 {selected.comprobante_url && (
                                     <div className="mt-4">
                                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2">Comprobante adjunto</p>
-                                        <img 
-                                            src={selected.comprobante_url.startsWith('http') ? selected.comprobante_url : `${API_BASE_URL}/${selected.comprobante_url}`} 
-                                            alt="Comprobante" 
-                                            className="w-full rounded-xl border border-slate-100 shadow-sm max-h-48 object-contain bg-slate-50"
-                                        />
+                                        <div 
+                                            onClick={() => {
+                                                setPreviewUrl(selected.comprobante_url || null);
+                                                setPreviewTitle(selected.concepto);
+                                            }}
+                                            className="relative group cursor-pointer overflow-hidden rounded-xl border border-slate-100 shadow-sm max-h-48 bg-slate-50 flex items-center justify-center"
+                                        >
+                                            <img 
+                                                src={selected.comprobante_url.startsWith('http') ? selected.comprobante_url : `${API_BASE_URL}/${selected.comprobante_url}`} 
+                                                alt="Comprobante" 
+                                                className="w-full max-h-48 object-contain"
+                                            />
+                                            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                                <Eye size={16} /> Ver en pantalla completa
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -309,6 +323,13 @@ const StudentPaymentDashboard: React.FC<Props> = ({
                     </div>
                 )}
             </AnimatePresence>
+
+            <DocumentPreviewModal 
+                isOpen={!!previewUrl} 
+                onClose={() => setPreviewUrl(null)} 
+                url={previewUrl || ''} 
+                title={previewTitle} 
+            />
         </div>
     );
 };

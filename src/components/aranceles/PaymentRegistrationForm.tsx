@@ -22,29 +22,44 @@ interface Arancel {
 interface Props {
     postulanteName?: string;
     postulanteCedula?: string;
+    postulanteCarrera?: string;
+    postulanteSede?: string;
     onSuccess: () => void;
     onBack?: () => void;
     mode?: 'postulante' | 'admin';
+    isDocente?: boolean;
 }
 
 const PaymentRegistrationForm: React.FC<Props> = ({ 
     postulanteName = '', 
     postulanteCedula = '', 
+    postulanteCarrera = '',
+    postulanteSede = '',
     onSuccess, 
     onBack,
-    mode = 'postulante'
+    mode = 'postulante',
+    isDocente = false
 }) => {
     const [concepto, setConcepto] = useState('matricula');
+    const [selectedSede, setSelectedSede] = useState(postulanteSede || 'Sede San Ignacio Guazú');
+    const [isCustomSede, setIsCustomSede] = useState(false);
+    const [customSede, setCustomSede] = useState('');
+    const [isCustomCarrera, setIsCustomCarrera] = useState(false);
+    const [customCarrera, setCustomCarrera] = useState('');
+    const [selectedCohorte, setSelectedCohorte] = useState('Primer Semestre - 2024');
+    const [isCustomCohorte, setIsCustomCohorte] = useState(false);
+    const [customCohorte, setCustomCohorte] = useState('');
     const [form, setForm] = useState({
         nombre: postulanteName, 
         cedula: postulanteCedula, 
         telefono: '',
         direccion: '', 
-        carrera: TODAS_LAS_CARRERAS[0], 
+        carrera: postulanteCarrera || (CATALOGO_UNAMIS[postulanteSede || 'Sede San Ignacio Guazú']?.[0] || 'Medicina'), 
         titular: '',
         numComprobante: '', 
         fechaPago: new Date().toISOString().split('T')[0], 
         monto: '',
+        asignatura: ''
     });
     const [searchId, setSearchId] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -84,6 +99,13 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         if (!form.fechaPago) e.push('fechaPago');
         if (!form.monto.trim()) e.push('monto');
         if (mode === 'postulante' && !file) e.push('file');
+        
+        const selectedConceptObj = dynamicAranceles.find(a => a.id.toString() === concepto);
+        const isTeacherConcurso = isDocente || selectedConceptObj?.concepto?.toUpperCase().includes('CONCURSO') || selectedConceptObj?.concepto?.toUpperCase().includes('DOCENTE');
+        if (isTeacherConcurso && !form.asignatura.trim()) {
+            e.push('asignatura');
+        }
+        
         setErrors(e);
         return e.length === 0;
     };
@@ -95,6 +117,10 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         setErrors([]);
         
         try {
+            const actualSede = isCustomSede ? customSede : selectedSede;
+            const actualCarrera = isCustomCarrera ? customCarrera : form.carrera;
+            const actualCohorte = isCustomCohorte ? customCohorte : selectedCohorte;
+
             const formData = new FormData();
             formData.append('postulante_cedula', form.cedula);
             formData.append('concepto', dynamicAranceles.find(a => a.id.toString() === concepto)?.concepto || 'Pago General');
@@ -103,6 +129,15 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             if (file) {
                 formData.append('comprobante', file);
             }
+            if (form.asignatura) {
+                formData.append('asignatura', form.asignatura);
+            }
+            if (mode === 'admin') {
+                formData.append('estado', 'verificado');
+            }
+            
+            // Adjuntar observaciones con los detalles especificos
+            formData.append('observaciones', `Sede: ${actualSede} | Carrera: ${actualCarrera} | Cohorte: ${actualCohorte}`);
             
             await FinanceService.registerPayment(formData);
             setSuccess(true);
@@ -259,38 +294,154 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                             <div>
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Sede Institucional</label>
                                 <div className="relative">
-                                    <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all">
-                                        <option>Sede Central - Asunción</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                    {isCustomSede ? (
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                value={customSede}
+                                                onChange={(e) => setCustomSede(e.target.value)}
+                                                placeholder="Escribir sede manualmente..."
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-800 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsCustomSede(false);
+                                                    setIsCustomCarrera(false);
+                                                    setSelectedSede('Sede Central - Asunción');
+                                                }}
+                                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl text-xs font-black transition-all"
+                                            >
+                                                Lista
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select 
+                                                value={selectedSede}
+                                                onChange={(e) => {
+                                                    const newSede = e.target.value;
+                                                    if (newSede === 'CUSTOM_SEDE') {
+                                                        setIsCustomSede(true);
+                                                        setIsCustomCarrera(true);
+                                                        setCustomSede('');
+                                                        setCustomCarrera('');
+                                                    } else {
+                                                        setSelectedSede(newSede);
+                                                        const careers = CATALOGO_UNAMIS[newSede] || [];
+                                                        if (careers.length > 0) {
+                                                            set('carrera', careers[0]);
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
+                                            >
+                                                {Object.keys(CATALOGO_UNAMIS).map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                                <option value="CUSTOM_SEDE">✍️ Escribir otra sede...</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Carrera</label>
                                 <div className="relative">
-                                    <select 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-                                        value={form.carrera}
-                                        onChange={(e) => set('carrera', e.target.value)}
-                                    >
-                                        {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
-                                            <optgroup key={sede} label={sede}>
-                                                {carreras.map(c => (
+                                    {isCustomCarrera ? (
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                value={customCarrera}
+                                                onChange={(e) => setCustomCarrera(e.target.value)}
+                                                placeholder="Escribir carrera manualmente..."
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-800 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                                            />
+                                            {!isCustomSede && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setIsCustomCarrera(false)}
+                                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl text-xs font-black transition-all"
+                                                >
+                                                    Lista
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select 
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
+                                                value={form.carrera}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === 'CUSTOM_CARRERA') {
+                                                        setIsCustomCarrera(true);
+                                                        setCustomCarrera('');
+                                                    } else {
+                                                        set('carrera', val);
+                                                    }
+                                                }}
+                                            >
+                                                {(CATALOGO_UNAMIS[selectedSede] || []).map(c => (
                                                     <option key={c} value={c}>{c}</option>
                                                 ))}
-                                            </optgroup>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                                <option value="CUSTOM_CARRERA">✍️ Escribir otra carrera...</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Curso o Cohorte</label>
                                 <div className="relative">
-                                    <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all">
-                                        <option>Primer Semestre - 2024</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                    {isCustomCohorte ? (
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                value={customCohorte}
+                                                onChange={(e) => setCustomCohorte(e.target.value)}
+                                                placeholder="Ej: Primer Semestre - 2026..."
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-800 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsCustomCohorte(false);
+                                                    setSelectedCohorte('Primer Semestre - 2024');
+                                                }}
+                                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl text-xs font-black transition-all"
+                                            >
+                                                Lista
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select 
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none appearance-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
+                                                value={selectedCohorte}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === 'CUSTOM_COHORTE') {
+                                                        setIsCustomCohorte(true);
+                                                        setCustomCohorte('');
+                                                    } else {
+                                                        setSelectedCohorte(val);
+                                                    }
+                                                }}
+                                            >
+                                                <option value="Primer Semestre - 2024">Primer Semestre - 2024</option>
+                                                <option value="Segundo Semestre - 2024">Segundo Semestre - 2024</option>
+                                                <option value="Primer Semestre - 2025">Primer Semestre - 2025</option>
+                                                <option value="Segundo Semestre - 2025">Segundo Semestre - 2025</option>
+                                                <option value="Primer Semestre - 2026">Primer Semestre - 2026</option>
+                                                <option value="Segundo Semestre - 2026">Segundo Semestre - 2026</option>
+                                                <option value="CUSTOM_COHORTE">✍️ Escribir otro curso o cohorte...</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -303,6 +454,53 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                             <h3 className="text-base font-bold text-[#001738]">Datos del Postulante</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {mode === 'admin' && (
+                                <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-2">
+                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Buscar Postulante por Cédula</label>
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ej: 4567890"
+                                                value={searchId}
+                                                onChange={(e) => setSearchId(e.target.value)}
+                                                className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-primary"
+                                            />
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={async () => {
+                                                if (!searchId.trim()) return;
+                                                try {
+                                                    const list = await FinanceService.getPostulantes();
+                                                    const found = list.find((p: any) => p.cedula === searchId.trim());
+                                                    if (found) {
+                                                        setForm(f => ({
+                                                            ...f,
+                                                            nombre: `${found.nombre} ${found.apellido}`,
+                                                            cedula: found.cedula,
+                                                            carrera: found.carrera || f.carrera
+                                                        }));
+                                                        if (found.sede) {
+                                                            setSelectedSede(found.sede);
+                                                        }
+                                                        alert(`Postulante encontrado: ${found.nombre} ${found.apellido}`);
+                                                    } else {
+                                                        alert("No se encontró ningún postulante con esa cédula.");
+                                                    }
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    alert("Error al buscar postulante.");
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 transition-colors"
+                                        >
+                                            Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <div className="md:col-span-2">
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Nombre y Apellido Completo</label>
                                 <input 
@@ -457,6 +655,23 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                     )}
                                 </div>
                             </div>
+
+                            {/* Campo Asignatura para Concurso Docente */}
+                            {(isDocente || dynamicAranceles.find(a => a.id.toString() === concepto)?.concepto?.toUpperCase().includes('CONCURSO') || dynamicAranceles.find(a => a.id.toString() === concepto)?.concepto?.toUpperCase().includes('DOCENTE')) && (
+                                <div className="md:col-span-2">
+                                    <label className="block text-[10px] font-black text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit uppercase tracking-widest mb-2">Asignatura a Concursar <span className="text-red-500">*</span></label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ingrese el nombre exacto de la asignatura a concursar"
+                                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all ${errors.includes('asignatura') ? 'border-red-300 bg-red-50 ring-2 ring-red-400' : ''}`}
+                                        value={form.asignatura}
+                                        onChange={(e) => set('asignatura', e.target.value)}
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
+                                        * Si está concursando en más de una asignatura, registre un pago independiente para cada una.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </section>
 

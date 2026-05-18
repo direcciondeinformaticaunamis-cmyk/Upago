@@ -20,6 +20,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
+import DocumentPreviewModal from './DocumentPreviewModal';
 
 interface Pago {
     id: number;
@@ -55,6 +56,8 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'verificado' | 'rechazado'>('all');
     const [selectedPago, setSelectedPago] = useState<Pago | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState('');
 
     useEffect(() => {
         loadData();
@@ -291,17 +294,32 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                                                     variant="ghost"
                                                     size="sm"
                                                     icon={Eye}
-                                                    onClick={() => setSelectedPago(pago)}
+                                                    onClick={() => {
+                                                        if (pago.comprobante_url) {
+                                                            const url = pago.comprobante_url.startsWith('http')
+                                                                ? pago.comprobante_url
+                                                                : `${window.location.origin}/${pago.comprobante_url}`;
+                                                            setPreviewUrl(url);
+                                                            setPreviewTitle(`Comprobante — ${pago.nombre || pago.postulante_cedula} — ${pago.concepto}`);
+                                                        } else {
+                                                            setSelectedPago(pago);
+                                                        }
+                                                    }}
                                                 />
                                                 {pago.comprobante_url && (
-                                                    <a
-                                                        href={pago.comprobante_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = pago.comprobante_url!.startsWith('http')
+                                                                ? pago.comprobante_url!
+                                                                : `${window.location.origin}/${pago.comprobante_url}`;
+                                                            setPreviewUrl(url);
+                                                            setPreviewTitle(`Comprobante — ${pago.nombre || pago.postulante_cedula}`);
+                                                        }}
+                                                        title="Ver comprobante"
+                                                        className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-100 transition-colors"
                                                     >
-                                                        <FileText size={16} />
-                                                    </a>
+                                                        <Eye size={16} />
+                                                    </button>
                                                 )}
                                                 <button
                                                     onClick={() => handleDeletePago(pago.id)}
@@ -423,6 +441,14 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Document Preview Modal — Ojito */}
+            <DocumentPreviewModal
+                isOpen={!!previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                url={previewUrl || ''}
+                title={previewTitle}
+            />
         </div>
     );
 };

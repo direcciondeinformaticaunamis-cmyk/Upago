@@ -1,0 +1,74 @@
+# 🚀 Configuración Upago - UNAMIS Portal (Hostinger)
+
+# 1. Habilitar el motor de reescritura
+RewriteEngine On
+RewriteBase /
+
+# 2. Forzar HTTPS (Obligatorio para seguridad)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 3. REDIRECCIÓN SPA (React Router / Browser State)
+# Si el archivo o directorio solicitado no existe, servir index.html
+# Exceptuamos archivos reales, directorios y rutas específicas de la API
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/assets/
+RewriteCond %{REQUEST_URI} !^/api\.php
+RewriteCond %{REQUEST_URI} !^/api-banco\.php
+RewriteCond %{REQUEST_URI} !^/diagnostico\.php
+RewriteRule . /index.html [L]
+
+# 4. SEGURIDAD: Prevenir listado de directorios
+Options -Indexes
+
+# 5. SEGURIDAD: Bloquear acceso a archivos sensibles
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "package.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# 6. OPTIMIZACIÓN: Compresión Gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+# 7. CACHÉ DE NAVEGADOR (Mejora el puntaje de Lighthouse/SEO)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+# 8. PREVENIR CACHÉ EN INDEX.HTML (Evita problemas de bundles obsoletos)
+<Files "index.html">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </IfModule>
+</Files>

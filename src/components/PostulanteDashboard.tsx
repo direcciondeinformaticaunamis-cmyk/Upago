@@ -7,7 +7,17 @@ import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';
 
 interface PostulanteDashboardProps {
-    user: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; };
+    user: { 
+        nombre: string; 
+        apellido: string; 
+        email: string; 
+        cedula: string; 
+        rol: string; 
+        expediente_aprobado?: boolean; 
+        carrera?: string;
+        sede?: string;
+        tipo_usuario?: string;
+    };
     onLogout: () => void;
 }
 
@@ -18,6 +28,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
         user.expediente_aprobado ? 'pagos' : 'datos'
     );
     const [showModalPago, setShowModalPago] = useState(false);
+    const isMedicina = user.carrera === 'Medicina' || user.carrera?.includes('Medicina');
     const [misPagos, setMisPagos] = useState<Pago[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -87,7 +98,9 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                             <p className="text-xs font-bold text-[var(--text)] truncate">
                                 {user.nombre} {user.apellido}
                             </p>
-                            <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase tracking-wider">{user.rol === 'concursante_docente' ? 'Concursante' : 'Postulante'}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase tracking-wider">
+                                {(user.rol === 'concursante_docente' || user.tipo_usuario === 'concursante_docente') ? 'Docente Titular' : ((user.rol === 'auxiliar_docente' || user.tipo_usuario === 'auxiliar_docente') ? 'Auxiliar Docente' : 'Postulante')}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -113,10 +126,10 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                     ))}
                 </nav>
                 <button 
-                    onClick={() => setShowModalPago(true)} 
-                    disabled={!user.expediente_aprobado}
-                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${user.expediente_aprobado ? 'bg-gradient-to-r from-[#a31e32] to-[#5a0015]' : 'bg-slate-400 cursor-not-allowed'}`}
-                    title={!user.expediente_aprobado ? 'Requiere aprobación de expediente' : ''}
+                    onClick={() => setActiveSection('registro_pago')} 
+                    disabled={!user.expediente_aprobado && !isMedicina && user.rol !== 'concursante_docente' && user.rol !== 'auxiliar_docente'}
+                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${(user.expediente_aprobado || isMedicina || user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente') ? 'bg-gradient-to-r from-[#a31e32] to-[#5a0015]' : 'bg-slate-400 cursor-not-allowed'}`}
+                    title={(!user.expediente_aprobado && !isMedicina && user.rol !== 'concursante_docente' && user.rol !== 'auxiliar_docente') ? 'Requiere aprobación de expediente' : ''}
                 >
                     <CloudUpload style={{fontSize: 18}} />
                     Subir Comprobante
@@ -182,7 +195,10 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                     <div>
                                         <h4 className="font-bold text-amber-800">Aprobación Pendiente</h4>
                                         <p className="text-sm text-amber-700 mt-1">
-                                            Debe esperar a que la Coordinación Académica verifique y apruebe su expediente digital ("Mis Datos"). Una vez aprobado, podrá registrar sus pagos de aranceles.
+                                            {isMedicina 
+                                                ? "Su expediente está en revisión. Sin embargo, por tratarse del Examen de Admisión de Medicina, ya se encuentra habilitado para registrar su comprobante de pago."
+                                                : "Debe esperar a que la Coordinación Académica verifique y apruebe su expediente digital ('Mis Datos'). Una vez aprobado, podrá registrar sus pagos de aranceles."
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -191,7 +207,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                             <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h2 className="text-3xl md:text-4xl font-black text-[#a31e32] tracking-tight mb-2">
-                                {user.rol === 'concursante_docente' ? 'Mis Concursos' : 'Mis Pagos'}
+                                {(user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente') ? 'Mis Concursos' : 'Mis Pagos'}
                             </h2>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                                 <span className="flex items-center gap-2 text-[#43474f] font-medium">
@@ -201,7 +217,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#c3c6d1]"></div>
                                 <span className="flex items-center gap-2 text-[#43474f]">
                                     <School className="text-sm" />
-                                    Lic. en Administración
+                                    {user.carrera || 'Medicina'}
                                 </span>
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#c3c6d1]"></div>
                                 <span className="text-[#43474f] font-mono text-sm bg-[#e6e8ea] px-2 py-0.5 rounded">ID: 2023-0492</span>
@@ -297,7 +313,12 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                             <td className="px-8 py-6 text-xs font-bold text-[var(--text-secondary)]">{pago.fecha_pago || ''}</td>
                                             <td className="px-8 py-6">
                                                 <p className="text-sm font-bold text-[var(--text)]">{pago.concepto}</p>
-                                                <p className="text-[10px] text-[var(--text-muted)] font-medium">Ciclo Académico 2026</p>
+                                                {pago.asignatura && (
+                                                    <p className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100 w-fit mt-1 uppercase tracking-wider">
+                                                        Asignatura: {pago.asignatura}
+                                                    </p>
+                                                )}
+                                                <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Ciclo Académico 2026</p>
                                             </td>
                                             <td className="px-8 py-6 text-sm font-black text-right text-[var(--text)]">
                                                 <span className="text-[10px] font-bold text-[var(--text-muted)] mr-1">PYG</span>
@@ -370,6 +391,9 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                 mode="postulante" 
                                 postulanteName={`${user.nombre} ${user.apellido}`} 
                                 postulanteCedula={user.cedula} 
+                                postulanteCarrera={user.carrera || 'Medicina'}
+                                postulanteSede={user.sede || 'Sede San Ignacio Guazú'}
+                                isDocente={user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente'}
                                 onSuccess={() => setActiveSection('pagos')} 
                                 onBack={() => setActiveSection('pagos')} 
                             />

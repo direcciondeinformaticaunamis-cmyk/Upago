@@ -204,9 +204,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
                                             className="w-full px-5 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[var(--primary)]/20 transition-all outline-none text-slate-600 text-sm font-bold"
                                             required
                                         >
-                                            <option value="postulante">Postulante</option>
-                                            <option value="concursante_docente">Docente Titular / Cátedra</option>
-                                            <option value="auxiliar_docente">Auxiliar de Cátedra</option>
+                                            <option value="postulante">Postulante a Estudiante</option>
+                                            <option value="concursante_docente">Postulante a Docente</option>
+                                            <option value="auxiliar_docente">Postulante a Auxiliar</option>
                                         </select>
                                         <select
                                             value={formData.carrera}

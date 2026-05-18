@@ -16,6 +16,17 @@
 
 <body>
   <div id="root"></div>
+  <script>
+    // Bulletproof: Force de-registration of any active service workers to clean cache instantly
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+          console.log('UNAMIS Cache Cleaned: Service Worker de-registered.');
+        }
+      });
+    }
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

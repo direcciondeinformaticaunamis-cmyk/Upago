@@ -24,6 +24,7 @@ export interface Payment {
     numero_boleta?: string;
     fecha_pago?: string;
     fecha_registro: string;
+    asignatura?: string;
 }
 
 export interface FinanceStats {
@@ -44,6 +45,7 @@ export interface ReconciliationItem {
         postulante: string;
         concepto: string;
         pago_id: number;
+        comprobante_url?: string;
         puntaje: number;
     } | null;
 }
@@ -77,6 +79,12 @@ export const FinanceService = {
     
     botAutoReconcile: async (): Promise<{ status: string, conciliated_count: number }> => {
         return fetchApi('bot_auto_reconcile', {
+            method: 'POST'
+        });
+    },
+
+    importDemoTransactions: async (): Promise<any> => {
+        return fetchApi('import_demo_transactions', {
             method: 'POST'
         });
     },

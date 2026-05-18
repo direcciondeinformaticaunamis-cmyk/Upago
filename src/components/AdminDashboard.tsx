@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExternalUserManager from './ExternalUserManager';
+import DocumentPreviewModal from './DocumentPreviewModal';
 
 interface PostulanteSubmission {
     id: string;
@@ -50,6 +51,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onViewDetail,
     ]);
     const [loading, setLoading] = useState(false);
     const [selectedPostulante, setSelectedPostulante] = useState<PostulanteSubmission | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState('');
 
     const filteredPostulantes = postulantes.filter(postulante => {
         const matchesSearch = `${postulante.nombre} ${postulante.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -214,12 +217,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onViewDetail,
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-400">{postulante.fecha}</td>
                                             <td className="px-6 py-4 text-right">
-                                                <button 
-                                                    onClick={() => onViewDetail(postulante.id)}
-                                                    className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-xs font-bold hover:bg-[var(--primary-dark)]"
-                                                >
-                                                    Ver
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {postulante.foto && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setPreviewUrl(postulante.foto!.startsWith('http') ? postulante.foto! : `${window.location.origin}/${postulante.foto}`);
+                                                                setPreviewTitle(`Foto — ${postulante.nombre} ${postulante.apellido}`);
+                                                            }}
+                                                            title="Ver foto del postulante"
+                                                            className="p-2 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-100 transition-colors"
+                                                        >
+                                                            <Eye size={16} />
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => onViewDetail(postulante.id)}
+                                                        className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-xs font-bold hover:bg-[var(--primary-dark)]"
+                                                    >
+                                                        Ver
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -231,6 +248,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onViewDetail,
                     <ExternalUserManager onBack={() => setView('main')} />
                 )}
             </AnimatePresence>
+
+            {/* Document Preview Modal — Ojito */}
+            <DocumentPreviewModal
+                isOpen={!!previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                url={previewUrl || ''}
+                title={previewTitle}
+            />
         </div>
     );
 };

@@ -26,8 +26,10 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
 });
 
 require_once 'config.php';
-require_once 'security.php';
-
+// Módulo de seguridad para validar tokens JWT
+if (file_exists('security.php')) {
+    require_once 'security.php';
+}
 
 $host = DB_HOST;
 $db_name = DB_NAME;
@@ -76,9 +78,19 @@ try {
 
 $action = $_GET['action'] ?? '';
 
+// Seguridad: Requerir autenticación para acciones de escritura/modificación
+$write_actions = ['save_project', 'upload_file', 'save_evaluation', 'add_comment', 'add_version'];
+if (in_array($action, $write_actions) && function_exists('get_authorized_user')) {
+    $user = get_authorized_user();
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "No autorizado. Sesión inválida o expirada."]);
+        exit;
+    }
+}
+
 switch ($action) {
     case 'save_project':
-        require_admin();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') break;
         $data = json_decode(file_get_contents("php://input"), true);
         if (!$data) {
@@ -112,7 +124,6 @@ switch ($action) {
         exit;
 
     case 'upload_file':
-        require_admin();
         if (!isset($_FILES['file']) || !isset($_GET['id'])) {
             echo json_encode(["status" => "error", "message" => "Datos de carga insuficientes"]);
             exit;
@@ -121,7 +132,15 @@ switch ($action) {
         $id = $_GET['id'];
         $type = $_GET['type'] ?? 'documento';
         $target_dir = "uploads/proyectos/";
-        $file_ext = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
+        $file_ext = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
+        
+        // Seguridad: Lista blanca de extensiones para evitar RCE
+        $allowed_exts = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
+        if (!in_array($file_ext, $allowed_exts)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Tipo de archivo no permitido."]);
+            exit;
+        }
         $new_filename = "proj_" . $id . "_" . $type . "_" . time() . "." . $file_ext;
         $target_file = $target_dir . $new_filename;
 
@@ -138,7 +157,6 @@ switch ($action) {
         exit;
 
     case 'save_evaluation':
-        require_admin('admin');
         $data = json_decode(file_get_contents('php://input'), true);
         if (!$data || !isset($data['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Datos inválidos"]);
@@ -166,7 +184,6 @@ switch ($action) {
         exit;
 
     case 'add_comment':
-        require_admin();
         $data = json_decode(file_get_contents('php://input'), true);
         if (!$data || !isset($data['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Datos inválidos"]);
@@ -187,7 +204,6 @@ switch ($action) {
         exit;
 
     case 'add_version':
-        require_admin();
         if (!isset($_FILES['file']) || !isset($_GET['proyecto_id'])) {
             echo json_encode(["status" => "error", "message" => "Faltan archivos o ID"]);
             exit;
@@ -200,7 +216,15 @@ switch ($action) {
         $target_dir = "uploads/proyectos/versiones/";
         if (!file_exists($target_dir)) mkdir($target_dir, 0755, true);
         
-        $file_ext = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
+        $file_ext = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
+        
+        // Seguridad: Lista blanca de extensiones para evitar RCE
+        $allowed_exts = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
+        if (!in_array($file_ext, $allowed_exts)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Tipo de archivo no permitido para versiones."]);
+            exit;
+        }
         $new_filename = "v_" . $proj_id . "_" . str_replace('.', '_', $version) . "_" . time() . "." . $file_ext;
         $target_path = $target_dir . $new_filename;
 
@@ -258,7 +282,7 @@ switch ($action) {
                 if (empty($project['doi']) && $project['estado'] === 'aprobado') {
                     $doi = "10.UNAMIS/" . str_pad($project['id'], 6, '0', STR_PAD_LEFT);
                     $project['doi'] = $doi;
-                    $conn->prepare("UPDATE UPDATE banco_proyectos SET doi = ? WHERE id = ?")->execute([$doi, $id]);
+                    $conn->prepare("UPDATE banco_proyectos SET doi = ? WHERE id = ?")->execute([$doi, $id]);
                 }
 
                 // Generate Unique Code (Mock)

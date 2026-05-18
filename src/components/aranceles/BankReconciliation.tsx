@@ -17,12 +17,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FinanceService, ReconciliationItem } from '../../services/FinanceService';
+import DocumentPreviewModal from '../DocumentPreviewModal';
 
 const BankReconciliation: React.FC = () => {
     const [systemRecords, setSystemRecords] = useState<ReconciliationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isImporting, setIsImporting] = useState(false);
     const [isBotOpen, setIsBotOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState<string>('');
     const [messageInput, setMessageInput] = useState('');
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: '¡Hola! Soy tu asistente de Inteligencia Artificial para conciliación. Estoy listo para ayudarte a cuadrar las cuentas.' }
@@ -65,7 +68,7 @@ const BankReconciliation: React.FC = () => {
     const handleImport = async () => {
         setIsImporting(true);
         try {
-            await fetch('api.php?import_demo_transactions=true', { method: 'POST' });
+            await FinanceService.importDemoTransactions();
             await loadRecords();
             setChatMessages(prev => [...prev, { 
                 role: 'bot', 
@@ -252,7 +255,19 @@ const BankReconciliation: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-5 text-center whitespace-nowrap">
                                             <div className="flex items-center justify-center gap-3">
-                                                <button className="text-slate-400 hover:text-[#001738] transition-colors">
+                                                <button 
+                                                    onClick={() => {
+                                                        if (row.match && row.match.comprobante_url) {
+                                                            setPreviewUrl(row.match.comprobante_url);
+                                                            setPreviewTitle(`Comprobante - ${row.match.postulante}`);
+                                                        } else {
+                                                            alert('Esta transacción no tiene comprobante adjunto o aún no ha sido vinculada con un pago.');
+                                                        }
+                                                    }}
+                                                    disabled={!row.match?.comprobante_url}
+                                                    className={`${row.match?.comprobante_url ? 'text-[#002f6c] hover:text-[#001738] hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
+                                                    title={row.match?.comprobante_url ? 'Ver Comprobante Cargado' : 'Sin comprobante disponible'}
+                                                >
                                                     <Eye size={18} />
                                                 </button>
                                                 <button 
@@ -419,6 +434,12 @@ const BankReconciliation: React.FC = () => {
                     <Bot size={24} />
                 </motion.button>
             </div>
+            <DocumentPreviewModal 
+                isOpen={!!previewUrl} 
+                onClose={() => setPreviewUrl(null)} 
+                url={previewUrl || ''} 
+                title={previewTitle} 
+            />
         </div>
     );
 };

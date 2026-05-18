@@ -10,8 +10,15 @@ import {
     Camera,
     CheckCircle2,
     FileText,
-    School
+    School,
+    ChevronDown,
+    Calendar,
+    Activity,
+    Heart,
+    HeartPulse,
+    Eye
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import AppInput from './ui/AppInput';
 import AppButton from './ui/AppButton';
 import SectionTitle from './ui/SectionTitle';
@@ -36,7 +43,7 @@ interface FormData {
     barrio?: string;
     carrera: string;
     sede: string;
-    tipoUsuario: 'postulante' | 'concursante_docente';
+    tipoUsuario: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
 
     // Datos de Salud
     grupoSanguineo?: string;
@@ -92,7 +99,16 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
     const availableCareers = formData.sede ? getCarrerasPorSede(formData.sede) : [];
 
     return (
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium p-8 md:p-12 relative overflow-hidden">
+        <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium p-6 md:p-12 relative overflow-hidden"
+        >
+            {/* Background elements */}
+            <div className="absolute -right-24 -top-24 w-96 h-96 bg-[var(--primary-50)] rounded-full blur-3xl opacity-50 pointer-events-none" />
+            <div className="absolute -left-24 bottom-10 w-80 h-80 bg-slate-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
+
             <input
                 type="file"
                 ref={fileInputRef}
@@ -101,41 +117,47 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                 className="hidden"
             />
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-100 pb-8 relative z-10">
                 <div>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">
-                        Paso 01
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-1 uppercase">
+                        Formulario de Admisión 2026
                     </h2>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Identificación y Registro</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Paso 01: Ficha de Datos Personales y Académicos</p>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <CheckCircle2 size={12} className="text-slate-400" /> Formulario Oficial UNAMIS
+                <div className="flex items-center gap-2.5 px-4 py-2 bg-[var(--primary-50)] rounded-2xl border border-[var(--primary-100)] text-[10px] font-black text-[var(--primary)] uppercase tracking-widest shadow-sm">
+                    <CheckCircle2 size={14} className="text-[var(--primary)]" /> Portal Oficial UNAMIS
                 </div>
             </div>
 
-            <div className="space-y-16">
+            <div className="space-y-16 relative z-10">
                 {/* Section 1: Identidad */}
-                <section>
+                <motion.section 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="p-6 md:p-8 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-200/80 transition-all duration-300"
+                >
                     <SectionTitle
                         title={formData.tipoUsuario === 'concursante_docente' ? "Identidad del Concursante" : "Identidad del Postulante"}
-                        subtitle="Asegúrese de que sus datos coincidan exactamente con su cédula de identidad."
+                        subtitle="Asegúrese de que sus datos coincidan exactamente con su cédula de identidad civil."
                         icon={User}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
                         {/* Photo Upload Card */}
                         <div className="md:col-span-2">
-                            <div
+                            <motion.div
+                                whileHover={{ y: -2 }}
                                 onClick={handlePhotoClick}
                                 className={`
-                                    relative group cursor-pointer overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-500
-                                    ${photo ? 'border-primary/20 bg-primary-soft' : 'border-slate-200 bg-slate-50/50 hover:border-primary/40 hover:bg-primary-soft/50'}
+                                    relative group cursor-pointer overflow-hidden rounded-[2rem] border-2 border-dashed transition-all duration-500
+                                    ${photo ? 'border-[var(--primary)]/30 bg-[var(--primary-50)]' : 'border-slate-200 bg-white hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/50'}
                                 `}
                             >
                                 <div className="p-8 flex flex-col md:flex-row items-center gap-8">
                                     <div className={`
-                                        w-24 h-32 rounded-2xl flex items-center justify-center transition-all duration-500 border shadow-sm flex-shrink-0
-                                        ${photo ? 'bg-white border-primary/10' : 'bg-white border-slate-100 text-slate-300 group-hover:text-primary'}
+                                        w-24 h-32 rounded-2xl flex items-center justify-center transition-all duration-500 border shadow-md flex-shrink-0 relative overflow-hidden
+                                        ${photo ? 'bg-white border-[var(--primary)]/10' : 'bg-slate-50 border-slate-100 text-slate-300 group-hover:text-[var(--primary)]'}
                                     `}>
                                         {photo ? (
                                             <img src={photo} alt="Preview" className="w-full h-full object-cover rounded-xl" />
@@ -145,11 +167,11 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     </div>
 
                                     <div className="flex-1 text-center md:text-left">
-                                        <h4 className="text-base font-bold text-slate-800 mb-1">
-                                            {photo ? 'Fotografía cargada correctamente' : 'Cargar Fotografía Oficial'}
+                                        <h4 className="text-base font-black text-slate-800 mb-1 tracking-tight">
+                                            {photo ? 'Fotografía cargada correctamente' : 'Fotografía Digital Oficial'}
                                         </h4>
-                                        <p className="text-xs text-slate-500 mb-6 max-w-sm">
-                                            La imagen debe ser de frente, con fondo claro y buena iluminación para el carnet institucional.
+                                        <p className="text-xs text-slate-500 mb-4 max-w-sm font-medium leading-relaxed">
+                                            Suba una foto tipo carnet (de frente, fondo claro y buena iluminación) para su identificación académica oficial.
                                         </p>
                                         <AppButton
                                             variant={photo ? 'secondary' : 'primary'}
@@ -157,17 +179,17 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                             icon={UploadCloud}
                                             onClick={(e) => { e.stopPropagation(); handlePhotoClick(); }}
                                         >
-                                            {photo ? 'Cambiar Imagen' : 'Seleccionar Archivo'}
+                                            {photo ? 'Cambiar Imagen' : 'Subir Foto'}
                                         </AppButton>
                                     </div>
 
                                     {photo && (
-                                        <div className="hidden md:flex items-center gap-2 text-success font-black text-[10px] uppercase tracking-widest">
-                                            <CheckCircle2 size={16} /> Verificado
+                                        <div className="hidden md:flex items-center gap-2 text-[var(--success)] font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
+                                            <CheckCircle2 size={16} /> Listo
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
                         <AppInput
@@ -175,7 +197,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             placeholder="Ej: Juan Antonio"
                             value={formData.nombre}
                             onChange={(e) => onChange('nombre', e.target.value)}
-                            error={errors.includes('nombre') ? 'Nombre requerido' : ''}
+                            error={errors.includes('nombre') ? 'El nombre es obligatorio' : ''}
                         />
 
                         <AppInput
@@ -183,7 +205,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             placeholder="Ej: Pérez González"
                             value={formData.apellido}
                             onChange={(e) => onChange('apellido', e.target.value)}
-                            error={errors.includes('apellido') ? 'Apellido requerido' : ''}
+                            error={errors.includes('apellido') ? 'El apellido es obligatorio' : ''}
                         />
 
                         <AppInput
@@ -192,7 +214,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             icon={CreditCard}
                             value={formData.cedula}
                             onChange={(e) => onChange('cedula', e.target.value)}
-                            error={errors.includes('cedula') ? 'Documento requerido' : ''}
+                            error={errors.includes('cedula') ? 'La cédula es obligatoria' : ''}
                         />
 
                         <AppInput
@@ -207,7 +229,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             label="Fecha de Nacimiento"
                             value={formData.fechaNacimiento}
                             onChange={(val) => onChange('fechaNacimiento', val)}
-                            error={errors.includes('fechaNacimiento') ? 'Seleccione fecha' : ''}
+                            error={errors.includes('fechaNacimiento') ? 'La fecha es obligatoria' : ''}
                         />
 
                         <div className="grid grid-cols-2 gap-4">
@@ -244,19 +266,21 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             </label>
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {['Soltero', 'Casado', 'Divorciado', 'Otro'].map((ec) => (
-                                    <button
+                                    <motion.button
+                                        whileHover={{ y: -1 }}
+                                        whileTap={{ scale: 0.98 }}
                                         key={ec}
                                         type="button"
                                         onClick={() => onChange('estadoCivil', ec)}
                                         className={`
-                                            px-2 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all
+                                            px-2 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300
                                             ${formData.estadoCivil === ec
-                                                ? 'bg-slate-800 text-white border-slate-800'
-                                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}
+                                                ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'}
                                         `}
                                     >
                                         {ec}
-                                    </button>
+                                    </motion.button>
                                 ))}
                             </div>
                         </div>
@@ -267,141 +291,194 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             </label>
                             <div className="grid grid-cols-3 gap-3">
                                 {['Masculino', 'Femenino', 'Otro'].map((g) => (
-                                    <button
+                                    <motion.button
+                                        whileHover={{ y: -1 }}
+                                        whileTap={{ scale: 0.98 }}
                                         key={g}
                                         type="button"
                                         onClick={() => onChange('genero', g)}
                                         className={`
                                             px-4 py-3.5 rounded-xl text-xs font-bold border transition-all duration-300
                                             ${formData.genero === g
-                                                ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                                                : 'bg-white text-slate-500 border-slate-200 hover:border-primary/30'}
+                                                ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary-100)]'
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-[var(--primary)]/30 hover:text-[var(--primary)]'}
                                             ${errors.includes('genero') && !formData.genero ? 'border-danger bg-danger-soft/30' : ''}
                                         `}
                                     >
                                         {g}
-                                    </button>
+                                    </motion.button>
                                 ))}
                             </div>
                         </div>
                     </div>
-                </section>
+                </motion.section>
 
-                {/* Section 2: Datos Académicos */}
-                <section>
+                {/* Section 2: Tipo de Registro */}
+                <motion.section 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="p-6 md:p-8 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-200/80 transition-all duration-300"
+                >
                     <SectionTitle
                         title="Tipo de Registro"
                         subtitle="Seleccione su perfil de ingreso a la UNAMIS."
                         icon={GraduationCap}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-10">
-                        <div className="flex flex-col gap-1.5 w-full md:col-span-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
+                        <div className="flex flex-col gap-1.5 w-full md:col-span-2">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
                                 Perfil del Solicitante
                             </label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <button
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <motion.button
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.99 }}
                                     type="button"
                                     onClick={() => onChange('tipoUsuario', 'postulante')}
-                                    className={`px-6 py-4 rounded-xl text-left transition-all duration-300 border-2 ${
+                                    className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
                                         formData.tipoUsuario === 'postulante' || !formData.tipoUsuario
-                                            ? 'bg-primary/5 border-primary shadow-md'
-                                            : 'bg-white border-slate-100 text-slate-400 grayscale'
+                                            ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
+                                            : 'bg-white/50 border-slate-100 text-slate-400'
                                     }`}
                                 >
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-black text-slate-800">Soy Postulante</span>
-                                        <span className="text-[10px] font-bold opacity-60 uppercase">Para ingreso a carreras</span>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'postulante' || !formData.tipoUsuario ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                            <User size={22} />
+                                        </div>
+                                        <div className="flex flex-col text-left">
+                                            <span className="text-sm font-black tracking-tight">Postulante a Estudiante</span>
+                                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider mt-0.5">Carreras de Grado</span>
+                                        </div>
                                     </div>
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.99 }}
                                     type="button"
                                     onClick={() => onChange('tipoUsuario', 'concursante_docente')}
-                                    className={`px-6 py-4 rounded-xl text-left transition-all duration-300 border-2 ${
+                                    className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
                                         formData.tipoUsuario === 'concursante_docente'
-                                            ? 'bg-primary/5 border-primary shadow-md'
-                                            : 'bg-white border-slate-100 text-slate-400 grayscale'
+                                            ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
+                                            : 'bg-white/50 border-slate-100 text-slate-400'
                                     }`}
                                 >
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-black text-slate-800">Soy Concursante</span>
-                                        <span className="text-[10px] font-bold opacity-60 uppercase leading-tight">Docentes Encargados de Cátedras y Auxiliares</span>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'concursante_docente' ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                            <School size={22} />
+                                        </div>
+                                        <div className="flex flex-col text-left">
+                                            <span className="text-sm font-black tracking-tight">Postulante a Docente</span>
+                                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider mt-0.5">Encargado de Cátedra</span>
+                                        </div>
                                     </div>
-                                </button>
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.99 }}
+                                    type="button"
+                                    onClick={() => onChange('tipoUsuario', 'auxiliar_docente')}
+                                    className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
+                                        formData.tipoUsuario === 'auxiliar_docente'
+                                            ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
+                                            : 'bg-white/50 border-slate-100 text-slate-400'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'auxiliar_docente' ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                            <GraduationCap size={22} />
+                                        </div>
+                                        <div className="flex flex-col text-left">
+                                            <span className="text-sm font-black tracking-tight">Postulante a Auxiliar</span>
+                                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider mt-0.5">Auxiliar de Enseñanza</span>
+                                        </div>
+                                    </div>
+                                </motion.button>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex flex-col gap-1.5 w-full relative">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
                                 Sede / Campus
                             </label>
-                            <select
-                                value={formData.sede}
-                                onChange={(e) => {
-                                    onChange('sede', e.target.value);
-                                    onChange('carrera', ''); // Reset career when sede changes
-                                }}
-                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-primary transition-colors appearance-none"
-                            >
-                                <option value="">Seleccionar sede...</option>
-                                {Object.keys(CATALOGO_UNAMIS).map(sede => (
-                                    <option key={sede} value={sede}>{sede}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={formData.sede}
+                                    onChange={(e) => {
+                                        onChange('sede', e.target.value);
+                                        onChange('carrera', ''); // Reset career when sede changes
+                                    }}
+                                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-[var(--primary)] transition-all appearance-none pr-12 focus:ring-4 focus:ring-[var(--primary)]/5"
+                                >
+                                    <option value="">Seleccionar sede...</option>
+                                    {Object.keys(CATALOGO_UNAMIS).map(sede => (
+                                        <option key={sede} value={sede}>{sede}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex flex-col gap-1.5 w-full relative">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
                                 Carrera / Programa
                             </label>
-                            <select
-                                value={formData.carrera}
-                                onChange={(e) => onChange('carrera', e.target.value)}
-                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-primary transition-colors appearance-none"
-                                disabled={!formData.sede}
-                            >
-                                <option value="">{formData.sede ? 'Seleccionar carrera...' : 'Primero seleccione una sede'}</option>
-                                {availableCareers.map(carrera => (
-                                    <option key={carrera} value={carrera}>{carrera}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={formData.carrera}
+                                    onChange={(e) => onChange('carrera', e.target.value)}
+                                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-[var(--primary)] transition-all appearance-none pr-12 disabled:opacity-50 focus:ring-4 focus:ring-[var(--primary)]/5"
+                                    disabled={!formData.sede}
+                                >
+                                    <option value="">{formData.sede ? 'Seleccionar carrera...' : 'Primero seleccione una sede'}</option>
+                                    {availableCareers.map(carrera => (
+                                        <option key={carrera} value={carrera}>{carrera}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
-                </section>
+                </motion.section>
 
-                {/* Section 2: Contacto */}
-                <section>
+                {/* Section 3: Contacto */}
+                <motion.section 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="p-6 md:p-8 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-200/80 transition-all duration-300"
+                >
                     <SectionTitle
                         title="Contacto y Ubicación"
-                        subtitle="Utilizaremos estos medios para notificarle sobre el estado de su admisión."
+                        subtitle="Utilizaremos estos medios para notificarle sobre el estado de su admisión académica."
                         icon={Mail}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
                         <AppInput
                             type="email"
                             label="Correo Electrónico"
                             placeholder="ejemplo@correo.com"
                             value={formData.correo}
                             onChange={(e) => onChange('correo', e.target.value)}
-                            error={errors.includes('correo') ? 'Email inválido' : ''}
+                            error={errors.includes('correo') ? 'Ingrese un email válido' : ''}
                         />
 
                         <AppInput
                             type="tel"
                             label="Teléfono Móvil"
-                            placeholder="09xx xxx xxx"
+                            placeholder="Ej: 0981 123 456"
                             value={formData.telefono}
                             onChange={(e) => onChange('telefono', e.target.value)}
-                            error={errors.includes('telefono') ? 'Teléfono requerido' : ''}
+                            error={errors.includes('telefono') ? 'El teléfono es obligatorio' : ''}
                         />
 
                         <AppInput
-                            label="Dirección Actual"
-                            placeholder="Ciudad y número de casa"
+                            label="Dirección de Domicilio"
+                            placeholder="Calle, número de casa, referencias"
                             icon={MapPin}
                             value={formData.direccion}
                             onChange={(e) => onChange('direccion', e.target.value)}
-                            error={errors.includes('direccion') ? 'Dirección requerida' : ''}
+                            error={errors.includes('direccion') ? 'La dirección es obligatoria' : ''}
                         />
 
                         <AppInput
@@ -411,28 +488,32 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             onChange={(e) => onChange('barrio', e.target.value)}
                         />
                     </div>
-                </section>
+                </motion.section>
 
                 {/* Section: Salud (Only for Medicine/Postulantes) */}
-                {formData.carrera === 'Medicina' && (
-                    <section>
+                {formData.carrera && formData.carrera.includes('Medicina') && (
+                    <motion.section 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-6 md:p-8 bg-emerald-50/10 rounded-3xl border border-emerald-100 hover:border-emerald-200/80 transition-all duration-300"
+                    >
                         <SectionTitle
                             title="Datos de Salud"
-                            subtitle="Información vital para la ficha médica institucional."
-                            icon={FileText}
+                            subtitle="Ficha médica requerida por la Dirección de la Carrera de Medicina."
+                            icon={Activity}
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <AppInput
-                                    label="Grupo Sanguíneo/RH"
+                                    label="Grupo Sanguíneo / RH"
                                     placeholder="Ej: O+"
                                     value={formData.grupoSanguineo}
                                     onChange={(e) => onChange('grupoSanguineo', e.target.value)}
                                 />
                                 <AppInput
                                     label="Alergias"
-                                    placeholder="Ninguna"
+                                    placeholder="Ej: Penicilina o Ninguna"
                                     value={formData.alergico}
                                     onChange={(e) => onChange('alergico', e.target.value)}
                                 />
@@ -444,68 +525,75 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {['Público', 'Privado', 'Ninguno'].map((sm) => (
-                                        <button
+                                        <motion.button
+                                            whileHover={{ y: -1 }}
+                                            whileTap={{ scale: 0.98 }}
                                             key={sm}
                                             type="button"
                                             onClick={() => onChange('seguroMedico', sm)}
                                             className={`
-                                                px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all
+                                                px-3 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300
                                                 ${formData.seguroMedico === sm
-                                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-200'
-                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200'}
+                                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100'
+                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-300 hover:text-emerald-600'}
                                             `}
                                         >
                                             {sm}
-                                        </button>
+                                        </motion.button>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="flex flex-col gap-1.5 w-full">
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
-                                    ¿Alguna Discapacidad?
+                                    ¿Presenta alguna Discapacidad?
                                 </label>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-1.5">
                                     {['Ninguna', 'Visual', 'Motriz', 'Auditiva', 'Otras'].map((d) => (
-                                        <button
+                                        <motion.button
+                                            whileTap={{ scale: 0.97 }}
                                             key={d}
                                             type="button"
                                             onClick={() => onChange('discapacidad', d)}
                                             className={`
-                                                px-2 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all
+                                                px-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300
                                                 ${formData.discapacidad === d
-                                                    ? 'bg-amber-500 text-white border-amber-500'
-                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-amber-200'}
+                                                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-amber-300'}
                                             `}
                                         >
                                             {d}
-                                        </button>
+                                        </motion.button>
                                     ))}
                                 </div>
                             </div>
 
                             <AppInput
-                                label="Enfermedad Crónica / Otros detalles"
-                                placeholder="Especifique si aplica..."
+                                label="Enfermedades Crónicas o Observaciones"
+                                placeholder="Especifique patologías previas si aplica"
                                 value={formData.enfermedadCronica}
                                 onChange={(e) => onChange('enfermedadCronica', e.target.value)}
                             />
                         </div>
-                    </section>
+                    </motion.section>
                 )}
 
                 {/* Section: Antecedentes Académicos/Laborales (Only for Medicine/Postulantes) */}
-                {formData.carrera === 'Medicina' && (
-                    <section>
+                {formData.carrera && formData.carrera.includes('Medicina') && (
+                    <motion.section 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-6 md:p-8 bg-blue-50/10 rounded-3xl border border-blue-100 hover:border-blue-200/80 transition-all duration-300"
+                    >
                         <SectionTitle
                             title="Antecedentes Académicos y Laborales"
-                            subtitle="Información sobre su formación previa y situación laboral actual."
+                            subtitle="Información de su colegio secundario y situación laboral actual."
                             icon={School}
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
                             <AppInput
-                                label="Nombre del Colegio / Institución"
+                                label="Nombre de la Institución de Egreso"
                                 placeholder="Ej: Colegio Nacional de la Capital"
                                 value={formData.colegioNombre}
                                 onChange={(e) => onChange('colegioNombre', e.target.value)}
@@ -526,23 +614,25 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
 
                             <div className="flex flex-col gap-1.5 w-full">
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
-                                    Tipo de Colegio
+                                    Tipo de Institución
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {['Público', 'Privado', 'Subvencionado'].map((tc) => (
-                                        <button
+                                        <motion.button
+                                            whileHover={{ y: -1 }}
+                                            whileTap={{ scale: 0.98 }}
                                             key={tc}
                                             type="button"
                                             onClick={() => onChange('colegioTipo', tc)}
                                             className={`
-                                                px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all
+                                                px-3 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300
                                                 ${formData.colegioTipo === tc
-                                                    ? 'bg-slate-800 text-white border-slate-800'
+                                                    ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
                                                     : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}
                                             `}
                                         >
                                             {tc}
-                                        </button>
+                                        </motion.button>
                                     ))}
                                 </div>
                             </div>
@@ -552,60 +642,66 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     label="Año de Egreso"
                                     type="number"
                                     value={formData.egresoAnio}
-                                    onChange={(e) => onChange('egresoAnio', e.target.value)}
+                                    onChange={(e) => onChange('egresoAnio', parseInt(e.target.value) || undefined)}
                                 />
                                 <AppInput
-                                    label="Promedio Final"
+                                    label="Promedio Final de Calificación"
                                     type="number"
                                     step="0.01"
                                     value={formData.egresoPromedio}
-                                    onChange={(e) => onChange('egresoPromedio', e.target.value)}
+                                    onChange={(e) => onChange('egresoPromedio', parseFloat(e.target.value) || undefined)}
                                 />
                             </div>
 
-                            <div className="flex flex-col gap-1.5 w-full md:col-span-2 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Situación Laboral</label>
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    <div className="flex items-center gap-4">
+                            <div className="flex flex-col gap-1.5 w-full md:col-span-2 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Situación Laboral Actual</label>
+                                <div className="flex flex-col md:flex-row gap-6 items-center">
+                                    <div className="flex items-center gap-4 shrink-0">
                                         <span className="text-xs font-bold text-slate-600">¿Trabaja actualmente?</span>
-                                        <div className="flex bg-white rounded-lg p-1 border border-slate-200">
+                                        <div className="flex bg-white rounded-xl p-1 border border-slate-200 shadow-sm">
                                             <button 
+                                                type="button"
                                                 onClick={() => onChange('trabaja', true)}
-                                                className={`px-4 py-1 rounded text-[10px] font-bold uppercase transition-all ${formData.trabaja ? 'bg-primary text-white' : 'text-slate-400'}`}
+                                                className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${formData.trabaja ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-slate-400'}`}
                                             >Sí</button>
                                             <button 
+                                                type="button"
                                                 onClick={() => onChange('trabaja', false)}
-                                                className={`px-4 py-1 rounded text-[10px] font-bold uppercase transition-all ${!formData.trabaja ? 'bg-slate-200 text-slate-600' : 'text-slate-400'}`}
+                                                className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${!formData.trabaja ? 'bg-slate-200 text-slate-600 shadow-inner' : 'text-slate-400'}`}
                                             >No</button>
                                         </div>
                                     </div>
                                     
                                     {formData.trabaja && (
-                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <motion.div 
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
+                                        >
                                             <AppInput
                                                 label="Empresa / Institución"
-                                                placeholder="Nombre de la empresa"
+                                                placeholder="Ej: Ministerio de Salud"
                                                 value={formData.empresaNombre}
                                                 onChange={(e) => onChange('empresaNombre', e.target.value)}
                                             />
                                             <AppInput
-                                                label="Cargo y Horario"
-                                                placeholder="Ej: Analista - 08:00 a 17:00"
+                                                label="Cargo y Horario de Trabajo"
+                                                placeholder="Ej: Asistente - 07:00 a 13:00"
                                                 value={formData.cargo}
                                                 onChange={(e) => onChange('cargo', e.target.value)}
                                             />
-                                        </div>
+                                        </motion.div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </motion.section>
                 )}
             </div>
 
             <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <CheckCircle2 size={14} className="text-success" /> Verifique que todos los datos sean correctos
+                    <CheckCircle2 size={14} className="text-[var(--success)]" /> Verifique todos los campos obligatorios antes de avanzar
                 </div>
                 <AppButton
                     size="lg"
@@ -615,10 +711,10 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                     className="w-full sm:w-auto"
                     loading={isLoading}
                 >
-                    {isLoading ? 'Guardando...' : 'Finalizar Registro'}
+                    {isLoading ? 'Guardando datos...' : 'Siguiente: Carga de Documentos'}
                 </AppButton>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

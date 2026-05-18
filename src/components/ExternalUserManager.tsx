@@ -11,7 +11,8 @@ import {
     ArrowLeft,
     Shield,
     Users,
-    Info
+    Info,
+    Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -116,6 +117,43 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
             alert('Error de conexión con el servidor al intentar migrar la cuenta.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+        
+        if (!window.confirm(`¿Está completamente seguro de eliminar permanentemente al usuario ${selectedUser.nombre} ${selectedUser.apellido} (CI: ${selectedUser.cedula})?\nEsta acción no se puede deshacer y borrará toda la información vinculada a su expediente.`)) {
+            return;
+        }
+
+        setDeleteLoading(true);
+        try {
+            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
+            const response = await fetch(`${baseUrl}/api.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete_external_user',
+                    cedula: selectedUser.cedula,
+                    admin_user: 'superadmin'
+                })
+            });
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert('Usuario eliminado permanentemente.');
+                setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+                setSelectedUser(null);
+            } else {
+                alert(result.message || 'Error al eliminar el usuario.');
+            }
+        } catch (error) {
+            alert('Error de conexión con el servidor.');
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -261,6 +299,24 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
                                             <CheckCircle2 size={20} />
                                         ) : (
                                             <>Vincular y Promover <ShieldCheck size={20} /></>
+                                        )}
+                                    </button>
+
+                                    <div className="relative flex py-2 items-center">
+                                        <div className="flex-grow border-t border-slate-100"></div>
+                                        <span className="flex-shrink mx-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Otras Acciones</span>
+                                        <div className="flex-grow border-t border-slate-100"></div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleDelete}
+                                        disabled={deleteLoading || loading}
+                                        className="w-full py-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all disabled:opacity-50 flex items-center justify-center gap-3 border border-red-200"
+                                    >
+                                        {deleteLoading ? (
+                                            <Loader2 className="animate-spin" size={20} />
+                                        ) : (
+                                            <>Eliminar Usuario Permanentemente <Trash2 size={18} /></>
                                         )}
                                     </button>
                                 </div>

@@ -6,7 +6,16 @@ import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';
 
 interface StudentDashboardProps {
-    user: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; };
+    user: { 
+        nombre: string; 
+        apellido: string; 
+        email: string; 
+        cedula: string; 
+        rol: string; 
+        expediente_aprobado?: boolean; 
+        carrera?: string;
+        sede?: string;
+    };
     onLogout: () => void;
 }
 
@@ -17,6 +26,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
         user.expediente_aprobado ? 'pagos' : 'datos'
     );
     const [showModalPago, setShowModalPago] = useState(false);
+    const isMedicina = user.carrera === 'Medicina' || user.carrera?.includes('Medicina');
     const [misPagos, setMisPagos] = useState<Pago[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -109,10 +119,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     </button>
                 </nav>
                 <button 
-                    onClick={() => setShowModalPago(true)} 
-                    disabled={!user.expediente_aprobado}
-                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${user.expediente_aprobado ? 'bg-gradient-to-r from-[#a31e32] to-[#7a1424]' : 'bg-slate-400 cursor-not-allowed'}`}
-                    title={!user.expediente_aprobado ? 'Requiere aprobación de expediente' : ''}
+                    onClick={() => setActiveSection('registro_pago')} 
+                    disabled={!user.expediente_aprobado && !isMedicina}
+                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${(user.expediente_aprobado || isMedicina) ? 'bg-gradient-to-r from-[#a31e32] to-[#7a1424]' : 'bg-slate-400 cursor-not-allowed'}`}
+                    title={(!user.expediente_aprobado && !isMedicina) ? 'Requiere aprobación de expediente' : ''}
                 >
                     <CloudUpload style={{fontSize: 18}} />
                     Subir Comprobante
@@ -159,7 +169,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                     <div>
                                         <h4 className="font-bold text-amber-800">Aprobación Pendiente</h4>
                                         <p className="text-sm text-amber-700 mt-1">
-                                            Debe esperar a que la Coordinación Académica verifique y apruebe su expediente digital ("Mis Datos"). Una vez aprobado, podrá registrar sus pagos de aranceles.
+                                            {isMedicina 
+                                                ? "Su expediente está en revisión. Sin embargo, por tratarse del Examen de Admisión de Medicina, ya se encuentra habilitado para registrar su comprobante de pago."
+                                                : "Debe esperar a que la Coordinación Académica verifique y apruebe su expediente digital ('Mis Datos'). Una vez aprobado, podrá registrar sus pagos de aranceles."
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -178,7 +191,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#c3c6d1]"></div>
                                 <span className="flex items-center gap-2 text-[#43474f]">
                                     <School className="text-sm" />
-                                    Lic. en Administración
+                                    {user.carrera || 'Medicina'}
                                 </span>
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#c3c6d1]"></div>
                                 <span className="text-[#43474f] font-mono text-sm bg-[#e6e8ea] px-2 py-0.5 rounded">ID: 2023-0492</span>
@@ -346,6 +359,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 mode="postulante" 
                                 postulanteName={`${user.nombre} ${user.apellido}`} 
                                 postulanteCedula={user.cedula} 
+                                postulanteCarrera={user.carrera || 'Medicina'}
+                                postulanteSede={user.sede || 'Sede San Ignacio Guazú'}
                                 onSuccess={() => setActiveSection('pagos')} 
                                 onBack={() => setActiveSection('pagos')} 
                             />

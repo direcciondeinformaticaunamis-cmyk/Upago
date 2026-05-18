@@ -1,0 +1,143 @@
+{
+    "description": "DO NOT DELETE THIS FILE. This file is used to keep track of which files have been synced in the most recent deployment. If you delete this file a resync will need to be done (which can take a while) - read more: https://github.com/SamKirkland/FTP-Deploy-Action",
+    "version": "1.0.0",
+    "generatedTime": 1778954067108,
+    "data": [
+        {
+            "type": "file",
+            "name": ".htaccess",
+            "size": 2451,
+            "hash": "950d3fe6e59a3c36bb27de310da8768604fed0aff296af6206e34af90feabe4e"
+        },
+        {
+            "type": "file",
+            "name": "api-banco.php",
+            "size": 12937,
+            "hash": "9fde876db0ae9edaff10c7aa5914d8684f9528975b53afd120ff8378370146bf"
+        },
+        {
+            "type": "file",
+            "name": "api.php",
+            "size": 27765,
+            "hash": "c6e14a874f289a5edc57eebe2fe2f0a3a57a096192e13d639900a17ed0dfc8ae"
+        },
+        {
+            "type": "file",
+            "name": "apple-touch-icon.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "folder",
+            "name": "assets"
+        },
+        {
+            "type": "file",
+            "name": "banco_proyectos_schema.sql",
+            "size": 3624,
+            "hash": "5bafea3579c759994e847c9d4f46243d6bba3e2f8710fe662e6708c0f3f92f6b"
+        },
+        {
+            "type": "file",
+            "name": "config.php",
+            "size": 623,
+            "hash": "2ae96002bf4f57fafc03347ed8b1028d863c9b16fb80c4fff2a78846b795b49e"
+        },
+        {
+            "type": "file",
+            "name": "database_schema.sql",
+            "size": 9842,
+            "hash": "8f61cdc5986e6c5887308f01c776943378663fe9845fe0c9b524731c0f9321b8"
+        },
+        {
+            "type": "file",
+            "name": "diagnostico.php",
+            "size": 1688,
+            "hash": "3ff2ffdc463ad0f60e333da4f74d8362663966976454acaf27db6ede7a9c72ee"
+        },
+        {
+            "type": "file",
+            "name": "favicon.ico",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "index.html",
+            "size": 981,
+            "hash": "9e93978ebd486642d15c61a030f1c89cbbf09704f5ebe055cebc23e23f688a47"
+        },
+        {
+            "type": "file",
+            "name": "manifest.webmanifest",
+            "size": 473,
+            "hash": "a34d96d130f820c90b26836a9e67a1603d0fd6a98e4a5e3a6b68eccad2799a31"
+        },
+        {
+            "type": "file",
+            "name": "pwa-192x192.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "pwa-512x512.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "repair_db.sql",
+            "size": 372,
+            "hash": "6cd7212e40dfbaae5613d1f1aae8fc82a6231a93f4eec9550017199017d5919f"
+        },
+        {
+            "type": "file",
+            "name": "sw.js",
+            "size": 1366,
+            "hash": "d7cb92db0d828b0e1b1e3cc20d2e8eacb53eea6d9ae7c8421820a518d47e6bd9"
+        },
+        {
+            "type": "file",
+            "name": "security.php",
+            "size": 2234,
+            "hash": "ea23cdf0e340a52c557afe16ef9db4455da62d26cb1a0be3ef4473d965a2ae4d"
+        },
+        {
+            "type": "file",
+            "name": "test_continental_reconciliation.sql",
+            "size": 1281,
+            "hash": "35a5229f23d832e1759be43bfbb1a5402c5abd37b1fa5a4eae000e976e2bdedc"
+        },
+        {
+            "type": "file",
+            "name": "test_finance_data.sql",
+            "size": 1919,
+            "hash": "d8689016e7552d91bb15e8dec759545f69b63d9b2c733764d7dfffd67231af00"
+        },
+        {
+            "type": "file",
+            "name": "workbox-8c29f6e4.js",
+            "size": 15123,
+            "hash": "3ad21a9ff8347da9410d22a6a7e48bf664194241553f27949d187772d2af870f"
+        },
+        {
+            "type": "file",
+            "name": "assets/index-f41a23e0.js",
+            "size": 862513,
+            "hash": "9816b7cd8c4f378ced775a3bfcf3b2ae065655c754aa257b429833cd1532d21f"
+        },
+        {
+            "type": "file",
+            "name": "assets/index-fb41cd7f.css",
+            "size": 73545,
+            "hash": "fb41cd7f5d8892005f3232e997707aaf4a7a687d6bc40233cab9ab3a7ce23f36"
+        },
+        {
+            "type": "file",
+            "name": "assets/workbox-window.prod.es5-d772c227.js",
+            "size": 5797,
+            "hash": "00a208768767c4444318ccc5acca1e28bd219f22d76b5927386013bcb0658d7c"
+        }
+    ]
+}

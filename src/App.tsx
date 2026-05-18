@@ -21,7 +21,7 @@ const App: React.FC = () => {
         apellido: string;
         email: string;
         cedula: string;
-        rol: 'postulante' | 'docente' | 'admin' | 'finance' | 'academico' | 'superadmin';
+        rol: 'postulante' | 'docente' | 'concursante_docente' | 'admin' | 'finance' | 'academico' | 'superadmin';
         expediente_aprobado?: boolean;
     } | null>(null);
     const [loading, setLoading] = useState(false);
@@ -97,7 +97,7 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante'))),
+                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'concursante_docente' : (data.tipo_usuario === 'auxiliar_docente' ? 'auxiliar_docente' : 'postulante')))),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data // Incluimos carrera, sede, etc.
                 } as any);
@@ -176,7 +176,7 @@ const App: React.FC = () => {
                     apellido: data.apellido,
                     email: data.correo,
                     cedula: data.cedula,
-                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'docente' : 'postulante'))),
+                    rol: isSuperAdmin ? 'superadmin' : (data.tipo_usuario === 'admin' ? 'admin' : (data.tipo_usuario === 'academico' ? 'academico' : (data.tipo_usuario === 'concursante_docente' ? 'concursante_docente' : (data.tipo_usuario === 'auxiliar_docente' ? 'auxiliar_docente' : 'postulante')))),
                     expediente_aprobado: data.estado_revision === 'verificado',
                     ...data
                 } as any);
