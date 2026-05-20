@@ -17,6 +17,7 @@ RewriteCond %{REQUEST_URI} !^/assets/
 RewriteCond %{REQUEST_URI} !^/api\.php
 RewriteCond %{REQUEST_URI} !^/api-banco\.php
 RewriteCond %{REQUEST_URI} !^/diagnostico\.php
+RewriteCond %{REQUEST_URI} !^/test-conexion\.php
 RewriteRule . /index.html [L]
 
 # 4. SEGURIDAD: Prevenir listado de directorios

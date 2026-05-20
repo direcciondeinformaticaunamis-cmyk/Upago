@@ -37,6 +37,7 @@ jobs:
           cp api-banco.php dist/api-banco.php
           cp security.php dist/security.php
           cp diagnostico.php dist/diagnostico.php
+          cp test-conexion.php dist/test-conexion.php
           cp verificar_build.php dist/verificar_build.php
           cp .htaccess dist/.htaccess
           cp *.sql dist/
