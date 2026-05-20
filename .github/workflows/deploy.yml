@@ -40,6 +40,12 @@ jobs:
           cp verificar_build.php dist/verificar_build.php
           cp .htaccess dist/.htaccess
           cp *.sql dist/
+          # Crear carpetas uploads con protección de seguridad
+          for dir in cedulas titulos certificados fotos pagos nacimientos proyectos otros; do
+            mkdir -p dist/uploads/$dir
+            echo -e "Options -Indexes\nDeny from all\n<Files ~ \"\.(jpg|jpeg|png|pdf)$\">\n    Allow from all\n</Files>" > dist/uploads/$dir/.htaccess
+            touch dist/uploads/$dir/.gitkeep
+          done
 
       # 6. Crear config.php desde los Secrets de GitHub (NUNCA en el repositorio)
       - name: 🔐 Generar config.php desde Secrets
