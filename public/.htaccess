@@ -21,6 +21,14 @@ RewriteRule . /index.html [L]
 # 4. SEGURIDAD: Prevenir listado de directorios
 Options -Indexes
 
+# ⚠️ CRÍTICO: index.html NUNCA debe cachearse (evita mismatch de hashes JS/CSS)
+<Files "index.html">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
+
+
 # 5. SEGURIDAD: Bloquear acceso a archivos sensibles
 <FilesMatch "^\.">
     Order allow,deny
