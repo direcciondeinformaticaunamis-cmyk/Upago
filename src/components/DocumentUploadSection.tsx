@@ -205,6 +205,10 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                 }
             } catch (err) {
                 console.error("Error cargando archivo:", err);
+            } finally {
+                if (e.target) {
+                    e.target.value = '';
+                }
             }
         }
     };

@@ -384,11 +384,33 @@ if (isset($_FILES['file']) && isset($_POST['type'])) {
     }
 
     $asignatura = isset($_POST['asignatura']) && $_POST['asignatura'] !== '' ? $_POST['asignatura'] : null;
+    
+    // Check if document already exists to replace it and avoid duplicates
+    if ($asignatura !== null) {
+        $stmt_check = $conn->prepare("SELECT id, archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+        $stmt_check->execute([$postulante_id, $type, $asignatura]);
+    } else {
+        $stmt_check = $conn->prepare("SELECT id, archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+        $stmt_check->execute([$postulante_id, $type]);
+    }
+    $existing = $stmt_check->fetch(PDO::FETCH_ASSOC);
+
     $new_name = $type . "_" . preg_replace('/[^a-zA-Z0-9]/', '', $postulante_id) . "_" . time() . "." . $file_ext;
     $target_file = $target_dir . $new_name;
     if (move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
-        $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$postulante_id, $type, $new_name, $target_file, $asignatura]);
+        if ($existing) {
+            // Delete old physical file if it exists
+            if (!empty($existing['archivo_url']) && file_exists($existing['archivo_url'])) {
+                @unlink($existing['archivo_url']);
+            }
+            // Update the existing record instead of inserting a duplicate
+            $stmt = $conn->prepare("UPDATE expedientes SET archivo_nombre = ?, archivo_url = ?, estado = 'subido', observaciones = NULL, fecha_carga = NOW() WHERE id = ?");
+            $stmt->execute([$new_name, $target_file, $existing['id']]);
+        } else {
+            // Insert a new record
+            $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$postulante_id, $type, $new_name, $target_file, $asignatura]);
+        }
         echo json_encode(["status" => "success", "path" => $target_file]);
     } else { echo json_encode(["status" => "error", "message" => "Error al mover"]); }
     exit;

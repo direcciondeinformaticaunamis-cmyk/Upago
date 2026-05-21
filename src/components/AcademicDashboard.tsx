@@ -62,6 +62,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         } catch (err) {
             console.error('Error uploading:', err);
             notificationService.send('Error', 'Error de red al intentar subir el archivo.', 'error');
+        } finally {
+            if (event.target) {
+                event.target.value = '';
+            }
         }
     };
 
