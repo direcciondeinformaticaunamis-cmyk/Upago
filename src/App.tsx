@@ -91,6 +91,9 @@ const App: React.FC = () => {
             const data = await response.json();
 
             if (data && data.cedula) {
+                if (data.token) {
+                    localStorage.setItem('upago_token', data.token);
+                }
                 const isSuperAdmin = data.correo === 'informatica@unamis.edu.py';
                 setCurrentUser({
                     nombre: data.nombre,
@@ -169,6 +172,9 @@ const App: React.FC = () => {
             const data = await response.json();
 
             if (data && data.cedula) {
+                if (data.token) {
+                    localStorage.setItem('upago_token', data.token);
+                }
                 // El usuario ya existe, lo logueamos directamente
                 const isSuperAdmin = data.correo === 'informatica@unamis.edu.py';
                 setCurrentUser({

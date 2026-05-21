@@ -1,0 +1,295 @@
+﻿2026-05-20T14:12:01.9034903Z Current runner version: '2.334.0'
+2026-05-20T14:12:01.9069975Z ##[group]Runner Image Provisioner
+2026-05-20T14:12:01.9071198Z Hosted Compute Agent
+2026-05-20T14:12:01.9072189Z Version: 20260213.493
+2026-05-20T14:12:01.9073245Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-05-20T14:12:01.9074384Z Build Date: 2026-02-13T00:28:41Z
+2026-05-20T14:12:01.9075914Z Worker ID: {12919f51-632f-48d0-9474-0ca5b9a97efa}
+2026-05-20T14:12:01.9077018Z Azure Region: eastus
+2026-05-20T14:12:01.9078060Z ##[endgroup]
+2026-05-20T14:12:01.9080238Z ##[group]Operating System
+2026-05-20T14:12:01.9082068Z Ubuntu
+2026-05-20T14:12:01.9082917Z 24.04.4
+2026-05-20T14:12:01.9083687Z LTS
+2026-05-20T14:12:01.9084633Z ##[endgroup]
+2026-05-20T14:12:01.9085720Z ##[group]Runner Image
+2026-05-20T14:12:01.9086842Z Image: ubuntu-24.04
+2026-05-20T14:12:01.9087784Z Version: 20260513.135.3
+2026-05-20T14:12:01.9090136Z Included Software: https:***github.com***actions***runner-images***blob***ubuntu24***20260513.135***images***ubuntu***Ubuntu2404-Readme.md
+2026-05-20T14:12:01.9092928Z Image Release: https:***github.com***actions***runner-images***releases***tag***ubuntu24***20260513.135
+2026-05-20T14:12:01.9094683Z ##[endgroup]
+2026-05-20T14:12:01.9096796Z ##[group]GITHUB_TOKEN Permissions
+2026-05-20T14:12:01.9099882Z Contents: read
+2026-05-20T14:12:01.9100840Z Metadata: read
+2026-05-20T14:12:01.9101931Z Packages: read
+2026-05-20T14:12:01.9102854Z ##[endgroup]
+2026-05-20T14:12:01.9105898Z Secret source: Actions
+2026-05-20T14:12:01.9107611Z Prepare workflow directory
+2026-05-20T14:12:01.9565397Z Prepare all required actions
+2026-05-20T14:12:01.9617729Z Getting action download info
+2026-05-20T14:12:02.4147602Z Download action repository 'actions***checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-05-20T14:12:02.5631573Z Download action repository 'actions***setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-05-20T14:12:02.6556103Z Download action repository 'SamKirkland***FTP-Deploy-Action@v4.3.5' (SHA:8e83cea8672e3fbcbb9fdafff34debf6ae4c5f65)
+2026-05-20T14:12:02.9065901Z Complete job name: Build y Deploy a producción
+2026-05-20T14:12:02.9818113Z ##[group]Run actions***checkout@v4
+2026-05-20T14:12:02.9819064Z with:
+2026-05-20T14:12:02.9819708Z   repository: direcciondeinformaticaunamis-cmyk***Upago
+2026-05-20T14:12:02.9820582Z   token: ***
+2026-05-20T14:12:02.9821062Z   ssh-strict: true
+2026-05-20T14:12:02.9821548Z   ssh-user: git
+2026-05-20T14:12:02.9822058Z   persist-credentials: true
+2026-05-20T14:12:02.9822617Z   clean: true
+2026-05-20T14:12:02.9823127Z   sparse-checkout-cone-mode: true
+2026-05-20T14:12:02.9823705Z   fetch-depth: 1
+2026-05-20T14:12:02.9824200Z   fetch-tags: false
+2026-05-20T14:12:02.9824718Z   show-progress: true
+2026-05-20T14:12:02.9825412Z   lfs: false
+2026-05-20T14:12:02.9825893Z   submodules: false
+2026-05-20T14:12:02.9826417Z   set-safe-directory: true
+2026-05-20T14:12:02.9827178Z ##[endgroup]
+2026-05-20T14:12:03.0944760Z Syncing repository: direcciondeinformaticaunamis-cmyk***Upago
+2026-05-20T14:12:03.0947446Z ##[group]Getting Git version info
+2026-05-20T14:12:03.0948381Z Working directory is '***home***runner***work***Upago***Upago'
+2026-05-20T14:12:03.0949540Z [command]***usr***bin***git version
+2026-05-20T14:12:03.1018282Z git version 2.54.0
+2026-05-20T14:12:03.1043610Z ##[endgroup]
+2026-05-20T14:12:03.1058949Z Temporarily overriding HOME='***home***runner***work***_temp***8ee49589-6de9-4907-8cec-1cc7383f4c34' before making global git config changes
+2026-05-20T14:12:03.1060495Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-20T14:12:03.1073224Z [command]***usr***bin***git config --global --add safe.directory ***home***runner***work***Upago***Upago
+2026-05-20T14:12:03.1120756Z Deleting the contents of '***home***runner***work***Upago***Upago'
+2026-05-20T14:12:03.1124241Z ##[group]Initializing the repository
+2026-05-20T14:12:03.1128647Z [command]***usr***bin***git init ***home***runner***work***Upago***Upago
+2026-05-20T14:12:03.1222719Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-05-20T14:12:03.1224393Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-05-20T14:12:03.1225742Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-05-20T14:12:03.1226649Z hint: call:
+2026-05-20T14:12:03.1227706Z hint:
+2026-05-20T14:12:03.1228723Z hint: 	git config --global init.defaultBranch <name>
+2026-05-20T14:12:03.1229898Z hint:
+2026-05-20T14:12:03.1231011Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-05-20T14:12:03.1233057Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-05-20T14:12:03.1234711Z hint:
+2026-05-20T14:12:03.1235932Z hint: 	git branch -m <name>
+2026-05-20T14:12:03.1236826Z hint:
+2026-05-20T14:12:03.1237990Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-05-20T14:12:03.1239959Z Initialized empty Git repository in ***home***runner***work***Upago***Upago***.git***
+2026-05-20T14:12:03.1243649Z [command]***usr***bin***git remote add origin https:***github.com***direcciondeinformaticaunamis-cmyk***Upago
+2026-05-20T14:12:03.1286741Z ##[endgroup]
+2026-05-20T14:12:03.1288179Z ##[group]Disabling automatic garbage collection
+2026-05-20T14:12:03.1291603Z [command]***usr***bin***git config --local gc.auto 0
+2026-05-20T14:12:03.1322045Z ##[endgroup]
+2026-05-20T14:12:03.1323429Z ##[group]Setting up auth
+2026-05-20T14:12:03.1329838Z [command]***usr***bin***git config --local --name-only --get-regexp core\.sshCommand
+2026-05-20T14:12:03.1364282Z [command]***usr***bin***git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-20T14:12:03.1709140Z [command]***usr***bin***git config --local --name-only --get-regexp http\.https\:\***\***github\.com\***\.extraheader
+2026-05-20T14:12:03.1741918Z [command]***usr***bin***git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\***\***github\.com\***\.extraheader' && git config --local --unset-all 'http.https:***github.com***.extraheader' || :"
+2026-05-20T14:12:03.1975829Z [command]***usr***bin***git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-05-20T14:12:03.2018714Z [command]***usr***bin***git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-05-20T14:12:03.2259419Z [command]***usr***bin***git config --local http.https:***github.com***.extraheader AUTHORIZATION: basic ***
+2026-05-20T14:12:03.2296493Z ##[endgroup]
+2026-05-20T14:12:03.2297490Z ##[group]Fetching the repository
+2026-05-20T14:12:03.2304905Z [command]***usr***bin***git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b4e4e1367894561bc3f2db2656e03b060d914f28:refs***remotes***origin***master
+2026-05-20T14:12:03.9132783Z From https:***github.com***direcciondeinformaticaunamis-cmyk***Upago
+2026-05-20T14:12:03.9135320Z  * [new ref]         b4e4e1367894561bc3f2db2656e03b060d914f28 -> origin***master
+2026-05-20T14:12:03.9180379Z ##[endgroup]
+2026-05-20T14:12:03.9182227Z ##[group]Determining the checkout info
+2026-05-20T14:12:03.9184339Z ##[endgroup]
+2026-05-20T14:12:03.9187851Z [command]***usr***bin***git sparse-checkout disable
+2026-05-20T14:12:03.9255723Z [command]***usr***bin***git config --local --unset-all extensions.worktreeConfig
+2026-05-20T14:12:03.9286183Z ##[group]Checking out the ref
+2026-05-20T14:12:03.9289703Z [command]***usr***bin***git checkout --progress --force -B master refs***remotes***origin***master
+2026-05-20T14:12:03.9608606Z Reset branch 'master'
+2026-05-20T14:12:03.9610241Z branch 'master' set up to track 'origin***master'.
+2026-05-20T14:12:03.9620548Z ##[endgroup]
+2026-05-20T14:12:03.9667827Z [command]***usr***bin***git log -1 --format=%H
+2026-05-20T14:12:03.9705346Z b4e4e1367894561bc3f2db2656e03b060d914f28
+2026-05-20T14:12:04.0137589Z ##[group]Run actions***setup-node@v4
+2026-05-20T14:12:04.0139169Z with:
+2026-05-20T14:12:04.0140076Z   node-version: 20
+2026-05-20T14:12:04.0141045Z   cache: npm
+2026-05-20T14:12:04.0141983Z   always-auth: false
+2026-05-20T14:12:04.0143009Z   check-latest: false
+2026-05-20T14:12:04.0144476Z   token: ***
+2026-05-20T14:12:04.0145541Z ##[endgroup]
+2026-05-20T14:12:04.1953915Z Found in cache @ ***opt***hostedtoolcache***node***20.20.2***x64
+2026-05-20T14:12:04.1959665Z ##[group]Environment details
+2026-05-20T14:12:04.5550231Z node: v20.20.2
+2026-05-20T14:12:04.5550800Z npm: 10.8.2
+2026-05-20T14:12:04.5551362Z yarn: 1.22.22
+2026-05-20T14:12:04.5552296Z ##[endgroup]
+2026-05-20T14:12:04.5573989Z [command]***opt***hostedtoolcache***node***20.20.2***x64***bin***npm config get cache
+2026-05-20T14:12:04.6790221Z ***home***runner***.npm
+2026-05-20T14:12:04.8245861Z Cache hit for: node-cache-Linux-x64-npm-5c112730c8cd2069e1698bdbb53c0f679db2006adcf3953fbe192bc7fbe6af9b
+2026-05-20T14:12:05.1218296Z Received 38942734 of 38942734 (100.0%), 141.8 MBs***sec
+2026-05-20T14:12:05.1218964Z Cache Size: ~37 MB (38942734 B)
+2026-05-20T14:12:05.1243145Z [command]***usr***bin***tar -xf ***home***runner***work***_temp***45638601-7340-4a7e-9b4c-1d9e616c543a***cache.tzst -P -C ***home***runner***work***Upago***Upago --use-compress-program unzstd
+2026-05-20T14:12:05.2692105Z Cache restored successfully
+2026-05-20T14:12:05.2723968Z Cache restored from key: node-cache-Linux-x64-npm-5c112730c8cd2069e1698bdbb53c0f679db2006adcf3953fbe192bc7fbe6af9b
+2026-05-20T14:12:05.2897633Z ##[group]Run npm ci
+2026-05-20T14:12:05.2897963Z [36;1mnpm ci[0m
+2026-05-20T14:12:05.2946453Z shell: ***usr***bin***bash -e {0}
+2026-05-20T14:12:05.2946828Z ##[endgroup]
+2026-05-20T14:12:08.1277567Z npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell***sourcemap-codec instead
+2026-05-20T14:12:08.3941500Z npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+2026-05-20T14:12:08.6901985Z npm warn deprecated glob@11.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-05-20T14:12:15.1506249Z 
+2026-05-20T14:12:15.1514109Z added 478 packages, and audited 479 packages in 10s
+2026-05-20T14:12:15.1514840Z 
+2026-05-20T14:12:15.1515516Z 123 packages are looking for funding
+2026-05-20T14:12:15.1516366Z   run `npm fund` for details
+2026-05-20T14:12:15.1747009Z 
+2026-05-20T14:12:15.1747774Z 13 vulnerabilities (4 moderate, 9 high)
+2026-05-20T14:12:15.1748206Z 
+2026-05-20T14:12:15.1748598Z To address issues that do not require attention, run:
+2026-05-20T14:12:15.1749192Z   npm audit fix
+2026-05-20T14:12:15.1749471Z 
+2026-05-20T14:12:15.1749887Z To address all issues (including breaking changes), run:
+2026-05-20T14:12:15.1750517Z   npm audit fix --force
+2026-05-20T14:12:15.1750792Z 
+2026-05-20T14:12:15.1751027Z Run `npm audit` for details.
+2026-05-20T14:12:15.2301331Z ##[group]Run npm run build
+2026-05-20T14:12:15.2301854Z [36;1mnpm run build[0m
+2026-05-20T14:12:15.2350266Z shell: ***usr***bin***bash -e {0}
+2026-05-20T14:12:15.2350762Z ##[endgroup]
+2026-05-20T14:12:15.3510213Z 
+2026-05-20T14:12:15.3510871Z > upago@0.0.0 build
+2026-05-20T14:12:15.3511417Z > tsc && vite build
+2026-05-20T14:12:15.3511703Z 
+2026-05-20T14:12:21.7303504Z [36mvite v4.5.14 [32mbuilding for production...[36m[39m
+2026-05-20T14:12:21.7612104Z transforming...
+2026-05-20T14:12:34.1513069Z [32m✓[39m 12887 modules transformed.
+2026-05-20T14:12:34.5470689Z rendering chunks...
+2026-05-20T14:12:34.5568778Z computing gzip size...
+2026-05-20T14:12:34.5819355Z [2mdist***[22m[32mindex.html                 [39m[1m[2m  1.36 kB[22m[1m[22m[2m │ gzip:   0.70 kB[22m
+2026-05-20T14:12:34.5821065Z [2mdist***[22m[2massets***[22m[35mindex-9c40b15c.css  [39m[1m[2m 77.01 kB[22m[1m[22m[2m │ gzip:  12.82 kB[22m
+2026-05-20T14:12:34.5822890Z [2mdist***[22m[2massets***[22m[36mindex-bcb384e9.js   [39m[1m[33m904.54 kB[39m[22m[2m │ gzip: 246.99 kB[22m
+2026-05-20T14:12:34.5824322Z [33m
+2026-05-20T14:12:34.5825039Z (!) Some chunks are larger than 500 kBs after minification. Consider:
+2026-05-20T14:12:34.5826137Z - Using dynamic import() to code-split the application
+2026-05-20T14:12:34.5828339Z - Use build.rollupOptions.output.manualChunks to improve chunking: https:***rollupjs.org***configuration-options***#output-manualchunks
+2026-05-20T14:12:34.5829840Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+2026-05-20T14:12:34.5830678Z [32m✓ built in 12.85s[39m
+2026-05-20T14:12:34.6763232Z ##[group]Run cp api.php dist***api.php
+2026-05-20T14:12:34.6763641Z [36;1mcp api.php dist***api.php[0m
+2026-05-20T14:12:34.6763992Z [36;1mcp api-banco.php dist***api-banco.php[0m
+2026-05-20T14:12:34.6764357Z [36;1mcp security.php dist***security.php[0m
+2026-05-20T14:12:34.6764724Z [36;1mcp diagnostico.php dist***diagnostico.php[0m
+2026-05-20T14:12:34.6765418Z [36;1mcp test-conexion.php dist***test-conexion.php[0m
+2026-05-20T14:12:34.6765882Z [36;1mcp verificar_build.php dist***verificar_build.php[0m
+2026-05-20T14:12:34.6766250Z [36;1mcp .htaccess dist***.htaccess[0m
+2026-05-20T14:12:34.6766561Z [36;1mcp *.sql dist***[0m
+2026-05-20T14:12:34.6766940Z [36;1m# Crear carpetas uploads con protección de seguridad[0m
+2026-05-20T14:12:34.6767475Z [36;1mfor dir in cedulas titulos certificados fotos pagos nacimientos proyectos otros; do[0m
+2026-05-20T14:12:34.6767974Z [36;1m  mkdir -p dist***uploads***$dir[0m
+2026-05-20T14:12:34.6768645Z [36;1m  echo -e "Options -Indexes\nDeny from all\n<Files ~ \"\.(jpg|jpeg|png|pdf)$\">\n    Allow from all\n<***Files>" > dist***uploads***$dir***.htaccess[0m
+2026-05-20T14:12:34.6769313Z [36;1m  touch dist***uploads***$dir***.gitkeep[0m
+2026-05-20T14:12:34.6769636Z [36;1mdone[0m
+2026-05-20T14:12:34.6805341Z shell: ***usr***bin***bash -e {0}
+2026-05-20T14:12:34.6805683Z ##[endgroup]
+2026-05-20T14:12:34.7209976Z ##[group]Run cat > dist***config.php << 'PHPEOF'
+2026-05-20T14:12:34.7210687Z [36;1mcat > dist***config.php << 'PHPEOF'[0m
+2026-05-20T14:12:34.7211164Z [36;1m<?php[0m
+2026-05-20T14:12:34.7211555Z [36;1mdefine('DB_HOST',     '***');[0m
+2026-05-20T14:12:34.7211915Z [36;1mdefine('DB_NAME',     '***');[0m
+2026-05-20T14:12:34.7212253Z [36;1mdefine('DB_USER',     '***');[0m
+2026-05-20T14:12:34.7212569Z [36;1mdefine('DB_PASS',     '***');[0m
+2026-05-20T14:12:34.7212860Z [36;1m[0m
+2026-05-20T14:12:34.7213166Z [36;1mdefine('ADMIN_USER',  '***');[0m
+2026-05-20T14:12:34.7213496Z [36;1mdefine('ADMIN_PASS',  '***');[0m
+2026-05-20T14:12:34.7214122Z [36;1mdefine('JWT_SECRET',  '***');[0m
+2026-05-20T14:12:34.7214406Z [36;1m[0m
+2026-05-20T14:12:34.7214669Z [36;1mdefine('UPLOAD_BASE', 'uploads***');[0m
+2026-05-20T14:12:34.7215004Z [36;1mdefine('MAX_FILE_SIZE', 5242880);[0m
+2026-05-20T14:12:34.7215586Z [36;1mdefine('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'pdf']);[0m
+2026-05-20T14:12:34.7216007Z [36;1m[0m
+2026-05-20T14:12:34.7216324Z [36;1m$upload_folders = [[0m
+2026-05-20T14:12:34.7216657Z [36;1m    "cedula"     => "cedulas***",[0m
+2026-05-20T14:12:34.7216982Z [36;1m    "nacimiento" => "nacimientos***",[0m
+2026-05-20T14:12:34.7217306Z [36;1m    "titulo"     => "titulos***",[0m
+2026-05-20T14:12:34.7217615Z [36;1m    "estudio"    => "certificados***",[0m
+2026-05-20T14:12:34.7217938Z [36;1m    "foto"       => "fotos***",[0m
+2026-05-20T14:12:34.7218230Z [36;1m    "otro"       => "otros***",[0m
+2026-05-20T14:12:34.7218508Z [36;1m];[0m
+2026-05-20T14:12:34.7218732Z [36;1mPHPEOF[0m
+2026-05-20T14:12:34.7253236Z shell: ***usr***bin***bash -e {0}
+2026-05-20T14:12:34.7253545Z ##[endgroup]
+2026-05-20T14:12:34.7379436Z ##[group]Run SamKirkland***FTP-Deploy-Action@v4.3.5
+2026-05-20T14:12:34.7379792Z with:
+2026-05-20T14:12:34.7380028Z   server: ***
+2026-05-20T14:12:34.7380293Z   username: ***
+2026-05-20T14:12:34.7380547Z   password: ***
+2026-05-20T14:12:34.7380799Z   local-dir: .***dist***
+2026-05-20T14:12:34.7381068Z   server-dir: ***
+2026-05-20T14:12:34.7381590Z   exclude: *****.git*
+*****.git******
+*****node_modules*****
+uploads*****
+logs*****
+temp*****
+
+2026-05-20T14:12:34.7382018Z ##[endgroup]
+2026-05-20T14:12:34.7854168Z ----------------------------------------------------------------
+2026-05-20T14:12:34.7857939Z 🚀 Thanks for using ftp-deploy. Let's deploy some stuff!   
+2026-05-20T14:12:34.7858822Z ----------------------------------------------------------------
+2026-05-20T14:12:34.7859334Z If you found this project helpful, please support it
+2026-05-20T14:12:34.7860088Z by giving it a ⭐ on Github --> https:***github.com***SamKirkland***FTP-Deploy-Action
+2026-05-20T14:12:34.7861057Z or add a badge 🏷️ to your projects readme --> https:***github.com***SamKirkland***FTP-Deploy-Action#badge
+2026-05-20T14:12:36.5559946Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5703007Z Last published on 📅 Wednesday, May 20, 2026 at 1:42 PM
+2026-05-20T14:12:36.5713893Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5747012Z Local Files:	21
+2026-05-20T14:12:36.5748135Z Server Files:	20
+2026-05-20T14:12:36.5748738Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5749410Z Calculating differences between client & server
+2026-05-20T14:12:36.5750170Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5761188Z 📄 Upload: test-conexion.php
+2026-05-20T14:12:36.5761800Z 🔁 File replace: .htaccess
+2026-05-20T14:12:36.5762617Z ⚖️  File content is the same, doing nothing: api-banco.php
+2026-05-20T14:12:36.5763481Z ⚖️  File content is the same, doing nothing: api.php
+2026-05-20T14:12:36.5764448Z ⚖️  File content is the same, doing nothing: apple-touch-icon.png
+2026-05-20T14:12:36.5766160Z ⚖️  File content is the same, doing nothing: assets***index-9c40b15c.css
+2026-05-20T14:12:36.5767258Z ⚖️  File content is the same, doing nothing: assets***index-bcb384e9.js
+2026-05-20T14:12:36.5768251Z ⚖️  File content is the same, doing nothing: banco_proyectos_schema.sql
+2026-05-20T14:12:36.5771335Z ⚖️  File content is the same, doing nothing: config.php
+2026-05-20T14:12:36.5772235Z ⚖️  File content is the same, doing nothing: database_schema.sql
+2026-05-20T14:12:36.5773144Z ⚖️  File content is the same, doing nothing: diagnostico.php
+2026-05-20T14:12:36.5774009Z ⚖️  File content is the same, doing nothing: favicon.ico
+2026-05-20T14:12:36.5774837Z ⚖️  File content is the same, doing nothing: index.html
+2026-05-20T14:12:36.5775993Z ⚖️  File content is the same, doing nothing: pwa-192x192.png
+2026-05-20T14:12:36.5776866Z ⚖️  File content is the same, doing nothing: pwa-512x512.png
+2026-05-20T14:12:36.5777790Z ⚖️  File content is the same, doing nothing: repair_db.sql
+2026-05-20T14:12:36.5778594Z ⚖️  File content is the same, doing nothing: security.php
+2026-05-20T14:12:36.5779594Z ⚖️  File content is the same, doing nothing: test_continental_reconciliation.sql
+2026-05-20T14:12:36.5780617Z ⚖️  File content is the same, doing nothing: test_finance_data.sql
+2026-05-20T14:12:36.5781585Z ⚖️  File content is the same, doing nothing: verificar_build.php
+2026-05-20T14:12:36.5782770Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5784109Z Making changes to 2 files***folders to sync server state
+2026-05-20T14:12:36.5784924Z Uploading: 1.34 kB -- Deleting: 0 B -- Replacing: 2.87 kB
+2026-05-20T14:12:36.5785912Z ----------------------------------------------------------------
+2026-05-20T14:12:36.5786543Z uploading "test-conexion.php"
+2026-05-20T14:12:37.0352854Z replacing ".htaccess"
+2026-05-20T14:12:37.4970521Z ----------------------------------------------------------------
+2026-05-20T14:12:37.4971614Z 🎉 Sync complete. Saving current server state to "***.ftp-deploy-sync-state.json"
+2026-05-20T14:12:37.9593251Z ----------------------------------------------------------------
+2026-05-20T14:12:37.9596115Z Time spent hashing: 20 milliseconds
+2026-05-20T14:12:37.9597521Z Time spent connecting to server: 1.1 seconds
+2026-05-20T14:12:37.9598781Z Time spent deploying: 1.3 seconds (3.04 kB***second)
+2026-05-20T14:12:37.9599314Z   - changing dirs: 114 milliseconds
+2026-05-20T14:12:37.9599716Z   - logging: 5 milliseconds
+2026-05-20T14:12:37.9600122Z ----------------------------------------------------------------
+2026-05-20T14:12:37.9600500Z Total time: 3.1 seconds
+2026-05-20T14:12:37.9600879Z ----------------------------------------------------------------
+2026-05-20T14:12:37.9701946Z Post job cleanup.
+2026-05-20T14:12:38.1266196Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-5c112730c8cd2069e1698bdbb53c0f679db2006adcf3953fbe192bc7fbe6af9b, not saving cache.
+2026-05-20T14:12:38.1382636Z Post job cleanup.
+2026-05-20T14:12:38.2361768Z [command]***usr***bin***git version
+2026-05-20T14:12:38.2397128Z git version 2.54.0
+2026-05-20T14:12:38.2437424Z Temporarily overriding HOME='***home***runner***work***_temp***55b425a9-a3af-4bcc-90b1-5028e857262b' before making global git config changes
+2026-05-20T14:12:38.2438346Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-20T14:12:38.2444323Z [command]***usr***bin***git config --global --add safe.directory ***home***runner***work***Upago***Upago
+2026-05-20T14:12:38.2480469Z [command]***usr***bin***git config --local --name-only --get-regexp core\.sshCommand
+2026-05-20T14:12:38.2512583Z [command]***usr***bin***git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-20T14:12:38.2745581Z fatal: No url found for submodule path 'hostinger_public_html***.builds***last-source' in .gitmodules
+2026-05-20T14:12:38.2797735Z ##[warning]The process '***usr***bin***git' failed with exit code 128
+2026-05-20T14:12:38.2887995Z Cleaning up orphan processes
+2026-05-20T14:12:38.3166791Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions***checkout@v4, actions***setup-node@v4, SamKirkland***FTP-Deploy-Action@v4.3.5. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https:***github.blog***changelog***2025-09-19-deprecation-of-node-20-on-github-actions-runners***

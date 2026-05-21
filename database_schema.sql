@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `postulantes` (
   `foto_url` text DEFAULT NULL,
   `estado_revision` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL,
+  `numero_expediente` varchar(50) DEFAULT NULL,
   `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `cedula_unique` (`cedula`)

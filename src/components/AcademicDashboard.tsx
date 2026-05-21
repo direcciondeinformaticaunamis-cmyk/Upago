@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, CheckCircle, Warning, Description, Edit, UploadFile, AssignmentInd, Assignment, FactCheck as FileCheck, AccessTime as Clock, FilterList, Close as X, Check } from '@mui/icons-material';
+import { Delete, Person as User, Dashboard, Payments, AccountBalanceWallet, Assessment, Help, Logout, Search, Notifications, Settings, Add, TrendingUp, Schedule, Group, PersonAdd, FileDownload, Print, History, Mail, MoreVert, Visibility, Logout as LogoutIcon, CheckCircle, Warning, Description, Edit, UploadFile, AssignmentInd, Assignment, FactCheck as FileCheck, AccessTime as Clock, FilterList, Close as X, Check } from '@mui/icons-material';
 import MisDatosModule from './MisDatosModule';
 import NotificationCenter from './NotificationCenter';
 import { notificationService } from '../services/NotificationService';
@@ -201,6 +201,35 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         }
     };
 
+    const handleDeleteExpediente = async (cedula: string, nombre: string) => {
+        if (!window.confirm(`¿Está seguro de que desea eliminar permanentemente el expediente de "${nombre}"?\nEsta acción es irreversible y eliminará todos sus datos, documentos y pagos.`)) {
+            return;
+        }
+        
+        try {
+            setIsLoading(true);
+            await AcademicService.deleteExpediente(cedula, user.email);
+            notificationService.send(
+                'Expediente Eliminado',
+                `El expediente de ${nombre} ha sido eliminado correctamente.`,
+                'success'
+            );
+            if (selectedExpediente?.cedula === cedula) {
+                setSelectedExpediente(null);
+            }
+            await loadExpedientes();
+        } catch (error: any) {
+            console.error('Error deleting expediente:', error);
+            notificationService.send(
+                'Error al Eliminar',
+                error.message || 'No se pudo eliminar el expediente.',
+                'error'
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleValidarDocumento = async (cedula: string, docId: string, asignatura?: string) => {
         try {
             await AcademicService.validateDocument(cedula, docId, asignatura);
@@ -357,7 +386,14 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                             <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm font-bold text-slate-800">{exp.nombre}</p>
-                                                    <p className="text-xs text-slate-500 font-mono">CI: {exp.cedula}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-slate-500 font-mono">CI: {exp.cedula}</span>
+                                                        {exp.numero_expediente && (
+                                                            <span className="text-[10px] bg-slate-100 text-slate-600 font-mono font-bold px-1.5 py-0.5 rounded">
+                                                                {exp.numero_expediente}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm text-slate-800">{exp.carrera}</p>
@@ -389,9 +425,18 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button onClick={() => setSelectedExpediente(exp)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
-                                                        <Visibility style={{fontSize: 16}} /> Ver Expediente
-                                                    </button>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button onClick={() => setSelectedExpediente(exp)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
+                                                            <Visibility style={{fontSize: 16}} /> Ver Expediente
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteExpediente(exp.cedula, exp.nombre)} 
+                                                            className="inline-flex items-center justify-center p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Eliminar Expediente"
+                                                        >
+                                                            <Delete style={{fontSize: 18}} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -551,6 +596,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     <table className="w-full text-sm text-left border-collapse">
                                         <thead className="bg-slate-50 border-b border-slate-200 print:bg-slate-100">
                                             <tr>
+                                                <th className="px-4 py-3 font-bold text-slate-700">Expediente Nº</th>
                                                 <th className="px-4 py-3 font-bold text-slate-700">C.I. Nº</th>
                                                 <th className="px-4 py-3 font-bold text-slate-700">Nombre y Apellido</th>
                                                 <th className="px-4 py-3 font-bold text-slate-700">Carrera / Área</th>
@@ -561,6 +607,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         <tbody className="divide-y divide-slate-100">
                                             {expedientes.map((exp) => (
                                                 <tr key={exp.id} className="hover:bg-slate-50 print:hover:bg-transparent">
+                                                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{exp.numero_expediente || 'PENDIENTE'}</td>
                                                     <td className="px-4 py-3 font-mono text-xs">{exp.cedula}</td>
                                                     <td className="px-4 py-3 font-bold text-slate-800 uppercase text-xs">{exp.nombre}</td>
                                                     <td className="px-4 py-3 text-xs">{exp.carrera}</td>
@@ -617,7 +664,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
                         <div className="p-6 border-b border-slate-200 flex justify-between items-center">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-800">Revisión de Expediente: {selectedExpediente.id}</h3>
+                                <h3 className="text-xl font-bold text-slate-800">Revisión de Expediente: {selectedExpediente.numero_expediente || selectedExpediente.id}</h3>
                                 <p className="text-sm text-slate-500">{selectedExpediente.nombre} - {selectedExpediente.carrera}</p>
                             </div>
                             <button onClick={() => setSelectedExpediente(null)} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors">

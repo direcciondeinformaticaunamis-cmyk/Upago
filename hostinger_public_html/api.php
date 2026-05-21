@@ -12,7 +12,7 @@ if (in_array($origin, $allowed_domains) || strpos($origin, 'localhost') !== fals
     header("Access-Control-Allow-Origin: $origin");
 }
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -216,7 +216,8 @@ try {
         "cargo" => "varchar(150) DEFAULT NULL",
         "horario_laboral" => "varchar(100) DEFAULT NULL",
         "estado_revision" => "enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente'",
-        "observaciones" => "text DEFAULT NULL"
+        "observaciones" => "text DEFAULT NULL",
+        "numero_expediente" => "varchar(50) DEFAULT NULL"
     ];
     foreach ($cols_mig as $col => $def) { 
         try { 
@@ -351,6 +352,9 @@ try {
       FOREIGN KEY (`transaccion_bancaria_id`) REFERENCES `transacciones_bancarias` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    // Backfill empty or null case file numbers (numero_expediente)
+    $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
+
 } catch(PDOException $exception) {
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => $exception->getMessage()]);
@@ -412,8 +416,56 @@ if ($method === 'POST') {
         http_response_code(401); echo json_encode(["status" => "error", "message" => "Credenciales inválidas"]); exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'import_bank_transactions') {
+        require_admin('admin'); // Seguridad: Solo administradores
+        try {
+            $transactions = $data['transactions'] ?? [];
+            $inserted = 0;
+            $duplicates = 0;
+
+            foreach ($transactions as $tx) {
+                $banco = $tx['banco'] ?? '';
+                $referencia = $tx['referencia'] ?? '';
+                $monto = floatval($tx['monto'] ?? 0);
+                $fecha_transaccion = $tx['fecha_transaccion'] ?? '';
+                $descripcion = $tx['descripcion'] ?? '';
+
+                if (empty($banco) || empty($referencia) || $monto <= 0 || empty($fecha_transaccion)) {
+                    continue; // Saltar filas inválidas
+                }
+
+                // Verificar duplicados (banco + referencia + monto + fecha_transaccion)
+                $stmtCheck = $conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM transacciones_bancarias 
+                    WHERE banco = ? AND referencia = ? AND monto = ? AND fecha_transaccion = ?
+                ");
+                $stmtCheck->execute([$banco, $referencia, $monto, $fecha_transaccion]);
+                if ($stmtCheck->fetchColumn() > 0) {
+                    $duplicates++;
+                    continue;
+                }
+
+                // Insertar nueva transacción
+                $stmtInsert = $conn->prepare("
+                    INSERT INTO transacciones_bancarias (banco, referencia, monto, fecha_transaccion, descripcion, estado) 
+                    VALUES (?, ?, ?, ?, ?, 'pendiente')
+                ");
+                $stmtInsert->execute([$banco, $referencia, $monto, $fecha_transaccion, $descripcion]);
+                $inserted++;
+            }
+
+            write_system_log("IMPORT_BANK_TRANSACTIONS", $data['admin_user'] ?? 'Admin', "Importó $inserted transacciones bancarias, omitió $duplicates duplicados");
+            echo json_encode(["status" => "success", "inserted" => $inserted, "duplicates" => $duplicates]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'migrate_user') {
-        require_admin(); // Seguridad: Solo administradores
+        require_admin('admin'); // Seguridad: Solo administradores
         try {
             $cedula = $data['cedula'] ?? '';
             $nuevo_correo = $data['nuevo_correo'] ?? '';
@@ -524,7 +576,7 @@ if ($method === 'POST') {
     }
 
     if (isset($data['action']) && $data['action'] === 'delete_external_user') {
-        require_admin(); // Seguridad: Solo administradores
+        require_admin('academico'); // Seguridad: Coordinadores y administradores
         try {
             $cedula = $data['cedula'] ?? '';
             $admin_user = $data['admin_user'] ?? 'superadmin';
@@ -556,7 +608,7 @@ if ($method === 'POST') {
     }
 
     if (isset($data['action']) && $data['action'] === 'mark_doc_in_cv') {
-        require_admin(); // Seguridad: Solo administradores/usuarios autorizados
+        require_admin('academico'); // Seguridad: Solo coordinadores académicos y administradores
         try {
             $cedula = $data['cedula'] ?? '';
             $doc_id = $data['doc_id'] ?? '';
@@ -668,6 +720,8 @@ if ($method === 'POST') {
         
         try {
             $stmt->execute($values);
+            // Generar/Actualizar el número de expediente si es nulo o vacío
+            $conn->prepare("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE (numero_expediente IS NULL OR numero_expediente = '') AND cedula = ?")->execute([$data['cedula']]);
             echo json_encode(["status" => "success", "id" => $data['cedula']]);
         } catch (PDOException $e) {
             http_response_code(500);
@@ -677,6 +731,7 @@ if ($method === 'POST') {
     }
 
     if (isset($_GET['import_demo_transactions'])) {
+        require_admin('admin'); // Seguridad: Solo administradores
         try {
             // Copy the premium generated mock receipt image locally if available
             $src_mock = 'C:/Users/Usuario/.gemini/antigravity/brain/9fc0c7af-c2a4-437f-b338-d3f3a6fd57ea/mock_bank_receipt_1779105621061.png';
@@ -715,6 +770,7 @@ if ($method === 'POST') {
     }
 
     if (isset($_GET['reconcile'])) {
+        require_admin('admin'); // Seguridad: Solo administradores
         try {
             $pago_id = $data['pago_id'] ?? null;
             $transaccion_id = $data['transaccion_id'] ?? null;
@@ -781,6 +837,7 @@ if ($method === 'POST') {
     }
 
     if (isset($_GET['bot_auto_reconcile'])) {
+        require_admin('admin'); // Seguridad: Solo administradores
         try {
             $admin_user = $data['admin_user'] ?? 'AI Bot';
 
@@ -1042,13 +1099,55 @@ if ($method === 'GET') {
         $stmt = $conn->prepare("SELECT * FROM postulantes WHERE correo = ?"); $stmt->execute([$email]);
         $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($manualRole) {
-            echo json_encode(["nombre" => $perfil['nombre'] ?? ($manualRole['nombre_referencia'] ?? "Usuario"), "apellido" => $perfil['apellido'] ?? "Institucional", "correo" => $email, "cedula" => $perfil['cedula'] ?? "INST-" . strtoupper(explode('@', $email)[0]), "tipo_usuario" => $manualRole['rol'] === 'admin' ? 'admin' : 'academico', "rol_manual" => $manualRole['rol']]);
-        } else { echo json_encode($perfil ?: null); }
+            $nombre = $perfil['nombre'] ?? ($manualRole['nombre_referencia'] ?? "Usuario");
+            $apellido = $perfil['apellido'] ?? "Institucional";
+            $cedula = $perfil['cedula'] ?? "INST-" . strtoupper(explode('@', $email)[0]);
+            $rol = $manualRole['rol'];
+            $tipo_usuario = $rol === 'admin' ? 'admin' : 'academico';
+            
+            $token = function_exists('generate_token') ? generate_token(["email" => $email, "rol" => $rol, "nombre" => $nombre, "cedula" => $cedula]) : null;
+            
+            echo json_encode([
+                "nombre" => $nombre,
+                "apellido" => $apellido,
+                "correo" => $email,
+                "cedula" => $cedula,
+                "tipo_usuario" => $tipo_usuario,
+                "rol_manual" => $rol,
+                "token" => $token
+            ]);
+        } else {
+            if ($perfil) {
+                if (empty($perfil['numero_expediente'])) {
+                    $conn->prepare("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE id = ?")->execute([$perfil['id']]);
+                    $perfil['numero_expediente'] = 'UNAMIS-2026-REG' . str_pad($perfil['id'], 4, '0', STR_PAD_LEFT);
+                }
+                $nombre = $perfil['nombre'] ?? "Postulante";
+                $cedula = $perfil['cedula'];
+                $rol = $perfil['tipo_usuario'] ?? 'postulante';
+                
+                $token = function_exists('generate_token') ? generate_token(["email" => $email, "rol" => $rol, "nombre" => $nombre, "cedula" => $cedula]) : null;
+                $perfil['token'] = $token;
+                echo json_encode($perfil);
+            } else {
+                echo json_encode(null);
+            }
+        }
         exit;
     }
     if (isset($_GET['perfil'])) {
         $stmt = $conn->prepare("SELECT * FROM postulantes WHERE cedula = ?"); $stmt->execute([$_GET['perfil']]);
-        echo json_encode($stmt->fetch(PDO::FETCH_ASSOC)); exit;
+        $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($perfil) {
+            if (empty($perfil['numero_expediente'])) {
+                $conn->prepare("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE id = ?")->execute([$perfil['id']]);
+                $perfil['numero_expediente'] = 'UNAMIS-2026-REG' . str_pad($perfil['id'], 4, '0', STR_PAD_LEFT);
+            }
+            echo json_encode($perfil);
+        } else {
+            echo json_encode(null);
+        }
+        exit;
     }
     if (isset($_GET['docs'])) {
         $stmt = $conn->prepare("SELECT * FROM expedientes WHERE postulante_id = ? ORDER BY fecha_carga DESC");
@@ -1077,7 +1176,7 @@ if ($method === 'GET') {
             SELECT 
                 p.id, p.nombre, p.apellido, p.cedula, p.correo, 
                 p.carrera, p.sede, p.tipo_usuario,
-                p.estado_revision, p.fecha_registro,
+                p.estado_revision, p.fecha_registro, p.numero_expediente,
                 (SELECT COUNT(*) FROM expedientes e WHERE e.postulante_id = p.cedula) as total_docs
             FROM postulantes p 
             ORDER BY p.fecha_registro DESC

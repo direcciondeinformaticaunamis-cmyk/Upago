@@ -39,6 +39,7 @@ jobs:
           cp diagnostico.php dist/diagnostico.php
           cp test-conexion.php dist/test-conexion.php
           cp verificar_build.php dist/verificar_build.php
+          cp sw.js dist/sw.js
           cp .htaccess dist/.htaccess
           cp *.sql dist/
           # Crear carpetas uploads con protección de seguridad

@@ -8,6 +8,7 @@ export interface Expediente {
     carrera: string;
     tipo: 'postulante' | 'docente';
     sede?: string;
+    numero_expediente?: string;
     fechaEnvio: string;
     estado: 'pendiente' | 'aprobado' | 'rechazado';
     totalDocs?: number;
@@ -47,6 +48,7 @@ export const AcademicService = {
             cedula: p.cedula,
             carrera: p.carrera || 'No especificada',
             sede: p.sede || 'Santa Rosa de Lima',
+            numero_expediente: p.numero_expediente || '',
             tipo: p.tipo_usuario === 'concursante_docente' || p.tipo_usuario === 'auxiliar_docente'
                 ? 'docente'
                 : 'postulante',
@@ -137,6 +139,17 @@ export const AcademicService = {
                 cedula: cedula,
                 doc_id: docId,
                 cv_url: cvUrl
+            })
+        });
+    },
+
+    async deleteExpediente(cedula: string, adminUser: string = 'academico') {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'delete_external_user',
+                cedula: cedula,
+                admin_user: adminUser
             })
         });
     }

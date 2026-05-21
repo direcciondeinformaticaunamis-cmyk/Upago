@@ -35,6 +35,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         carrera: (user as any)?.carrera || '',
         sede: (user as any)?.sede || '',
         tipoUsuario: (user as any)?.tipo_usuario || (user as any)?.tipoUsuario || 'postulante' as 'postulante' | 'concursante_docente' | 'auxiliar_docente',
+        numero_expediente: (user as any)?.numero_expediente || (user as any)?.numeroExpediente || '',
         
         // Salud
         grupoSanguineo: (user as any)?.grupo_sanguineo || (user as any)?.grupoSanguineo || '',
@@ -92,6 +93,16 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
             const result = await response.json();
             if (result.status === 'success') {
                 console.log("Datos personales guardados correctamente");
+                // Obtener el número de expediente auto-generado
+                try {
+                    const profileRes = await fetch(`${baseUrl}/api.php?perfil=${formData.cedula}`);
+                    const profileData = await profileRes.json();
+                    if (profileData && profileData.numero_expediente) {
+                        setFormData(prev => ({ ...prev, numero_expediente: profileData.numero_expediente }));
+                    }
+                } catch (fetchErr) {
+                    console.error("Error al obtener el número de expediente actualizado:", fetchErr);
+                }
                 setStep(2);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {

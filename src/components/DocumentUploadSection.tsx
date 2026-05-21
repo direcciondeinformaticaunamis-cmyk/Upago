@@ -51,6 +51,7 @@ interface PostulanteData {
     carrera: string;
     sede: string;
     tipoUsuario?: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
+    numero_expediente?: string;
 }
 
 interface DocumentUploadSectionProps {
@@ -281,7 +282,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                     </div>
                     <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-slate-400">
                         <span>Código Único de Trámite</span>
-                        <span className="text-[var(--primary)] font-mono font-black">UNAMIS-2026-REG{Math.floor(Math.random() * 9000) + 1000}</span>
+                        <span className="text-[var(--primary)] font-mono font-black">{postulanteData.numero_expediente || 'UNAMIS-2026-REG-PENDIENTE'}</span>
                     </div>
                 </div>
 
@@ -294,7 +295,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                         size="lg"
                         icon={ExternalLink}
                         onClick={() => {
-                            const regCode = `UNAMIS-2026-REG${Math.floor(Math.random() * 9000) + 1000}`;
+                            const regCode = postulanteData.numero_expediente || 'UNAMIS-2026-REG-PENDIENTE';
                             const html = generateVoucherHTML(postulanteData, documents, regCode, photo);
                             const win = window.open('', '_blank');
                             if (win) {

@@ -15,6 +15,7 @@ interface StudentDashboardProps {
         expediente_aprobado?: boolean; 
         carrera?: string;
         sede?: string;
+        numero_expediente?: string;
     };
     onLogout: () => void;
 }
@@ -194,7 +195,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                     {user.carrera || 'Medicina'}
                                 </span>
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#c3c6d1]"></div>
-                                <span className="text-[#43474f] font-mono text-sm bg-[#e6e8ea] px-2 py-0.5 rounded">ID: 2023-0492</span>
+                                <span className="text-[#43474f] font-mono text-sm bg-[#e6e8ea] px-2 py-0.5 rounded">
+                                    EXP: {user.numero_expediente || 'UNAMIS-2026-REG-PENDIENTE'}
+                                </span>
                             </div>
                         </div>
                         <button 

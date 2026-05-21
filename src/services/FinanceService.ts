@@ -22,6 +22,7 @@ export interface Payment {
     estado: 'pendiente' | 'verificado' | 'rechazado';
     observaciones?: string;
     numero_boleta?: string;
+    num_comprobante?: string;
     fecha_pago?: string;
     fecha_registro: string;
     asignatura?: string;
@@ -48,6 +49,14 @@ export interface ReconciliationItem {
         comprobante_url?: string;
         puntaje: number;
     } | null;
+}
+
+export interface ReconciliationInput {
+    banco: string;
+    referencia: string;
+    monto: number;
+    fecha_transaccion: string;
+    descripcion: string;
 }
 
 export const FinanceService = {
@@ -89,6 +98,13 @@ export const FinanceService = {
         });
     },
 
+    importBankTransactions: async (transactions: ReconciliationInput[]): Promise<{ status: string, inserted: number, duplicates: number }> => {
+        return fetchApi('import_bank_transactions', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'import_bank_transactions', transactions })
+        });
+    },
+
     getPagos: async (cedula: string = ''): Promise<Payment[]> => {
         return fetchApi(cedula ? `pagos=${cedula}` : 'pagos');
     },
@@ -110,6 +126,7 @@ export const FinanceService = {
     },
 
     getPostulantes: async (): Promise<any[]> => {
-        return fetchApi(''); // api.php sin parámetros devuelve todos los postulantes (línea 648 de api.php)
+        return fetchApi('all_postulantes');
     }
 };
+
