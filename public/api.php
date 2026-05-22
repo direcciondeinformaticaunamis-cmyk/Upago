@@ -378,7 +378,8 @@ try {
         "horario_laboral" => "varchar(100) DEFAULT NULL",
         "estado_revision" => "enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente'",
         "observaciones" => "text DEFAULT NULL",
-        "numero_expediente" => "varchar(50) DEFAULT NULL"
+        "numero_expediente" => "varchar(50) DEFAULT NULL",
+        "tipo_usuario" => "enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'"
     ];
     foreach ($cols_mig as $col => $def) { 
         try { 
@@ -780,14 +781,44 @@ if ($method === 'POST') {
                 throw new Exception("No se puede eliminar un usuario institucional.");
             }
 
-            // Eliminar de la base de datos (postulantes)
+            $conn->beginTransaction();
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 0");
+
+            // a. Eliminar expedientes del postulante
+            $stmtDelExp = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ?");
+            $stmtDelExp->execute([$cedula]);
+
+            // b. Eliminar usuario asociado de la tabla usuarios y sus dependencias si existe
+            $stmtGetUsr = $conn->prepare("SELECT id FROM usuarios WHERE cedula = ?");
+            $stmtGetUsr->execute([$cedula]);
+            $usr = $stmtGetUsr->fetch(PDO::FETCH_ASSOC);
+            if ($usr) {
+                $usr_id = $usr['id'];
+                $conn->prepare("DELETE FROM pagos_examen WHERE usuario_id = ?")->execute([$usr_id]);
+                $conn->prepare("DELETE FROM datos_academicos WHERE usuario_id = ?")->execute([$usr_id]);
+                $conn->prepare("DELETE FROM documentos WHERE usuario_id = ?")->execute([$usr_id]);
+                $conn->prepare("DELETE FROM usuarios WHERE id = ?")->execute([$usr_id]);
+            }
+
+            // c. Eliminar pagos del portal
+            $stmtDelP = $conn->prepare("DELETE FROM pagos WHERE postulante_cedula = ?");
+            $stmtDelP->execute([$cedula]);
+
+            // d. Eliminar de la base de datos (postulantes)
             $stmtDelete = $conn->prepare("DELETE FROM postulantes WHERE cedula = ?");
             $stmtDelete->execute([$cedula]);
 
-            write_system_log("DELETE_EXTERNAL_USER", $admin_user, "Eliminó a {$user_data['nombre']} {$user_data['apellido']} (CI: $cedula)");
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 1");
+            $conn->commit();
 
-            echo json_encode(["status" => "success", "message" => "Usuario eliminado exitosamente."]);
+            write_system_log("DELETE_EXTERNAL_USER", $admin_user, "Eliminó a {$user_data['nombre']} {$user_data['apellido']} (CI: $cedula) y todos sus registros asociados.");
+
+            echo json_encode(["status" => "success", "message" => "Usuario y registros asociados eliminados exitosamente."]);
         } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->exec("SET FOREIGN_KEY_CHECKS = 1");
+                $conn->rollBack();
+            }
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
