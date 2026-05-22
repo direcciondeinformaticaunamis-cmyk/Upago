@@ -42,6 +42,7 @@ jobs:
           cp sw.js dist/sw.js
           cp .htaccess dist/.htaccess
           cp *.sql dist/
+          cp -r documentos dist/
           # Crear carpetas uploads con protección de seguridad
           for dir in cedulas titulos certificados fotos pagos nacimientos proyectos otros; do
             mkdir -p dist/uploads/$dir

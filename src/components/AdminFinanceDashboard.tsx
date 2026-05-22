@@ -10,6 +10,7 @@ import { FinanceService, Payment, FinanceStats } from '../services/FinanceServic
 import InstitutionalAnalytics from './aranceles/InstitutionalAnalytics';
 import SystemSettings from './SystemSettings';
 import ExternalUserManager from './ExternalUserManager';
+import { CashClosures } from './aranceles/CashClosures';
 
 interface AdminDashboardProps {
     user: { nombre: string; apellido: string; email: string; rol: string };
@@ -17,7 +18,7 @@ interface AdminDashboardProps {
 }
 
 const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas' | 'postulantes' | 'external' | 'config'>('dashboard');
+    const [activeSection, setActiveSection] = useState<'dashboard' | 'pagos' | 'conciliacion' | 'reportes' | 'facturas' | 'metricas' | 'postulantes' | 'external' | 'config' | 'cierres'>('dashboard');
     const [payments, setPayments] = useState<Payment[]>([]);
     const [postulantes, setPostulantes] = useState<any[]>([]);
     const [stats, setStats] = useState<FinanceStats | null>(null);
@@ -65,6 +66,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                         { id: 'postulantes', label: 'Gestión Usuarios', icon: Group },
                         { id: 'pagos', label: 'Registro de Pago', icon: Payments },
                         { id: 'conciliacion', label: 'Conciliación', icon: AccountBalanceWallet },
+                        { id: 'cierres', label: 'Cierres de Caja', icon: FileDownload },
                         { id: 'reportes', label: 'Reportes', icon: Assessment },
                         { id: 'metricas', label: 'Métricas', icon: TrendingUp },
                         { id: 'facturas', label: 'Facturas', icon: Receipt },
@@ -416,6 +418,10 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                     ) : activeSection === 'config' ? (
                         <div className="-m-8 bg-slate-50/50 min-h-screen p-8">
                             <SystemSettings />
+                        </div>
+                    ) : activeSection === 'cierres' ? (
+                        <div className="-m-8 bg-slate-50/50 min-h-screen p-8">
+                            <CashClosures />
                         </div>
                     ) : (
                         <div className="-m-8 bg-slate-50/50 min-h-screen">

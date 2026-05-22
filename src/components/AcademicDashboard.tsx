@@ -27,6 +27,17 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         concepto: string;
     } | null>(null);
 
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingExpediente, setEditingExpediente] = useState<Expediente | null>(null);
+    const [editForm, setEditForm] = useState({
+        nombre: '',
+        apellido: '',
+        cedula: '',
+        carrera: '',
+        sede: '',
+        tipo_usuario: 'postulante'
+    });
+
     const handleDirectUpload = async (cedula: string, docId: string, asignatura: string | undefined, event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -234,6 +245,68 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         }
     };
 
+    const handleOpenEditModal = (exp: Expediente) => {
+        setEditingExpediente(exp);
+        setEditForm({
+            nombre: exp.nombre_real || exp.nombre.split(' ')[0] || '',
+            apellido: exp.apellido_real || exp.nombre.split(' ').slice(1).join(' ') || '',
+            cedula: exp.cedula || '',
+            carrera: exp.carrera || '',
+            sede: exp.sede || '',
+            tipo_usuario: exp.tipo_usuario || (exp.tipo === 'docente' ? 'concursante_docente' : 'postulante')
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editForm.nombre.trim() || !editForm.apellido.trim() || !editForm.cedula.trim() || !editForm.carrera.trim() || !editForm.sede.trim()) {
+            notificationService.send(
+                'Campos requeridos',
+                'Por favor, complete todos los campos del formulario.',
+                'warning'
+            );
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const response = await AcademicService.updatePostulante(
+                editingExpediente!.cedula,
+                {
+                    nombre: editForm.nombre,
+                    apellido: editForm.apellido,
+                    cedula: editForm.cedula,
+                    carrera: editForm.carrera,
+                    sede: editForm.sede,
+                    tipo_usuario: editForm.tipo_usuario
+                },
+                user.email
+            );
+            
+            if (response.success) {
+                notificationService.send(
+                    'Postulante Actualizado',
+                    'Los datos del postulante han sido modificados correctamente.',
+                    'success'
+                );
+                setIsEditModalOpen(false);
+                setEditingExpediente(null);
+                await loadExpedientes();
+            } else {
+                throw new Error(response.message || 'Error al actualizar postulante');
+            }
+        } catch (error: any) {
+            console.error('Error actualizando postulante:', error);
+            notificationService.send(
+                'Error al Guardar',
+                error.message || 'No se pudo actualizar la información del postulante.',
+                'error'
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleValidarDocumento = async (cedula: string, docId: string, asignatura?: string) => {
         try {
             await AcademicService.validateDocument(cedula, docId, asignatura);
@@ -432,6 +505,13 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button onClick={() => setSelectedExpediente(exp)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
                                                             <Visibility style={{fontSize: 16}} /> Ver Expediente
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleOpenEditModal(exp)} 
+                                                            className="inline-flex items-center justify-center p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Editar Datos"
+                                                        >
+                                                            <Edit style={{fontSize: 18}} />
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDeleteExpediente(exp.cedula, exp.nombre)} 
@@ -930,6 +1010,124 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     onClose={() => setVentanillaPayment(null)} 
                     onSubmit={handleUploadVentanillaPayment} 
                 />
+            )}
+
+            {/* Modal de Edición de Datos de Postulante */}
+            {isEditModalOpen && editingExpediente && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl animate-fade-in">
+                        <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">Editar Datos de Postulante</h3>
+                                <p className="text-sm text-slate-500">Modificar información del expediente del postulante</p>
+                            </div>
+                            <button onClick={() => { setIsEditModalOpen(false); setEditingExpediente(null); }} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors">
+                                <X />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre</label>
+                                    <input 
+                                        type="text" 
+                                        value={editForm.nombre}
+                                        onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                        placeholder="Nombre del postulante"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Apellido</label>
+                                    <input 
+                                        type="text" 
+                                        value={editForm.apellido}
+                                        onChange={(e) => setEditForm({ ...editForm, apellido: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                        placeholder="Apellido del postulante"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Cédula de Identidad (CI)</label>
+                                    <input 
+                                        type="text" 
+                                        value={editForm.cedula}
+                                        onChange={(e) => setEditForm({ ...editForm, cedula: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm font-mono"
+                                        placeholder="Número de cédula de identidad"
+                                    />
+                                    {editForm.cedula !== editingExpediente.cedula && (
+                                        <p className="text-[11px] text-amber-600 font-medium mt-1">
+                                            ⚠️ Cambiar la cédula actualizará los expedientes, pagos y usuarios relacionados.
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Carrera / Programa</label>
+                                    <select 
+                                        value={editForm.carrera}
+                                        onChange={(e) => setEditForm({ ...editForm, carrera: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                    >
+                                        <option value="">Seleccione carrera</option>
+                                        <option value="Medicina">Medicina</option>
+                                        <option value="Derecho">Derecho</option>
+                                        <option value="Ingeniería">Ingeniería</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Sede</label>
+                                    <select 
+                                        value={editForm.sede}
+                                        onChange={(e) => setEditForm({ ...editForm, sede: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                    >
+                                        <option value="">Seleccione sede</option>
+                                        <option value="Santa Rosa">Santa Rosa</option>
+                                        <option value="San Ignacio">San Ignacio</option>
+                                        <option value="Ayolas">Ayolas</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Tipo de Usuario</label>
+                                    <select 
+                                        value={editForm.tipo_usuario}
+                                        onChange={(e) => setEditForm({ ...editForm, tipo_usuario: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                    >
+                                        <option value="postulante">Postulante</option>
+                                        <option value="concursante_docente">Concursante Docente</option>
+                                        <option value="auxiliar_docente">Auxiliar Docente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end items-center gap-3">
+                            <button 
+                                onClick={() => { setIsEditModalOpen(false); setEditingExpediente(null); }} 
+                                className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={handleSaveEdit}
+                                className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex items-center gap-2"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Cambios'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

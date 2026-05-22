@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS `pagos` (
   `estado` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL,
   `fecha_pago` date DEFAULT NULL,
+  `cierre_nro` int DEFAULT NULL,
+  `cierre_fecha` date DEFAULT NULL,
   `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`postulante_cedula`) REFERENCES `postulantes`(`cedula`) ON DELETE CASCADE

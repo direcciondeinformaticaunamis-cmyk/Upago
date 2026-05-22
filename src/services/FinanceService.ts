@@ -1,5 +1,5 @@
 
-import { fetchApi } from './ApiService';
+import { fetchApi, API_BASE_URL } from './ApiService';
 
 export interface Arancel {
     id: number;
@@ -26,6 +26,8 @@ export interface Payment {
     fecha_pago?: string;
     fecha_registro: string;
     asignatura?: string;
+    cierre_nro?: number | null;
+    cierre_fecha?: string | null;
 }
 
 export interface FinanceStats {
@@ -127,6 +129,34 @@ export const FinanceService = {
 
     getPostulantes: async (): Promise<any[]> => {
         return fetchApi('all_postulantes');
+    },
+
+    getCierrePreview: async (): Promise<Payment[]> => {
+        return fetchApi('get_cierre_preview');
+    },
+
+    getMaxCierreCorrelativo: async (): Promise<{ max_cierre: number }> => {
+        return fetchApi('get_cierre_max_correlativo');
+    },
+
+    getCierresHistoricos: async (): Promise<any[]> => {
+        return fetchApi('get_cierres_historicos');
+    },
+
+    realizarCierre: async (fechaCierre: string, nroCierre: number, pagosIds: number[]): Promise<{ status: string, message: string }> => {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'realizar_cierre',
+                fecha_cierre: fechaCierre,
+                nro_cierre: nroCierre,
+                pagos_ids: pagosIds
+            })
+        });
+    },
+
+    getDownloadCierreUrl: (nroCierre: number, fechaCierre: string): string => {
+        return `${API_BASE_URL}/api.php?descargar_cierre_excel=1&cierre_nro=${nroCierre}&cierre_fecha=${fechaCierre}`;
     }
 };
 

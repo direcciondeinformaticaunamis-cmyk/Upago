@@ -25,10 +25,12 @@ copy /Y verificar_build.php dist\verificar_build.php
 copy /Y sw.js dist\sw.js
 copy /Y .htaccess dist\.htaccess
 copy /Y *.sql dist\
+xcopy /E /I /Y documentos dist\documentos
 
 echo.
 echo [3/3] ¡Listo! Carpeta dist/ preparada con la ultima actualizacion.
 echo Puedes subir los contenidos de dist/ a tu Hostinger por FTP,
 echo comprimirlos en un ZIP, o hacer git push para el deploy automatico.
 echo.
-pause
+rem pause
+

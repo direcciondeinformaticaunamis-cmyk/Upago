@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `postulantes` (
   `foto_url` text DEFAULT NULL,
   `estado_revision` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL,
+  `numero_expediente` varchar(50) DEFAULT NULL,
   `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `cedula_unique` (`cedula`)
@@ -80,6 +81,8 @@ CREATE TABLE IF NOT EXISTS `pagos` (
   `estado` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL,
   `fecha_pago` date DEFAULT NULL,
+  `cierre_nro` int DEFAULT NULL,
+  `cierre_fecha` date DEFAULT NULL,
   `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`postulante_cedula`) REFERENCES `postulantes`(`cedula`) ON DELETE CASCADE

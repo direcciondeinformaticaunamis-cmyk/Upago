@@ -4,9 +4,12 @@ import { fetchApi, API_BASE_URL } from './ApiService';
 export interface Expediente {
     id: string;
     nombre: string;
+    nombre_real?: string;
+    apellido_real?: string;
     cedula: string;
     carrera: string;
     tipo: 'postulante' | 'docente';
+    tipo_usuario?: string;
     sede?: string;
     numero_expediente?: string;
     fechaEnvio: string;
@@ -45,6 +48,8 @@ export const AcademicService = {
         return data.map((p: any) => ({
             id: p.cedula,          // Usamos cédula como ID único real
             nombre: `${p.nombre} ${p.apellido}`,
+            nombre_real: p.nombre,
+            apellido_real: p.apellido,
             cedula: p.cedula,
             carrera: p.carrera || 'No especificada',
             sede: p.sede || 'Santa Rosa de Lima',
@@ -52,6 +57,7 @@ export const AcademicService = {
             tipo: p.tipo_usuario === 'concursante_docente' || p.tipo_usuario === 'auxiliar_docente'
                 ? 'docente'
                 : 'postulante',
+            tipo_usuario: p.tipo_usuario,
             fechaEnvio: p.fecha_registro
                 ? p.fecha_registro.split(' ')[0]
                 : '—',
@@ -149,6 +155,34 @@ export const AcademicService = {
             body: JSON.stringify({
                 action: 'delete_external_user',
                 cedula: cedula,
+                admin_user: adminUser
+            })
+        });
+    },
+
+    async updatePostulante(
+        cedulaActual: string,
+        data: {
+            nombre: string;
+            apellido: string;
+            cedula: string;
+            carrera: string;
+            sede: string;
+            tipo_usuario: string;
+        },
+        adminUser: string = 'academico'
+    ) {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'update_external_user',
+                cedula_actual: cedulaActual,
+                nombre: data.nombre,
+                apellido: data.apellido,
+                cedula: data.cedula,
+                carrera: data.carrera,
+                sede: data.sede,
+                tipo_usuario: data.tipo_usuario,
                 admin_user: adminUser
             })
         });

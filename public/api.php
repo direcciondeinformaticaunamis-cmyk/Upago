@@ -46,6 +46,167 @@ function write_system_log($action, $user = 'Sistema', $details = '') {
     }
 }
 
+// --- UTILIDADES DE CIERRE DE CAJA Y REPORTES EXCEL ---
+function mapearConceptoAFilaPresupuesto($concepto) {
+    $normalized = strtolower(trim($concepto));
+    $normalized = str_replace(array('á', 'é', 'í', 'ó', 'ú', 'ñ'), array('a', 'e', 'i', 'o', 'u', 'n'), $normalized);
+    $normalized = preg_replace('/[^a-z0-9 ]/', '', $normalized);
+    $normalized = preg_replace('/\s+/', ' ', $normalized);
+
+    // Mapear según palabras claves
+    if (strpos($normalized, 'certificado de estudios parcial') !== false) {
+        return array('row' => 11, 'code' => '514020101000');
+    }
+    if (strpos($normalized, 'certificado de estudio') !== false) {
+        return array('row' => 22, 'code' => '514020112000');
+    }
+    if (strpos($normalized, 'programas de estudios por asignatura') !== false || strpos($normalized, 'programa de estudios por asignatura') !== false) {
+        return array('row' => 12, 'code' => '514020102000');
+    }
+    if (strpos($normalized, 'actividades academicas') !== false) {
+        return array('row' => 13, 'code' => '514020103000');
+    }
+    if (strpos($normalized, 'traslados de estudiantes entre carreras') !== false || strpos($normalized, 'traslado entre carreras') !== false || strpos($normalized, 'traslados entre carreras') !== false) {
+        return array('row' => 14, 'code' => '514020104000');
+    }
+    if (strpos($normalized, 'traslados de estudiantes de otras') !== false || strpos($normalized, 'traslado de otra universidad') !== false || strpos($normalized, 'traslados otras universidades') !== false) {
+        return array('row' => 15, 'code' => '514020105000');
+    }
+    if (strpos($normalized, 'convalidacion de asignaturas') !== false || strpos($normalized, 'convalidaciones de asignatura') !== false || strpos($normalized, 'convalidacion') !== false) {
+        return array('row' => 16, 'code' => '514020106000');
+    }
+    if (strpos($normalized, 'matricula de curso de especializacion') !== false || strpos($normalized, 'matricula postgrado') !== false || strpos($normalized, 'matricula de postgrado') !== false) {
+        return array('row' => 17, 'code' => '514020107000');
+    }
+    if (strpos($normalized, 'cuotas de curso de especializacion') !== false || strpos($normalized, 'cuota postgrado') !== false || strpos($normalized, 'cuota de postgrado') !== false) {
+        return array('row' => 18, 'code' => '514020108000');
+    }
+    if (strpos($normalized, 'constancia de trabajo') !== false) {
+        return array('row' => 40, 'code' => '514020302000');
+    }
+    if (strpos($normalized, 'constancia') !== false) {
+        return array('row' => 19, 'code' => '514020109000');
+    }
+    if (strpos($normalized, 'segundo periodo de examen') !== false) {
+        return array('row' => 20, 'code' => '514020110000');
+    }
+    if (strpos($normalized, 'tercer periodo de examen') !== false) {
+        return array('row' => 21, 'code' => '514020111000');
+    }
+    if (strpos($normalized, 'diploma de grado y postgrado') !== false || strpos($normalized, 'diploma de grado') !== false) {
+        return array('row' => 23, 'code' => '514020113000');
+    }
+    if (strpos($normalized, 'registro de diploma de grado') !== false) {
+        return array('row' => 24, 'code' => '514020114000');
+    }
+    if (strpos($normalized, 'registro de diploma de postgrado') !== false) {
+        return array('row' => 25, 'code' => '514020115000');
+    }
+    if (strpos($normalized, 'matricula') !== false) {
+        return array('row' => 26, 'code' => '514020116000');
+    }
+    if (strpos($normalized, 'cuota') !== false) {
+        return array('row' => 27, 'code' => '514020117000');
+    }
+    if (strpos($normalized, 'curso de actualizacion tics pago contado') !== false) {
+        return array('row' => 28, 'code' => '514020118000');
+    }
+    if (strpos($normalized, 'matricula curso de actualizacion tics') !== false) {
+        return array('row' => 29, 'code' => '514020119000');
+    }
+    if (strpos($normalized, 'cuota curso de actualizacion tics') !== false) {
+        return array('row' => 30, 'code' => '514020120000');
+    }
+    if (strpos($normalized, 'programa de estudio por modulo') !== false || strpos($normalized, 'programa de estudios por modulo') !== false) {
+        return array('row' => 31, 'code' => '514020121000');
+    }
+    if (strpos($normalized, 'diploma de curso de actualizacion tics') !== false) {
+        return array('row' => 32, 'code' => '514020122000');
+    }
+    if (strpos($normalized, 'matricula carrera de lic en gerencia') !== false) {
+        return array('row' => 33, 'code' => '514020123000');
+    }
+    if (strpos($normalized, 'cuota de la carrera de lic en gerencia') !== false || strpos($normalized, 'cuota carrera de lic en gerencia') !== false) {
+        return array('row' => 34, 'code' => '514020124000');
+    }
+    if (strpos($normalized, 'inscripcion de titulo obtenido en otra universidad') !== false || strpos($normalized, 'inscripcion de titulo obtenido') !== false) {
+        return array('row' => 36, 'code' => '514020131000');
+    }
+    if (strpos($normalized, 'inscripcion a concurso para encargado') !== false || strpos($normalized, 'inscripcion a concurso') !== false) {
+        return array('row' => 37, 'code' => '514020132000');
+    }
+    if (strpos($normalized, 'autenticacion de documentos') !== false) {
+        return array('row' => 39, 'code' => '514020301000');
+    }
+    if (strpos($normalized, 'fotocopias de expedicion de expediente') !== false || strpos($normalized, 'fotocopia') !== false) {
+        return array('row' => 41, 'code' => '514020303000');
+    }
+
+    if (strpos($normalized, 'examen') !== false) {
+        return array('row' => 20, 'code' => '514020110000');
+    }
+
+    return array('row' => 27, 'code' => '514020117000');
+}
+
+function excel_update_cell($xpath, $cell_ref, $val, $type = 'n', $keep_formula = false) {
+    $query = "//ns:c[@r='{$cell_ref}']";
+    $nodes = $xpath->query($query);
+    
+    if ($nodes->length > 0) {
+        $cell = $nodes->item(0);
+        
+        if ($keep_formula) {
+            $v_nodes = $xpath->query("ns:v", $cell);
+            if ($v_nodes->length > 0) {
+                $v = $v_nodes->item(0);
+                if ($val === null || $val === '') {
+                    $cell->removeChild($v);
+                } else {
+                    $v->nodeValue = $val;
+                }
+            } else {
+                if ($val !== null && $val !== '') {
+                    $v = $cell->ownerDocument->createElementNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main', 'v', $val);
+                    $cell->appendChild($v);
+                }
+            }
+            return;
+        }
+        
+        $f_nodes = $xpath->query("ns:f", $cell);
+        foreach ($f_nodes as $fn) {
+            $cell->removeChild($fn);
+        }
+        
+        $v_nodes = $xpath->query("ns:v", $cell);
+        foreach ($v_nodes as $vn) {
+            $cell->removeChild($vn);
+        }
+        $is_nodes = $xpath->query("ns:is", $cell);
+        foreach ($is_nodes as $isn) {
+            $cell->removeChild($isn);
+        }
+        
+        if ($val === null || $val === '') {
+            $cell->removeAttribute('t');
+            return;
+        }
+        
+        if ($type === 'inlineStr') {
+            $cell->setAttribute('t', 'inlineStr');
+            $is = $cell->ownerDocument->createElementNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main', 'is');
+            $t = $cell->ownerDocument->createElementNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main', 't', $val);
+            $is->appendChild($t);
+            $cell->appendChild($is);
+        } else {
+            $cell->removeAttribute('t');
+            $v = $cell->ownerDocument->createElementNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main', 'v', $val);
+            $cell->appendChild($v);
+        }
+    }
+}
+
 require_once 'config.php';
 // Cargamos el módulo de seguridad si existe (JWT, Roles)
 if (file_exists('security.php')) {
@@ -259,6 +420,8 @@ try {
       `estado` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
       `observaciones` text DEFAULT NULL,
       `fecha_pago` date DEFAULT NULL,
+      `cierre_nro` int DEFAULT NULL,
+      `cierre_fecha` date DEFAULT NULL,
       `fecha_registro` timestamp DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       CONSTRAINT `fk_pago_postulante` FOREIGN KEY (`postulante_cedula`) REFERENCES `postulantes` (`cedula`) ON DELETE CASCADE
@@ -267,7 +430,9 @@ try {
     $cols_pagos_mig = [
         "asignatura" => "varchar(255) DEFAULT NULL",
         "observaciones" => "text DEFAULT NULL",
-        "fecha_pago" => "date DEFAULT NULL"
+        "fecha_pago" => "date DEFAULT NULL",
+        "cierre_nro" => "int DEFAULT NULL",
+        "cierre_fecha" => "date DEFAULT NULL"
     ];
     foreach ($cols_pagos_mig as $col => $def) {
         try {
@@ -629,6 +794,90 @@ if ($method === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'update_external_user') {
+        require_admin('academico'); // Seguridad: Coordinadores y administradores
+        try {
+            $cedula_actual = trim($data['cedula_actual'] ?? '');
+            $nombre = trim($data['nombre'] ?? '');
+            $apellido = trim($data['apellido'] ?? '');
+            $nueva_cedula = trim($data['cedula'] ?? '');
+            $carrera = trim($data['carrera'] ?? '');
+            $sede = trim($data['sede'] ?? '');
+            $tipo_usuario = trim($data['tipo_usuario'] ?? 'postulante');
+            $admin_user = $data['admin_user'] ?? 'academico';
+
+            if (!$cedula_actual || !$nombre || !$apellido || !$nueva_cedula) {
+                throw new Exception("Faltan campos requeridos.");
+            }
+
+            // Validar tipo_usuario
+            $allowed_types = ['postulante', 'concursante_docente', 'auxiliar_docente'];
+            if (!in_array($tipo_usuario, $allowed_types)) {
+                throw new Exception("Tipo de usuario no válido.");
+            }
+
+            // 1. Verificar si el postulante a editar existe
+            $stmtGet = $conn->prepare("SELECT id, nombre, apellido, correo FROM postulantes WHERE cedula = ?");
+            $stmtGet->execute([$cedula_actual]);
+            $user_data = $stmtGet->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user_data) {
+                throw new Exception("Postulante no encontrado.");
+            }
+
+            // 2. Si la cédula cambia, verificar que la nueva cédula no exista ya en la BD
+            if ($nueva_cedula !== $cedula_actual) {
+                $stmtCheck = $conn->prepare("SELECT id FROM postulantes WHERE cedula = ?");
+                $stmtCheck->execute([$nueva_cedula]);
+                if ($stmtCheck->fetch()) {
+                    throw new Exception("La nueva cédula ya está registrada para otro postulante.");
+                }
+            }
+
+            // 3. Ejecutar actualizaciones en una transacción
+            $conn->beginTransaction();
+
+            // Desactivar temporalmente FK checks para permitir cambiar la cédula
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 0");
+
+            // a. Actualizar la tabla postulantes
+            $stmtUpdate = $conn->prepare("UPDATE postulantes SET nombre = ?, apellido = ?, cedula = ?, carrera = ?, sede = ?, tipo_usuario = ? WHERE cedula = ?");
+            $stmtUpdate->execute([$nombre, $apellido, $nueva_cedula, $carrera, $sede, $tipo_usuario, $cedula_actual]);
+
+            // b. Propagar cambios a la tabla usuarios si el usuario existe (basado en la cédula)
+            $stmtUsers = $conn->prepare("UPDATE usuarios SET nombre = ?, apellido = ?, cedula = ? WHERE cedula = ?");
+            $stmtUsers->execute([$nombre, $apellido, $nueva_cedula, $cedula_actual]);
+
+            // c. Si la cédula cambió, propagar el cambio a las tablas relacionadas
+            if ($nueva_cedula !== $cedula_actual) {
+                // Actualizar en expedientes
+                $stmtExp = $conn->prepare("UPDATE expedientes SET postulante_id = ? WHERE postulante_id = ?");
+                $stmtExp->execute([$nueva_cedula, $cedula_actual]);
+
+                // Actualizar en pagos
+                $stmtPagos = $conn->prepare("UPDATE pagos SET postulante_cedula = ? WHERE postulante_cedula = ?");
+                $stmtPagos->execute([$nueva_cedula, $cedula_actual]);
+            }
+
+            // Rehabilitar FK checks y confirmar
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 1");
+            $conn->commit();
+
+            write_system_log("UPDATE_EXTERNAL_USER", $admin_user, "Editó postulante $cedula_actual -> Nombre: $nombre $apellido, Cédula: $nueva_cedula, Carrera: $carrera, Sede: $sede, Tipo: $tipo_usuario");
+
+            echo json_encode(["status" => "success", "message" => "Postulante actualizado correctamente."]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 1"); // Por si acaso
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+
     if (isset($data['action']) && $data['action'] === 'mark_doc_in_cv') {
         require_admin('academico'); // Seguridad: Solo coordinadores académicos y administradores
         try {
@@ -966,10 +1215,358 @@ if ($method === 'POST') {
         }
         exit;
     }
+
+    if (isset($data['action']) && $data['action'] === 'realizar_cierre') {
+        require_admin('finance');
+        $fecha_cierre = $data['fecha_cierre'] ?? date('Y-m-d');
+        $nro_cierre = (int)($data['nro_cierre'] ?? 0);
+        $pagos_ids = $data['pagos_ids'] ?? [];
+        
+        if ($nro_cierre <= 0) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "El número de cierre debe ser un entero positivo."]);
+            exit;
+        }
+        if (empty($pagos_ids)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Debe seleccionar al menos un pago para realizar el cierre."]);
+            exit;
+        }
+        
+        try {
+            $conn->beginTransaction();
+            
+            $stmtCheck = $conn->prepare("SELECT COUNT(*) FROM pagos WHERE cierre_nro = ?");
+            $stmtCheck->execute([$nro_cierre]);
+            if ($stmtCheck->fetchColumn() > 0) {
+                $conn->rollBack();
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "El número de cierre $nro_cierre ya ha sido utilizado."]);
+                exit;
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($pagos_ids), '?'));
+            $sql = "UPDATE pagos SET cierre_nro = ?, cierre_fecha = ? WHERE id IN ($placeholders) AND estado = 'verificado' AND cierre_nro IS NULL";
+            $stmt = $conn->prepare($sql);
+            
+            $params = array_merge([$nro_cierre, $fecha_cierre], $pagos_ids);
+            $stmt->execute($params);
+            
+            $updated = $stmt->rowCount();
+            if ($updated == 0) {
+                $conn->rollBack();
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "No se pudieron cerrar los pagos seleccionados. Verifique que estén verificados y no tengan un cierre asignado."]);
+                exit;
+            }
+            
+            $conn->commit();
+            write_system_log("REALIZAR_CIERRE", $data['admin_user'] ?? 'Finance', "Se realizó el cierre N° $nro_cierre con fecha $fecha_cierre para $updated pagos.");
+            echo json_encode(["status" => "success", "message" => "Cierre procesado correctamente con $updated transacciones."]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Error interno al procesar el cierre: " . $e->getMessage()]);
+        }
+        exit;
+    }
 }
 
 // --- ACCIONES GET ---
 if ($method === 'GET') {
+    // Endpoints de Cierre de Caja
+    if (isset($_GET['get_cierre_preview'])) {
+        require_admin('finance');
+        try {
+            $stmt = $conn->query("
+                SELECT p.*, pos.nombre, pos.apellido 
+                FROM pagos p 
+                JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                WHERE p.estado = 'verificado' AND p.cierre_nro IS NULL 
+                ORDER BY p.fecha_pago ASC, p.id ASC
+            ");
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($_GET['get_cierre_max_correlativo'])) {
+        require_admin('finance');
+        try {
+            $stmt = $conn->query("SELECT MAX(cierre_nro) FROM pagos");
+            $max = (int)$stmt->fetchColumn();
+            echo json_encode(["max_cierre" => $max > 0 ? $max : 61]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($_GET['get_cierres_historicos'])) {
+        require_admin('finance');
+        try {
+            $stmt = $conn->query("
+                SELECT cierre_nro, cierre_fecha, COUNT(*) as transacciones, SUM(monto) as total
+                FROM pagos 
+                WHERE cierre_nro IS NOT NULL 
+                GROUP BY cierre_nro, cierre_fecha 
+                ORDER BY cierre_nro DESC
+            ");
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($_GET['descargar_cierre_excel'])) {
+        require_admin('finance');
+        $cierre_nro = (int)($_GET['cierre_nro'] ?? 0);
+        $cierre_fecha = $_GET['cierre_fecha'] ?? '';
+        
+        if ($cierre_nro <= 0 || !$cierre_fecha) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Parámetros inválidos para la descarga."]);
+            exit;
+        }
+
+        try {
+            $stmt = $conn->prepare("
+                SELECT p.*, pos.nombre, pos.apellido 
+                FROM pagos p 
+                JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                WHERE p.cierre_nro = ? 
+                ORDER BY p.fecha_pago ASC, p.id ASC
+            ");
+            $stmt->execute([$cierre_nro]);
+            $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($pagos)) {
+                http_response_code(404);
+                echo json_encode(["status" => "error", "message" => "No se encontraron pagos asociados a este cierre."]);
+                exit;
+            }
+
+            $template_file = __DIR__ . '/documentos/RESUMEN DE INGRESOS-19-05-2026 CIERRE N°61.xlsx';
+            if (!file_exists($template_file)) {
+                throw new Exception("Plantilla Excel no encontrada.");
+            }
+
+            @mkdir(__DIR__ . '/logs', 0755, true);
+            $temp_file = __DIR__ . '/logs/temp_cierre_' . uniqid() . '.xlsx';
+            if (!copy($template_file, $temp_file)) {
+                throw new Exception("No se pudo duplicar la plantilla Excel.");
+            }
+
+            $zip = new ZipArchive();
+            if ($zip->open($temp_file) !== TRUE) {
+                throw new Exception("No se pudo abrir el archivo Excel clonado.");
+            }
+
+            $sheet1_xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+            if ($sheet1_xml === FALSE) {
+                throw new Exception("No se encontró xl/worksheets/sheet1.xml en el Excel.");
+            }
+
+            $dom1 = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom1->loadXML($sheet1_xml);
+            libxml_clear_errors();
+
+            $xpath1 = new DOMXPath($dom1);
+            $xpath1->registerNamespace('ns', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+
+            $fecha_parts = explode('-', $cierre_fecha);
+            $fecha_formateada = (count($fecha_parts) === 3) ? "{$fecha_parts[2]}/{$fecha_parts[1]}/{$fecha_parts[0]}" : $cierre_fecha;
+            
+            excel_update_cell($xpath1, 'G4', "Fecha Cierre: " . $fecha_formateada, 'inlineStr');
+            excel_update_cell($xpath1, 'G5', "N° de Cierre:  " . $cierre_nro, 'inlineStr');
+
+            $hoja2_acumulados = [];
+            for ($r = 11; $r <= 41; $r++) {
+                $hoja2_acumulados[$r] = ['efectivo' => 0.0, 'transferencia' => 0.0];
+            }
+
+            $sum_efectivo = 0.0;
+            $sum_transferencia = 0.0;
+
+            for ($idx = 0; $idx < 35; $idx++) {
+                $row_num = 7 + $idx;
+                if ($idx < count($pagos)) {
+                    $pago = $pagos[$idx];
+                    $monto = (float)$pago['monto'];
+                    $es_efectivo = (strtolower($pago['metodo_pago'] ?? '') === 'efectivo');
+
+                    $p_fecha_parts = explode('-', $pago['fecha_pago']);
+                    $p_fecha_form = (count($p_fecha_parts) === 3) ? "{$p_fecha_parts[2]}/{$p_fecha_parts[1]}/{$p_fecha_parts[0]}" : $pago['fecha_pago'];
+
+                    $comprobante = $pago['num_comprobante'] ?? '';
+                    $cedula = $pago['postulante_cedula'] ?? '';
+                    $cliente = mb_strtoupper(($pago['nombre'] ?? '') . ' ' . ($pago['apellido'] ?? ''), 'UTF-8');
+                    $arancel = $pago['concepto'] ?? '';
+
+                    if ($es_efectivo) {
+                        $pago_efectivo = $monto;
+                        $pago_transf = 0.0;
+                        $sum_efectivo += $monto;
+                    } else {
+                        $pago_efectivo = 0.0;
+                        $pago_transf = $monto;
+                        $sum_transferencia += $monto;
+                    }
+
+                    $banco = '';
+                    $comp_transf = '';
+                    $fecha_transf = '';
+                    if (!$es_efectivo) {
+                        $banco = mb_strtoupper($pago['banco'] ?? 'CONTINENTAL S.A.E.C.A.', 'UTF-8');
+                        $comp_transf = $pago['num_comprobante'] ?? '';
+                        $fecha_transf = $p_fecha_form;
+                    }
+
+                    excel_update_cell($xpath1, 'A' . $row_num, $p_fecha_form, 'inlineStr');
+                    excel_update_cell($xpath1, 'B' . $row_num, $comprobante, 'inlineStr');
+                    excel_update_cell($xpath1, 'C' . $row_num, $cedula, 'n');
+                    excel_update_cell($xpath1, 'D' . $row_num, $cliente, 'inlineStr');
+                    excel_update_cell($xpath1, 'E' . $row_num, $pago_efectivo, 'n');
+                    excel_update_cell($xpath1, 'F' . $row_num, $banco, 'inlineStr');
+                    excel_update_cell($xpath1, 'G' . $row_num, $comp_transf, 'inlineStr');
+                    excel_update_cell($xpath1, 'H' . $row_num, $fecha_transf, 'inlineStr');
+                    excel_update_cell($xpath1, 'I' . $row_num, $pago_transf, 'n');
+                    excel_update_cell($xpath1, 'J' . $row_num, $monto, 'n');
+                    excel_update_cell($xpath1, 'K' . $row_num, $arancel, 'inlineStr');
+
+                    $mapeo = mapearConceptoAFilaPresupuesto($arancel);
+                    $fila_hoja2 = $mapeo['row'];
+                    if ($fila_hoja2 >= 11 && $fila_hoja2 <= 41) {
+                        if ($es_efectivo) {
+                            $hoja2_acumulados[$fila_hoja2]['efectivo'] += $monto;
+                        } else {
+                            $hoja2_acumulados[$fila_hoja2]['transferencia'] += $monto;
+                        }
+                    }
+                } else {
+                    excel_update_cell($xpath1, 'A' . $row_num, null);
+                    excel_update_cell($xpath1, 'B' . $row_num, null);
+                    excel_update_cell($xpath1, 'C' . $row_num, null);
+                    excel_update_cell($xpath1, 'D' . $row_num, null);
+                    excel_update_cell($xpath1, 'E' . $row_num, null);
+                    excel_update_cell($xpath1, 'F' . $row_num, null);
+                    excel_update_cell($xpath1, 'G' . $row_num, null);
+                    excel_update_cell($xpath1, 'H' . $row_num, null);
+                    excel_update_cell($xpath1, 'I' . $row_num, null);
+                    excel_update_cell($xpath1, 'J' . $row_num, null);
+                    excel_update_cell($xpath1, 'K' . $row_num, null);
+                }
+            }
+
+            excel_update_cell($xpath1, 'I42', $sum_transferencia, 'n', true);
+            excel_update_cell($xpath1, 'J42', $sum_efectivo + $sum_transferencia, 'n', true);
+
+            $zip->addFromString('xl/worksheets/sheet1.xml', $dom1->saveXML());
+
+            $sheet2_xml = $zip->getFromName('xl/worksheets/sheet2.xml');
+            if ($sheet2_xml === FALSE) {
+                throw new Exception("No se encontró xl/worksheets/sheet2.xml en el Excel.");
+            }
+
+            $dom2 = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom2->loadXML($sheet2_xml);
+            libxml_clear_errors();
+
+            $xpath2 = new DOMXPath($dom2);
+            $xpath2->registerNamespace('ns', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+
+            excel_update_cell($xpath2, 'A5', "Fecha de Ingreso : " . $fecha_formateada, 'inlineStr');
+
+            for ($r = 11; $r <= 41; $r++) {
+                $ef = $hoja2_acumulados[$r]['efectivo'];
+                $tr = $hoja2_acumulados[$r]['transferencia'];
+                $tot = $ef + $tr;
+
+                excel_update_cell($xpath2, 'C' . $r, ($ef > 0) ? $ef : null, 'n');
+                excel_update_cell($xpath2, 'D' . $r, ($tr > 0) ? $tr : null, 'n');
+                excel_update_cell($xpath2, 'E' . $r, ($tot > 0) ? $tot : null, 'n', true);
+            }
+
+            $c10_efectivo = 0.0;
+            $d10_transferencia = 0.0;
+            $e10_total = 0.0;
+            for ($r = 11; $r <= 32; $r++) {
+                $c10_efectivo += $hoja2_acumulados[$r]['efectivo'];
+            }
+            for ($r = 11; $r <= 37; $r++) {
+                $d10_transferencia += $hoja2_acumulados[$r]['transferencia'];
+                $e10_total += ($hoja2_acumulados[$r]['efectivo'] + $hoja2_acumulados[$r]['transferencia']);
+            }
+            excel_update_cell($xpath2, 'C10', $c10_efectivo, 'n', true);
+            excel_update_cell($xpath2, 'D10', $d10_transferencia, 'n', true);
+            excel_update_cell($xpath2, 'E10', $e10_total, 'n', true);
+
+            excel_update_cell($xpath2, 'C8', $c10_efectivo, 'n', true);
+            excel_update_cell($xpath2, 'D8', $e10_total, 'n', true);
+            excel_update_cell($xpath2, 'E8', $e10_total, 'n', true);
+
+            $c38_efectivo = 0.0;
+            $d38_transferencia = 0.0;
+            $e38_total = 0.0;
+            for ($r = 39; $r <= 41; $r++) {
+                $c38_efectivo += $hoja2_acumulados[$r]['efectivo'];
+                $d38_transferencia += $hoja2_acumulados[$r]['transferencia'];
+                $e38_total += ($hoja2_acumulados[$r]['efectivo'] + $hoja2_acumulados[$r]['transferencia']);
+            }
+            excel_update_cell($xpath2, 'C38', $c38_efectivo, 'n', true);
+            excel_update_cell($xpath2, 'D38', $d38_transferencia, 'n', true);
+            excel_update_cell($xpath2, 'E38', $e38_total, 'n', true);
+
+            excel_update_cell($xpath2, 'C9', $c38_efectivo, 'n', true);
+            excel_update_cell($xpath2, 'D9', $e38_total, 'n', true);
+            excel_update_cell($xpath2, 'E9', $e38_total, 'n', true);
+
+            $c42_total = $c10_efectivo + $c38_efectivo;
+            $e42_total = $e10_total + $e38_total;
+            excel_update_cell($xpath2, 'C42', $c42_total, 'n', true);
+            excel_update_cell($xpath2, 'E42', $e42_total, 'n', true);
+
+            excel_update_cell($xpath2, 'C43', $c42_total, 'n', true);
+            excel_update_cell($xpath2, 'C54', $c42_total, 'n', true);
+
+            $zip->addFromString('xl/worksheets/sheet2.xml', $dom2->saveXML());
+            $zip->close();
+
+            $filename = "RESUMEN DE INGRESOS-{$fecha_formateada} CIERRE N" . str_pad($cierre_nro, 2, '0', STR_PAD_LEFT) . ".xlsx";
+            $filename = str_replace('/', '-', $filename);
+
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($temp_file));
+            
+            readfile($temp_file);
+            @unlink($temp_file);
+            exit;
+
+        } catch (Exception $e) {
+            if (isset($temp_file) && file_exists($temp_file)) {
+                @unlink($temp_file);
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($_GET['stats_finance'])) {
         try {
             // Recaudación hoy: verified payments today
