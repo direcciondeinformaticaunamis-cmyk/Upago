@@ -600,7 +600,11 @@ if ($method === 'POST') {
             write_system_log("ADMIN_LOGIN", $user, "Exitoso");
             exit;
         } else if (($user === 'academico@unamis.edu.py' || $user === 'medicina@unamis.edu.py') && $pass === 'admin123') {
-            echo json_encode(["status" => "success", "user" => ["nombre" => "Coordinador", "email" => $user, "rol" => "academico"]]); exit;
+            $rol = 'academico'; $nombre = "Coordinador";
+            $token = function_exists('generate_token') ? generate_token(["email" => $user, "rol" => $rol, "nombre" => $nombre]) : null;
+            echo json_encode(["status" => "success", "token" => $token, "user" => ["nombre" => $nombre, "email" => $user, "rol" => $rol]]);
+            write_system_log("ADMIN_LOGIN", $user, "Exitoso");
+            exit;
         }
         http_response_code(401); echo json_encode(["status" => "error", "message" => "Credenciales inválidas"]); exit;
     }

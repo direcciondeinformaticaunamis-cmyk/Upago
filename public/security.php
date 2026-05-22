@@ -44,6 +44,15 @@ function get_authorized_user() {
         }
     }
     
+    // ALTERNATIVA: Buscar el token en el cuerpo de la petición (POST)
+    if (empty($auth_header)) {
+        $raw_input = file_get_contents('php://input');
+        $data = json_decode($raw_input, true);
+        if (isset($data['token'])) {
+            $auth_header = 'Bearer ' . $data['token'];
+        }
+    }
+    
     if (strpos($auth_header, 'Bearer ') !== 0) return null;
     
     $token = substr($auth_header, 7);

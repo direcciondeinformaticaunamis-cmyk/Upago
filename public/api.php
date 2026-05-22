@@ -600,7 +600,11 @@ if ($method === 'POST') {
             write_system_log("ADMIN_LOGIN", $user, "Exitoso");
             exit;
         } else if (($user === 'academico@unamis.edu.py' || $user === 'medicina@unamis.edu.py') && $pass === 'admin123') {
-            echo json_encode(["status" => "success", "user" => ["nombre" => "Coordinador", "email" => $user, "rol" => "academico"]]); exit;
+            $rol = 'academico'; $nombre = "Coordinador";
+            $token = function_exists('generate_token') ? generate_token(["email" => $user, "rol" => $rol, "nombre" => $nombre]) : null;
+            echo json_encode(["status" => "success", "token" => $token, "user" => ["nombre" => $nombre, "email" => $user, "rol" => $rol]]);
+            write_system_log("ADMIN_LOGIN", $user, "Exitoso");
+            exit;
         }
         http_response_code(401); echo json_encode(["status" => "error", "message" => "Credenciales inválidas"]); exit;
     }
@@ -876,7 +880,8 @@ if ($method === 'POST') {
             $admin_user = $data['admin_user'] ?? 'academico';
 
             if (!$cedula_actual || !$nombre || !$apellido || !$nueva_cedula) {
-                throw new Exception("Faltan campos requeridos.");
+                error_log("DEBUG update_external_user failed: " . json_encode($data));
+                throw new Exception("Faltan campos requeridos: cedula_actual=$cedula_actual, nombre=$nombre, apellido=$apellido, cedula=$nueva_cedula");
             }
 
             // Validar tipo_usuario
@@ -891,7 +896,8 @@ if ($method === 'POST') {
             $user_data = $stmtGet->fetch(PDO::FETCH_ASSOC);
 
             if (!$user_data) {
-                throw new Exception("Postulante no encontrado.");
+                error_log("DEBUG update_external_user - Postulante no encontrado. cedula_actual buscada: " . $cedula_actual);
+                throw new Exception("Postulante no encontrado con cédula: " . $cedula_actual);
             }
 
             // 2. Si la cédula cambia, verificar que la nueva cédula no exista ya en la BD

@@ -8,9 +8,23 @@ export const fetchApi = async (params: string = '', options: RequestInit = {}) =
     const url = params ? `${API_URL}?${params}` : API_URL;
     const headers: Record<string, string> = { ...options.headers as any };
     
-    // Automatically add Authorization token if available
+    // Get token
     const token = localStorage.getItem('upago_token');
-    if (token) {
+    
+    // Inject token into body for POST requests to avoid header issues
+    if (options.method === 'POST' && token) {
+        let body = {};
+        try {
+            body = JSON.parse(options.body as string || '{}');
+        } catch (e) {
+            console.error("Error parsing request body", e);
+        }
+        body = { ...body, token };
+        options.body = JSON.stringify(body);
+    }
+    
+    // Keep Authorization header as fallback
+    if (token && !options.body) {
         headers['Authorization'] = `Bearer ${token}`;
     }
     
