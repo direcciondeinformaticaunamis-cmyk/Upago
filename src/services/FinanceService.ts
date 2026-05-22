@@ -156,7 +156,8 @@ export const FinanceService = {
     },
 
     getDownloadCierreUrl: (nroCierre: number, fechaCierre: string): string => {
-        return `${API_BASE_URL}/api.php?descargar_cierre_excel=1&cierre_nro=${nroCierre}&cierre_fecha=${fechaCierre}`;
+        const token = localStorage.getItem('upago_token') || '';
+        return `${API_BASE_URL}/api.php?descargar_cierre_excel=1&cierre_nro=${nroCierre}&cierre_fecha=${fechaCierre}&token=${encodeURIComponent(token)}`;
     }
 };
 

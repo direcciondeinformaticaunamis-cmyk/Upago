@@ -575,7 +575,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     Cancelar
                                 </button>
                             </div>
-                            <MisDatosModule forceEdit={true} initialStep={1} />
+                            <MisDatosModule forceEdit={true} initialStep={1} isAcademic={true} />
                         </div>
                     )}
                     {activeSection === 'dashboard' && (

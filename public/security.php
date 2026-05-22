@@ -53,6 +53,11 @@ function get_authorized_user() {
         }
     }
     
+    // ALTERNATIVA: Buscar el token en la query string (GET) para descargas de archivos
+    if (empty($auth_header) && isset($_GET['token'])) {
+        $auth_header = 'Bearer ' . $_GET['token'];
+    }
+    
     if (strpos($auth_header, 'Bearer ') !== 0) return null;
     
     $token = substr($auth_header, 7);

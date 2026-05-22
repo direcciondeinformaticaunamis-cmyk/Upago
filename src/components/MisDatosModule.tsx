@@ -8,9 +8,10 @@ interface MisDatosModuleProps {
     user?: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; estado_expediente?: 'pendiente' | 'aprobado' | 'rechazado'; };
     initialStep?: number;
     forceEdit?: boolean;
+    isAcademic?: boolean;
 }
 
-const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false }) => {
+const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false, isAcademic = false }) => {
     // Solo mostrar el resumen si el expediente está aprobado o si ya se envió (tiene carrera y teléfono cargado) y no estamos forzando edición.
     const hasSubmittedData = user?.expediente_aprobado || (user?.nombre && (user as any).carrera && (user as any).telefono);
     const [isSubmitted, setIsSubmitted] = useState(!forceEdit && hasSubmittedData);
@@ -295,6 +296,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                     errors={errors}
                     onChange={handleChange}
                     onContinue={handleContinue}
+                    isAcademic={isAcademic}
                 />
             ) : (
                 <DocumentUploadSection

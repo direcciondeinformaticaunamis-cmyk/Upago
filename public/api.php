@@ -4,6 +4,37 @@
  * Maneja la persistencia y la organización de archivos por carpetas
  */
 
+// Global Error and Exception Handler for robust JSON responses on 500 errors
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
+set_exception_handler(function ($exception) {
+    http_response_code(500);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Excepción no manejada: " . $exception->getMessage(),
+        "file" => basename($exception->getFile()),
+        "line" => $exception->getLine(),
+        "trace" => $exception->getTraceAsString()
+    ]);
+    exit;
+});
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        return;
+    }
+    http_response_code(500);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Error PHP: " . $message,
+        "file" => basename($file),
+        "line" => $line
+    ]);
+    exit;
+});
+
 // Seguridad CORS: Permitir solo dominios oficiales de la UNAMIS
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed_domains = ['https://upago.unamis.edu.py', 'https://unamis.edu.py', 'https://www.unamis.edu.py'];
@@ -880,8 +911,7 @@ if ($method === 'POST') {
             $admin_user = $data['admin_user'] ?? 'academico';
 
             if (!$cedula_actual || !$nombre || !$apellido || !$nueva_cedula) {
-                error_log("DEBUG update_external_user failed: " . json_encode($data));
-                throw new Exception("Faltan campos requeridos: cedula_actual=$cedula_actual, nombre=$nombre, apellido=$apellido, cedula=$nueva_cedula");
+                throw new Exception("Faltan campos requeridos.");
             }
 
             // Validar tipo_usuario
@@ -896,8 +926,7 @@ if ($method === 'POST') {
             $user_data = $stmtGet->fetch(PDO::FETCH_ASSOC);
 
             if (!$user_data) {
-                error_log("DEBUG update_external_user - Postulante no encontrado. cedula_actual buscada: " . $cedula_actual);
-                throw new Exception("Postulante no encontrado con cédula: " . $cedula_actual);
+                throw new Exception("Postulante no encontrado.");
             }
 
             // 2. Si la cédula cambia, verificar que la nueva cédula no exista ya en la BD

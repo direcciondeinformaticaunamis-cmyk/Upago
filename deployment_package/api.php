@@ -4,6 +4,37 @@
  * Maneja la persistencia y la organización de archivos por carpetas
  */
 
+// Global Error and Exception Handler for robust JSON responses on 500 errors
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
+set_exception_handler(function ($exception) {
+    http_response_code(500);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Excepción no manejada: " . $exception->getMessage(),
+        "file" => basename($exception->getFile()),
+        "line" => $exception->getLine(),
+        "trace" => $exception->getTraceAsString()
+    ]);
+    exit;
+});
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        return;
+    }
+    http_response_code(500);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Error PHP: " . $message,
+        "file" => basename($file),
+        "line" => $line
+    ]);
+    exit;
+});
+
 // Seguridad CORS: Permitir solo dominios oficiales de la UNAMIS
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed_domains = ['https://upago.unamis.edu.py', 'https://unamis.edu.py', 'https://www.unamis.edu.py'];

@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { OcrUploadModal } from './OcrUploadModal';
 import {
     User,
     Mail,
@@ -80,10 +81,20 @@ interface PersonalDataFormProps {
     onChange: (field: string, value: any) => void;
     onContinue: () => void;
     isLoading?: boolean;
+    isAcademic?: boolean;
 }
 
-const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false }) => {
+const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
+
+    const handleOcrSuccess = (ocrData: any) => {
+        Object.entries(ocrData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                onChange(key, value);
+            }
+        });
+    };
 
     const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -124,8 +135,19 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                     </h2>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Paso 01: Ficha de Datos Personales y Académicos</p>
                 </div>
-                <div className="flex items-center gap-2.5 px-4 py-2 bg-[var(--primary-50)] rounded-2xl border border-[var(--primary-100)] text-[10px] font-black text-[var(--primary)] uppercase tracking-widest shadow-sm">
-                    <CheckCircle2 size={14} className="text-[var(--primary)]" /> Portal Oficial UNAMIS
+                <div className="flex flex-wrap items-center gap-3">
+                    {isAcademic && (
+                        <button
+                            type="button"
+                            onClick={() => setIsOcrModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md hover:scale-[1.02] active:scale-95"
+                        >
+                            📂 Cargar desde Formulario Escaneado (OCR)
+                        </button>
+                    )}
+                    <div className="flex items-center gap-2.5 px-4 py-2 bg-[var(--primary-50)] rounded-2xl border border-[var(--primary-100)] text-[10px] font-black text-[var(--primary)] uppercase tracking-widest shadow-sm">
+                        <CheckCircle2 size={14} className="text-[var(--primary)]" /> Portal Oficial UNAMIS
+                    </div>
                 </div>
             </div>
 
@@ -714,6 +736,12 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                     {isLoading ? 'Guardando datos...' : 'Siguiente: Carga de Documentos'}
                 </AppButton>
             </div>
+            
+            <OcrUploadModal
+                isOpen={isOcrModalOpen}
+                onClose={() => setIsOcrModalOpen(false)}
+                onSuccess={handleOcrSuccess}
+            />
         </motion.div>
     );
 };
