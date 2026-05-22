@@ -48,6 +48,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         formData.append('file', file);
         formData.append('type', docId);
         formData.append('postulante_id', cedula);
+        formData.append('admin_upload', '1');
         if (asignatura) {
             formData.append('asignatura', asignatura);
         }
@@ -332,6 +333,25 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
             }
         } catch (error) {
             console.error('Error saving observation:', error);
+        }
+    };
+
+    const handleDeleteDocument = async (cedula: string, docId: string, asignatura?: string) => {
+        if (!window.confirm("¿Está seguro de que desea eliminar permanentemente este documento cargado? Esta acción no se puede deshacer.")) {
+            return;
+        }
+        try {
+            await AcademicService.deleteDocument(cedula, docId, asignatura);
+            notificationService.send('Carga Eliminada', `Se eliminó el documento correctamente.`, 'success');
+            // Refresh documents in the modal
+            const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
+            if (selectedExpediente) {
+                setSelectedExpediente({ ...selectedExpediente, documentos: updatedDocs });
+            }
+            loadExpedientes(); // Update dashboard counts/lists
+        } catch (error) {
+            console.error('Error deleting document:', error);
+            notificationService.send('Error', 'No se pudo eliminar el documento.', 'error');
         }
     };
 
@@ -880,6 +900,18 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                         onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
                                                                     />
                                                                 </label>
+                                                                
+                                                                {/* Eliminar button */}
+                                                                <button 
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        handleDeleteDocument(exp.cedula, req.id, actual.asignatura);
+                                                                    }}
+                                                                    className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-0.5 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                                                                >
+                                                                    <Delete style={{ fontSize: 12 }} />
+                                                                    Eliminar
+                                                                </button>
                                                             </>
                                                         ) : (
                                                             <>

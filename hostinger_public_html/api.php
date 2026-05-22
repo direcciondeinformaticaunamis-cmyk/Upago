@@ -564,18 +564,19 @@ if (isset($_FILES['file']) && isset($_POST['type'])) {
     $new_name = $type . "_" . preg_replace('/[^a-zA-Z0-9]/', '', $postulante_id) . "_" . time() . "." . $file_ext;
     $target_file = $target_dir . $new_name;
     if (move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
+        $estado = (isset($_POST['admin_upload']) && $_POST['admin_upload'] === '1') ? 'validado' : 'subido';
         if ($existing) {
             // Delete old physical file if it exists
             if (!empty($existing['archivo_url']) && file_exists($existing['archivo_url'])) {
                 @unlink($existing['archivo_url']);
             }
             // Update the existing record instead of inserting a duplicate
-            $stmt = $conn->prepare("UPDATE expedientes SET archivo_nombre = ?, archivo_url = ?, estado = 'subido', observaciones = NULL, fecha_carga = NOW() WHERE id = ?");
-            $stmt->execute([$new_name, $target_file, $existing['id']]);
+            $stmt = $conn->prepare("UPDATE expedientes SET archivo_nombre = ?, archivo_url = ?, estado = ?, observaciones = NULL, fecha_carga = NOW() WHERE id = ?");
+            $stmt->execute([$new_name, $target_file, $estado, $existing['id']]);
         } else {
             // Insert a new record
-            $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$postulante_id, $type, $new_name, $target_file, $asignatura]);
+            $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura, estado) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$postulante_id, $type, $new_name, $target_file, $asignatura, $estado]);
         }
         echo json_encode(["status" => "success", "path" => $target_file]);
     } else { echo json_encode(["status" => "error", "message" => "Error al mover"]); }
@@ -756,6 +757,43 @@ if ($method === 'POST') {
             }
             write_system_log("OBSERVE_DOC", "Admin", "Agregó observación a $doc_id de CI: $cedula" . (!empty($asignatura) ? " (Materia: $asignatura)" : "") . " | Obs: $observacion");
             echo json_encode(["status" => "success", "message" => "Observación guardada con éxito."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($data['action']) && $data['action'] === 'delete_doc') {
+        try {
+            $cedula = $data['cedula'] ?? '';
+            $doc_id = $data['doc_id'] ?? '';
+            $asignatura = $data['asignatura'] ?? null;
+            
+            // 1. Obtener la url del archivo para borrarlo del disco
+            if (!empty($asignatura)) {
+                $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                $stmt->execute([$cedula, $doc_id, $asignatura]);
+            } else {
+                $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                $stmt->execute([$cedula, $doc_id]);
+            }
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing && !empty($existing['archivo_url']) && file_exists($existing['archivo_url'])) {
+                @unlink($existing['archivo_url']);
+            }
+            
+            // 2. Eliminar el registro de la base de datos
+            if (!empty($asignatura)) {
+                $stmt = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                $stmt->execute([$cedula, $doc_id, $asignatura]);
+            } else {
+                $stmt = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                $stmt->execute([$cedula, $doc_id]);
+            }
+            
+            write_system_log("DELETE_DOC", "Admin", "Eliminó el documento $doc_id de CI: $cedula" . (!empty($asignatura) ? " (Materia: $asignatura)" : ""));
+            echo json_encode(["status" => "success", "message" => "Documento eliminado con éxito."]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);

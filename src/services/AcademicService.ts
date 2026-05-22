@@ -124,6 +124,18 @@ export const AcademicService = {
         });
     },
 
+    async deleteDocument(cedula: string, docId: string, asignatura?: string) {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'delete_doc',
+                cedula: cedula,
+                doc_id: docId,
+                asignatura: asignatura
+            })
+        });
+    },
+
     async saveDocumentObservation(cedula: string, docId: string, observation: string, asignatura?: string) {
         return fetchApi('', {
             method: 'POST',
