@@ -14,24 +14,18 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # 3. REDIRECCIÓN SPA (React Router / Browser State)
 # Si el archivo o directorio solicitado no existe, servir index.html
-# Exceptuamos los archivos .php para que la API siga funcionando
+# Exceptuamos archivos reales, directorios y rutas específicas de la API
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/assets/
 RewriteCond %{REQUEST_URI} !^/api\.php
 RewriteCond %{REQUEST_URI} !^/api-banco\.php
 RewriteCond %{REQUEST_URI} !^/diagnostico\.php
+RewriteCond %{REQUEST_URI} !^/test-conexion\.php
 RewriteRule . /index.html [L]
 
 # 4. SEGURIDAD: Prevenir listado de directorios
 Options -Indexes
-
-# ⚠️ CRÍTICO: index.html NUNCA debe cachearse (evita mismatch de hashes JS/CSS)
-<Files "index.html">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-    Header set Pragma "no-cache"
-    Header set Expires "0"
-</Files>
-
 
 # 5. SEGURIDAD: Bloquear acceso a archivos sensibles
 <FilesMatch "^\.">
@@ -73,4 +67,19 @@ Options -Indexes
     ExpiresByType text/css "access plus 1 month"
     ExpiresByType text/javascript "access plus 1 month"
     ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+# 8. PREVENIR CACHÉ EN INDEX.HTML Y LA RAÍZ / (Evita problemas de bundles obsoletos)
+<IfModule mod_headers.c>
+    # Aplicar anti-caché a index.html
+    <Files "index.html">
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </Files>
+    # Aplicar anti-caché específicamente a la petición de la raíz (/)
+    SetEnvIf Request_URI "^/$" IS_ROOT
+    Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate" env=IS_ROOT
+    Header set Pragma "no-cache" env=IS_ROOT
+    Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT" env=IS_ROOT
 </IfModule>

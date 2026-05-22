@@ -18,7 +18,8 @@ import {
     Upload,
     Search,
     Sparkles,
-    Check
+    Check,
+    Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FinanceService, ReconciliationItem } from '../../services/FinanceService';
@@ -363,6 +364,22 @@ const BankReconciliation: React.FC = () => {
         }
     };
 
+    const handleDeleteTransaction = async (row: ReconciliationItem) => {
+        const confirmMsg = row.estado === 'conciliado'
+            ? `¿Estás seguro de que deseas eliminar esta transacción? Al estar ya conciliada, el pago asociado volverá a quedar pendiente.`
+            : `¿Estás seguro de que deseas eliminar esta transacción bancaria?`;
+            
+        if (window.confirm(confirmMsg)) {
+            try {
+                await FinanceService.deleteBankTransaction(row.id);
+                await loadRecords();
+            } catch (e) {
+                console.error("Error deleting bank transaction:", e);
+                alert('Error al eliminar la transacción bancaria.');
+            }
+        }
+    };
+
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!messageInput.trim()) return;
@@ -545,6 +562,13 @@ const BankReconciliation: React.FC = () => {
                                                         <Link size={18} />
                                                     </button>
                                                 )}
+                                                <button 
+                                                    onClick={() => handleDeleteTransaction(row)}
+                                                    className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
+                                                    title="Eliminar Transacción / Carga"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

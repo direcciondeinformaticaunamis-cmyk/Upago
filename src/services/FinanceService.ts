@@ -107,6 +107,13 @@ export const FinanceService = {
         });
     },
 
+    deleteBankTransaction: async (id: number): Promise<any> => {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete_bank_transaction', id })
+        });
+    },
+
     getPagos: async (cedula: string = ''): Promise<Payment[]> => {
         return fetchApi(cedula ? `pagos=${cedula}` : 'pagos');
     },

@@ -688,6 +688,47 @@ if ($method === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'delete_bank_transaction') {
+        require_admin('admin'); // Seguridad: Solo administradores
+        try {
+            $tx_id = (int)($data['id'] ?? 0);
+            if ($tx_id <= 0) {
+                throw new Exception("ID de transacción inválido.");
+            }
+
+            $conn->beginTransaction();
+
+            // 1. Encontrar pagos asociados a través de conciliaciones
+            $stmtPay = $conn->prepare("SELECT pago_id FROM conciliaciones WHERE transaccion_bancaria_id = ?");
+            $stmtPay->execute([$tx_id]);
+            $linked_pagos = $stmtPay->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($linked_pagos)) {
+                // 2. Para cada pago, volver a poner su estado en 'pendiente' y limpiar datos de cierre
+                $placeholders = implode(',', array_fill(0, count($linked_pagos), '?'));
+                $stmtReset = $conn->prepare("UPDATE pagos SET estado = 'pendiente', cierre_nro = NULL, cierre_fecha = NULL WHERE id IN ($placeholders)");
+                $stmtReset->execute($linked_pagos);
+            }
+
+            // 3. Eliminar la transacción bancaria.
+            // Por la foreign key `ON DELETE CASCADE`, la entrada en `conciliaciones` se eliminará automáticamente.
+            $stmtDel = $conn->prepare("DELETE FROM transacciones_bancarias WHERE id = ?");
+            $stmtDel->execute([$tx_id]);
+
+            $conn->commit();
+
+            write_system_log("DELETE_BANK_TRANSACTION", $data['admin_user'] ?? 'Admin', "Eliminó transacción bancaria ID: $tx_id");
+            echo json_encode(["status" => "success", "message" => "Transacción eliminada con éxito."]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'migrate_user') {
         require_admin('admin'); // Seguridad: Solo administradores
         try {
