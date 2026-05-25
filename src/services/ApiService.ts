@@ -27,8 +27,8 @@ export const fetchApi = async (params: string = '', options: RequestInit = {}) =
         }
     }
     
-    // Keep Authorization header as fallback
-    if (token && !options.body) {
+    // Always include Authorization header if token exists to avoid body dependency
+    if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
     

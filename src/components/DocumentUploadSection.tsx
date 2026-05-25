@@ -192,8 +192,14 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
             formData.append('asignatura', uploadSubject);
 
             try {
+                const token = localStorage.getItem('upago_token');
+                const headers: Record<string, string> = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
                 const response = await fetch('api.php', {
                     method: 'POST',
+                    headers,
                     body: formData
                 });
                 const result = await response.json();

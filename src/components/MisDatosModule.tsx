@@ -86,9 +86,15 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         // Guardar datos en la base de datos antes de pasar al siguiente paso
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
+            const token = localStorage.getItem('upago_token');
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
             const response = await fetch(`${baseUrl}/api.php`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -96,7 +102,13 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                 console.log("Datos personales guardados correctamente");
                 // Obtener el número de expediente auto-generado
                 try {
-                    const profileRes = await fetch(`${baseUrl}/api.php?perfil=${formData.cedula}`);
+                    const profileHeaders: Record<string, string> = {};
+                    if (token) {
+                        profileHeaders['Authorization'] = `Bearer ${token}`;
+                    }
+                    const profileRes = await fetch(`${baseUrl}/api.php?perfil=${formData.cedula}`, {
+                        headers: profileHeaders
+                    });
                     const profileData = await profileRes.json();
                     if (profileData && profileData.numero_expediente) {
                         setFormData(prev => ({ ...prev, numero_expediente: profileData.numero_expediente }));
