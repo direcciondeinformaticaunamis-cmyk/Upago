@@ -13,14 +13,18 @@ export const fetchApi = async (params: string = '', options: RequestInit = {}) =
     
     // Inject token into body for POST requests to avoid header issues
     if (options.method === 'POST' && token) {
-        let body = {};
-        try {
-            body = JSON.parse(options.body as string || '{}');
-        } catch (e) {
-            console.error("Error parsing request body", e);
+        if (options.body instanceof FormData) {
+            options.body.append('token', token);
+        } else {
+            let body = {};
+            try {
+                body = JSON.parse(options.body as string || '{}');
+            } catch (e) {
+                console.error("Error parsing request body", e);
+            }
+            body = { ...body, token };
+            options.body = JSON.stringify(body);
         }
-        body = { ...body, token };
-        options.body = JSON.stringify(body);
     }
     
     // Keep Authorization header as fallback

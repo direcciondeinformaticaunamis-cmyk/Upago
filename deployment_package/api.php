@@ -1127,8 +1127,15 @@ if ($method === 'POST') {
                 $val = $data['email'];
             }
             
-            // Convert empty strings to null for numeric fields to prevent PDO errors
-            if ($val === "" && in_array($f, ['egreso_anio', 'egreso_promedio', 'trabaja', 'necesita_adecuacion', 'es_zurdo'])) {
+            // Map booleans to integers to avoid PDO binding issues in MySQL strict mode
+            if ($val === true || $val === 'true') {
+                $val = 1;
+            } elseif ($val === false || $val === 'false') {
+                $val = 0;
+            }
+            
+            // Convert empty strings to null for nullable fields to prevent database errors (especially for numeric/date columns)
+            if ($val === "" && !in_array($f, ['nombre', 'apellido', 'cedula', 'correo'])) {
                 $val = null;
             }
             $values[] = $val;
