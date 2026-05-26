@@ -130,12 +130,12 @@ export const FinanceService = {
     updatePagoEstado: async (id: number, estado: string, observaciones: string = ''): Promise<any> => {
         return fetchApi('', {
             method: 'POST',
-            body: JSON.stringify({ id, estado, observaciones })
+            body: JSON.stringify({ action: 'update_pago_estado', id, estado, observaciones })
         });
     },
 
     getPostulantes: async (): Promise<any[]> => {
-        return fetchApi('all_postulantes');
+        return fetchApi('all_postulantes=true');
     },
 
     getCierrePreview: async (): Promise<Payment[]> => {

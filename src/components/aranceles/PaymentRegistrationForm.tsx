@@ -141,10 +141,10 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             
             await FinanceService.registerPayment(formData);
             setSuccess(true);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error submitting payment:", err);
             setErrors(['api_error']);
-            alert("Error al registrar el pago. Verifique su conexión.");
+            alert("Error del servidor: " + (err.message || JSON.stringify(err)));
         } finally {
             setSubmitting(false);
         }

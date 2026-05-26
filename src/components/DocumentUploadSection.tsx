@@ -27,6 +27,9 @@ import ProgressBar from './ui/ProgressBar';
 import { generateVoucherHTML } from './VoucherTemplate';
 import { securityService } from '../services/SecurityService';
 import DocumentPreviewModal from './DocumentPreviewModal';
+import { AcademicService } from '../services/AcademicService';
+import { fetchApi } from '../services/ApiService';
+import { FinanceService } from '../services/FinanceService';
 
 interface DocumentItem {
     id: string;
@@ -110,8 +113,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
-                const response = await fetch(`api.php?pagos=${postulanteData.cedula}`);
-                const data = await response.json();
+                const data = await FinanceService.getPagos(postulanteData.cedula);
                 if (Array.isArray(data)) {
                     const subjects = Array.from(new Set(data.map((p: any) => p.asignatura).filter(Boolean))) as string[];
                     setDocSubjects(subjects);
@@ -128,8 +130,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
     useEffect(() => {
         const fetchDocumentStatuses = async () => {
             try {
-                const response = await fetch(`api.php?docs=${postulanteData.cedula}`);
-                const data = await response.json();
+                const data = await fetchApi(`docs=${postulanteData.cedula}`);
                 
                 if (Array.isArray(data)) {
                     setDocuments(prev => prev.map(doc => {
@@ -192,17 +193,10 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
             formData.append('asignatura', uploadSubject);
 
             try {
-                const token = localStorage.getItem('upago_token');
-                const headers: Record<string, string> = {};
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                const response = await fetch('api.php', {
+                const result = await fetchApi('', {
                     method: 'POST',
-                    headers,
                     body: formData
                 });
-                const result = await response.json();
                 console.log("Carga exitosa:", result);
                 if (result.status === 'success' && result.path) {
                     setDocuments(prev => prev.map(doc =>
@@ -532,12 +526,20 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                                                         {doc.status !== 'verified' && (
                                                             <button 
                                                                 type="button"
-                                                                onClick={(e) => {
+                                                                onClick={async (e) => {
                                                                     e.stopPropagation();
                                                                     const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este documento de tu expediente?');
                                                                     if (confirmDelete) {
-                                                                        setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: 'pending', fileNames: [], downloadUrl: undefined } : d));
-                                                                        securityService.log(`Eliminación: ${doc.label}`, 'Postulante');
+                                                                        try {
+                                                                            const isShared = ['cedula', 'titulos', 'antecedente_judicial', 'antecedente_policial'].includes(doc.id);
+                                                                            const uploadSubject = isShared || docAsignatura === 'General' ? '' : docAsignatura;
+                                                                            await AcademicService.deleteDocument(postulanteData.cedula, doc.id, uploadSubject);
+                                                                            setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: 'pending', fileNames: [], downloadUrl: undefined } : d));
+                                                                            securityService.log(`Eliminación: ${doc.label}`, 'Postulante');
+                                                                        } catch (err: any) {
+                                                                            console.error("Error al eliminar documento:", err);
+                                                                            alert(err.message || "Error al eliminar el documento. Intente de nuevo.");
+                                                                        }
                                                                     }
                                                                 }}
                                                                 className="p-2.5 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all border border-slate-100 bg-white shadow-sm"

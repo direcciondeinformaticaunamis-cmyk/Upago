@@ -3,6 +3,7 @@ import PersonalDataForm from './PersonalDataForm';
 import DocumentUploadSection from './DocumentUploadSection';
 import MedicinePrintForm from './MedicinePrintForm';
 import { CheckCircle, AccessTime as Clock, Error as ErrorIcon, Description, Person, School, ArrowRight, Print } from '@mui/icons-material';
+import { fetchApi } from '../services/ApiService';
 
 interface MisDatosModuleProps {
     user?: { nombre: string; apellido: string; email: string; cedula: string; rol: string; expediente_aprobado?: boolean; estado_expediente?: 'pendiente' | 'aprobado' | 'rechazado'; };
@@ -68,9 +69,12 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
     const [errors, setErrors] = useState<string[]>([]);
     const [showPrintForm, setShowPrintForm] = useState(false);
 
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         setErrors(prev => prev.filter(e => e !== field));
+        if (submitError) setSubmitError(null);
     };
 
     const handleContinue = async () => {
@@ -79,37 +83,22 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         
         if (missing.length > 0) {
             setErrors(missing);
-            alert("Por favor, complete todos los campos obligatorios.");
+            setSubmitError("Por favor, complete todos los campos obligatorios resaltados en rojo.");
             return;
         }
         
+        setSubmitError(null);
         // Guardar datos en la base de datos antes de pasar al siguiente paso
         try {
-            const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const token = localStorage.getItem('upago_token');
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-            
-            const response = await fetch(`${baseUrl}/api.php`, {
+            const result = await fetchApi('', {
                 method: 'POST',
-                headers,
                 body: JSON.stringify(formData)
             });
-            const result = await response.json();
             if (result.status === 'success') {
                 console.log("Datos personales guardados correctamente");
                 // Obtener el número de expediente auto-generado
                 try {
-                    const profileHeaders: Record<string, string> = {};
-                    if (token) {
-                        profileHeaders['Authorization'] = `Bearer ${token}`;
-                    }
-                    const profileRes = await fetch(`${baseUrl}/api.php?perfil=${formData.cedula}`, {
-                        headers: profileHeaders
-                    });
-                    const profileData = await profileRes.json();
+                    const profileData = await fetchApi(`perfil=${formData.cedula}`);
                     if (profileData && profileData.numero_expediente) {
                         setFormData(prev => ({ ...prev, numero_expediente: profileData.numero_expediente }));
                     }
@@ -119,11 +108,11 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                 setStep(2);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                alert("Error al guardar datos: " + result.message);
+                setSubmitError("Error al guardar datos: " + result.message);
             }
         } catch (err) {
             console.error("Error saving personal data:", err);
-            alert("Error de conexión al guardar los datos.");
+            setSubmitError("Error de conexión al guardar los datos.");
         }
     };
 
@@ -298,6 +287,12 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                     >
                         ↩️ Cancelar y Volver
                     </button>
+                </div>
+            )}
+            {submitError && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center gap-3 max-w-4xl mx-auto shadow-sm">
+                    <ErrorIcon />
+                    <p className="text-sm font-medium">{submitError}</p>
                 </div>
             )}
             {step === 1 ? (

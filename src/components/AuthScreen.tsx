@@ -30,9 +30,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Validación estricta: correos institucionales solo por SSO
-        if (formData.email.toLowerCase().endsWith('@unamis.edu.py')) {
-            alert('Las cuentas institucionales (@unamis.edu.py) deben ingresar exclusivamente haciendo clic en el botón "Acceder con Microsoft 365" en la parte superior.');
+        // Validación estricta: correos institucionales solo por SSO para REGISTRO
+        if (!isLogin && formData.email.toLowerCase().endsWith('@unamis.edu.py')) {
+            alert('Las cuentas institucionales (@unamis.edu.py) deben registrarse/ingresar usando "Acceder con Microsoft 365". Si usted es personal académico/administrativo y desea hacer login manual, vuelva a la pestaña de "Ingresar".');
             return;
         }
 

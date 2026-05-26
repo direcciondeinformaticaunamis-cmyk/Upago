@@ -6,6 +6,7 @@ import { notificationService } from '../services/NotificationService';
 import { AcademicService, Expediente } from '../services/AcademicService';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
+import { fetchApi } from '../services/ApiService';
 
 interface AcademicDashboardProps {
     user: { nombre: string; apellido: string; email: string; cedula: string; rol: string };
@@ -54,11 +55,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         }
 
         try {
-            const response = await fetch('api.php', {
+            const result = await fetchApi('', {
                 method: 'POST',
                 body: formData
             });
-            const result = await response.json();
             if (result.status === 'success') {
                 notificationService.send('Carga Exitosa', `Se cargó '${docId}' correctamente.`, 'success');
                 // Automatically validate the uploaded document immediately since it's uploaded by the administrator at ventanilla!
@@ -107,11 +107,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
             }
 
             // 2. Call register payment
-            const paymentResult = await fetch('api.php?registrar_pago=1', {
+            const payResJson = await fetchApi('registrar_pago=1', {
                 method: 'POST',
                 body: formData
             });
-            const payResJson = await paymentResult.json();
 
             if (payResJson.status !== 'success') {
                 throw new Error(payResJson.message || 'Error al registrar el pago en caja.');
@@ -127,11 +126,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     docFormData.append('asignatura', asignatura);
                 }
 
-                const docResult = await fetch('api.php', {
+                const docResJson = await fetchApi('', {
                     method: 'POST',
                     body: docFormData
                 });
-                const docResJson = await docResult.json();
                 if (docResJson.status !== 'success') {
                     console.warn("El pago se registró, pero no se pudo subir el archivo digital al expediente:", docResJson.message);
                 }
@@ -146,7 +144,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     dummyFormData.append('asignatura', asignatura);
                 }
 
-                await fetch('api.php', {
+                await fetchApi('', {
                     method: 'POST',
                     body: dummyFormData
                 });
@@ -951,7 +949,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                                 return;
                                                                             }
                                                                             try {
-                                                                                await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl);
+                                                                                await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl, actual?.asignatura);
                                                                                 notificationService.send('Criterio Aprobado', `Se marcó '${req.nombre}' como incluido en Currículum.`, 'success');
                                                                                 const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
                                                                                 setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);

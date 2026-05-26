@@ -80,7 +80,12 @@ $action = $_GET['action'] ?? '';
 
 // Seguridad: Requerir autenticación para acciones de escritura/modificación
 $write_actions = ['save_project', 'upload_file', 'save_evaluation', 'add_comment', 'add_version'];
-if (in_array($action, $write_actions) && function_exists('get_authorized_user')) {
+if (in_array($action, $write_actions)) {
+    if (!function_exists('get_authorized_user')) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "No autorizado. Sistema de seguridad no disponible."]);
+        exit;
+    }
     $user = get_authorized_user();
     if (!$user) {
         http_response_code(401);
@@ -130,7 +135,7 @@ switch ($action) {
         }
 
         $id = $_GET['id'];
-        $type = $_GET['type'] ?? 'documento';
+        $type = isset($_GET['type']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['type']) : 'documento';
         $target_dir = "uploads/proyectos/";
         $file_ext = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
         

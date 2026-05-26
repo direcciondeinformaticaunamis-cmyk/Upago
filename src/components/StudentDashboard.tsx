@@ -110,7 +110,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                         <Wallet style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Pagos</span>
                     </button>
-                    <button onClick={() => setActiveSection('documentos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'documentos' ? 'bg-white shadow-sm text-[#a31e32]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
+                    <button onClick={() => setActiveSection('documentos_digitales')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'documentos_digitales' ? 'bg-white shadow-sm text-[#a31e32]' : 'text-[#43474f] hover:bg-[#d8dadc]'}`}>
                         <Description style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Trámites</span>
                     </button>
@@ -387,7 +387,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                     <Wallet />
                     <span className="text-[10px] font-bold">Pagos</span>
                 </button>
-                <button onClick={() => setActiveSection('documentos')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos' ? 'text-[#a31e32]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('documentos_digitales')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos_digitales' ? 'text-[#a31e32]' : 'text-[#43474f]'}`}>
                     <Description />
                     <span className="text-[10px] font-medium">Trámites</span>
                 </button>

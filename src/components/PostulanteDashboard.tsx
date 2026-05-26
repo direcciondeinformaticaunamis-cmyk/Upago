@@ -109,7 +109,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                     {[
                         { id: 'datos', label: 'Mis Datos', icon: Dashboard },
                         { id: 'pagos', label: 'Pagos', icon: Wallet },
-                        { id: 'documentos', label: 'Trámites', icon: Description },
+                        { id: 'documentos_digitales', label: 'Trámites', icon: Description },
                         { id: 'config', label: 'Ajustes', icon: Settings },
                     ].map((item) => (
                         <button 
@@ -420,7 +420,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                     <Wallet />
                     <span className="text-[10px] font-bold">Pagos</span>
                 </button>
-                <button onClick={() => setActiveSection('documentos')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('documentos_digitales')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos_digitales' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
                     <Description />
                     <span className="text-[10px] font-medium">Trámites</span>
                 </button>

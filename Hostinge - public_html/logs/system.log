@@ -1,0 +1,13 @@
+[2026-05-21 16:11:57] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento cedula de CI: 5176725
+[2026-05-21 16:12:10] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento cedula de CI: 5176725
+[2026-05-21 16:12:43] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento cv de CI: 5176725
+[2026-05-21 16:12:49] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento declaracion_jurada de CI: 5176725
+[2026-05-21 16:13:13] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento antecedente_judicial de CI: 5176725
+[2026-05-21 16:13:29] [IP: 138.59.226.164] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento antecedente_policial de CI: 5176725
+[2026-05-21 16:13:37] [IP: 138.59.226.164] [USER: Admin] ACTION: APPROVE_EXPEDIENTE | DETAILS: Aprobó expediente completo de CI: 5176725
+[2026-05-22 08:36:03] [IP: 138.59.224.59] [USER: Admin] ACTION: APPROVE_EXPEDIENTE | DETAILS: Aprobó expediente completo de CI: 5176725
+[2026-05-22 10:17:14] [IP: 37.230.58.69] [USER: Admin] ACTION: VALIDATE_DOC | DETAILS: Validó documento solicitud_participacion de CI: 1505651
+[2026-05-22 13:57:10] [IP: 37.230.58.69] [USER: AI Bot] ACTION: MANUAL_RECONCILE | DETAILS: Concilió Pago ID: 5 con Transacción ID: 3
+[2026-05-25 10:12:56] [IP: 2803:2a00:4000:2004:38d5:b3b1:597f:a6f5] [USER: Admin] ACTION: DELETE_BANK_TRANSACTION | DETAILS: Eliminó transacción bancaria ID: 3
+[2026-05-25 10:12:58] [IP: 2803:2a00:4000:2004:38d5:b3b1:597f:a6f5] [USER: Admin] ACTION: DELETE_BANK_TRANSACTION | DETAILS: Eliminó transacción bancaria ID: 2
+[2026-05-25 10:13:00] [IP: 2803:2a00:4000:2004:38d5:b3b1:597f:a6f5] [USER: Admin] ACTION: DELETE_BANK_TRANSACTION | DETAILS: Eliminó transacción bancaria ID: 1

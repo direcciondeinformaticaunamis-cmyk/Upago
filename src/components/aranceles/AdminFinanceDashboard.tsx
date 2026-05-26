@@ -8,6 +8,7 @@ import {
     Plus, Bell, Settings, LayoutDashboard, FileText, Users, RefreshCw,
     DollarSign as DollarSignIcon
 } from 'lucide-react';
+import { fetchApi } from '../../services/ApiService';
 
 interface FinanceStat {
     label: string;
@@ -34,12 +35,7 @@ const AdminFinanceDashboard: React.FC = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch('api.php?stats_finance', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('upago_token')}`
-                    }
-                });
-                const data = await res.json();
+                const data = await fetchApi('stats_finance');
                 setStatsData(data);
             } catch (e) {
                 console.error("Error fetching stats:", e);

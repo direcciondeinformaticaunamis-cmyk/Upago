@@ -149,14 +149,15 @@ export const AcademicService = {
         });
     },
 
-    async markDocInCv(cedula: string, docId: string, cvUrl: string) {
+    async markDocInCv(cedula: string, docId: string, cvUrl: string, asignatura?: string) {
         return fetchApi('', {
             method: 'POST',
             body: JSON.stringify({
                 action: 'mark_doc_in_cv',
                 cedula: cedula,
                 doc_id: docId,
-                cv_url: cvUrl
+                cv_url: cvUrl,
+                asignatura: asignatura
             })
         });
     },

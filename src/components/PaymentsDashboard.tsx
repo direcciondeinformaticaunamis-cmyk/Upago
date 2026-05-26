@@ -21,6 +21,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
 import DocumentPreviewModal from './DocumentPreviewModal';
+import { fetchApi } from '../services/ApiService';
+import { FinanceService } from '../services/FinanceService';
 
 interface Pago {
     id: number;
@@ -66,12 +68,10 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [pagosRes, statsRes] = await Promise.all([
-                fetch('api.php?pagos=1'),
-                fetch('api.php?stats=1')
+            const [pagosData, statsData] = await Promise.all([
+                FinanceService.getPagos(),
+                fetchApi('stats=1')
             ]);
-            const pagosData = await pagosRes.json();
-            const statsData = await statsRes.json();
             
             if (Array.isArray(pagosData)) setPagos(pagosData);
             if (statsData.total !== undefined) setStats(statsData);
@@ -85,12 +85,10 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
     const handleUpdateStatus = async (id: number, estado: string, observaciones: string = '') => {
         setIsSaving(true);
         try {
-            const res = await fetch('api.php', {
+            const data = await fetchApi('', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, estado, observaciones })
             });
-            const data = await res.json();
             if (data.status === 'success') {
                 loadData();
                 setSelectedPago(null);
@@ -108,8 +106,8 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
             const formData = new FormData();
             formData.append('delete_pago', '1');
             formData.append('id', id.toString());
-            
-            await fetch('api.php', {
+
+            await fetchApi('', {
                 method: 'POST',
                 body: formData
             });

@@ -1,8 +1,64 @@
-
 export const API_BASE_URL = import.meta.env.DEV 
     ? 'http://localhost:8001' 
     : window.location.origin;
 export const API_URL = `${API_BASE_URL}/api.php`;
+
+/**
+ * Super robust JSON extractor that matches braces and brackets.
+ * It ignores characters inside strings and handles escaping.
+ * This is 100% immune to HTML/JS appended at the end of the JSON response by Hostinger.
+ */
+export function extractJson(text: string): string {
+    const firstBrace = text.indexOf('{');
+    const firstBracket = text.indexOf('[');
+    
+    if (firstBrace === -1 && firstBracket === -1) {
+        throw new Error("No JSON found in response");
+    }
+    
+    const startIdx = (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) 
+        ? firstBrace 
+        : firstBracket;
+        
+    const startChar = text[startIdx];
+    const endChar = startChar === '{' ? '}' : ']';
+    
+    let count = 0;
+    let inString = false;
+    let escaped = false;
+    
+    for (let i = startIdx; i < text.length; i++) {
+        const char = text[i];
+        
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        
+        if (char === '\\') {
+            escaped = true;
+            continue;
+        }
+        
+        if (char === '"') {
+            inString = !inString;
+            continue;
+        }
+        
+        if (!inString) {
+            if (char === startChar) {
+                count++;
+            } else if (char === endChar) {
+                count--;
+                if (count === 0) {
+                    return text.substring(startIdx, i + 1);
+                }
+            }
+        }
+    }
+    
+    throw new Error("JSON brace/bracket mismatch");
+}
 
 export const fetchApi = async (params: string = '', options: RequestInit = {}) => {
     const url = params ? `${API_URL}?${params}` : API_URL;
@@ -41,9 +97,32 @@ export const fetchApi = async (params: string = '', options: RequestInit = {}) =
         headers,
     });
 
+    const text = await response.text();
+
     if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
+        let errMsg = `API Error: ${response.statusText}`;
+        try {
+            const errData = JSON.parse(text);
+            if (errData && errData.message) {
+                errMsg = errData.message;
+            }
+        } catch (e) {
+            if (text) {
+                errMsg = `Server Error: ${text.substring(0, 150)}`;
+            }
+        }
+        throw new Error(errMsg);
     }
 
-    return response.json();
+    try {
+        return JSON.parse(text);
+    } catch (jsonErr) {
+        try {
+            const extracted = extractJson(text);
+            return JSON.parse(extracted);
+        } catch (e) {
+            console.error("Non-JSON API Response (after extraction attempt):", text);
+            throw new Error(`Invalid JSON response: ${text.substring(0, 150)}`);
+        }
+    }
 };

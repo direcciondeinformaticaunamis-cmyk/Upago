@@ -1,0 +1,159 @@
+{
+    "description": "DO NOT DELETE THIS FILE. This file is used to keep track of which files have been synced in the most recent deployment. If you delete this file a resync will need to be done (which can take a while) - read more: https://github.com/SamKirkland/FTP-Deploy-Action",
+    "version": "1.0.0",
+    "generatedTime": 1779702138510,
+    "data": [
+        {
+            "type": "file",
+            "name": ".htaccess",
+            "size": 3017,
+            "hash": "f03087b847c9b195888bdfab7dedfe794734616f51b842edca95096ff57de3a5"
+        },
+        {
+            "type": "file",
+            "name": "api-banco.php",
+            "size": 14352,
+            "hash": "6171254c704e47f103c984332303b75dee69f1b1ebd547c36317ab5a84b944e2"
+        },
+        {
+            "type": "file",
+            "name": "api.php",
+            "size": 98778,
+            "hash": "f38d5754d6d699e2c5e4b9ffb289c5f2aae5dca17bcc48a8cef78bfcb4967317"
+        },
+        {
+            "type": "file",
+            "name": "apple-touch-icon.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "folder",
+            "name": "assets"
+        },
+        {
+            "type": "file",
+            "name": "banco_proyectos_schema.sql",
+            "size": 3624,
+            "hash": "5bafea3579c759994e847c9d4f46243d6bba3e2f8710fe662e6708c0f3f92f6b"
+        },
+        {
+            "type": "file",
+            "name": "config.php",
+            "size": 738,
+            "hash": "3c1c51c97c29591e95924568366562ee37af7448cb6f7dfe7e1f27117a92141d"
+        },
+        {
+            "type": "file",
+            "name": "db_diagnostic.php",
+            "size": 2094,
+            "hash": "2fa8c68e641417e958dea5b5de176588a8c7ae5dcdf6b83537cd16425540907e"
+        },
+        {
+            "type": "file",
+            "name": "database_schema.sql",
+            "size": 9959,
+            "hash": "6fc13e2e6623b38845a5b7fa9e10370704a3e8a00c9c97245f5391acd245dfd9"
+        },
+        {
+            "type": "file",
+            "name": "diagnostico.php",
+            "size": 1688,
+            "hash": "3ff2ffdc463ad0f60e333da4f74d8362663966976454acaf27db6ede7a9c72ee"
+        },
+        {
+            "type": "folder",
+            "name": "documentos"
+        },
+        {
+            "type": "file",
+            "name": "favicon.ico",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "index.html",
+            "size": 1361,
+            "hash": "f7215d5f6be9271364702448ebbbb85c8cc6743276aba7cb9525839770452bdf"
+        },
+        {
+            "type": "file",
+            "name": "pwa-192x192.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "pwa-512x512.png",
+            "size": 40472,
+            "hash": "25fe14171bf18cbd2ce9b06657a70b9611dd2c6e34bfb5ee721db6a960c73e2b"
+        },
+        {
+            "type": "file",
+            "name": "repair_db.sql",
+            "size": 369,
+            "hash": "c7dc6bec0ed9c9f216505c523c86807c0bbd4342948a167bccd0f5f1f3ab2812"
+        },
+        {
+            "type": "file",
+            "name": "security.php",
+            "size": 3625,
+            "hash": "e8dc65a2d8c2c2d44c6a4dbb93b8841994c0f9abebdce7adffa2051971c50061"
+        },
+        {
+            "type": "file",
+            "name": "sw.js",
+            "size": 458,
+            "hash": "9356ec3a03563e181850b45d9ee8a546164f416cc70fa083b30d2830e2782530"
+        },
+        {
+            "type": "file",
+            "name": "test-conexion.php",
+            "size": 1338,
+            "hash": "bbfaf39961742cd616271ad9ddfd8cf3564ee89a705871eca832c525cc9899c5"
+        },
+        {
+            "type": "file",
+            "name": "test_continental_reconciliation.sql",
+            "size": 1281,
+            "hash": "35a5229f23d832e1759be43bfbb1a5402c5abd37b1fa5a4eae000e976e2bdedc"
+        },
+        {
+            "type": "file",
+            "name": "test_finance_data.sql",
+            "size": 1919,
+            "hash": "d8689016e7552d91bb15e8dec759545f69b63d9b2c733764d7dfffd67231af00"
+        },
+        {
+            "type": "file",
+            "name": "verificar_build.php",
+            "size": 2511,
+            "hash": "39b65f1e8d4b7ceba4bfec916a13f315266c2d88f9924e0eec9a985da6a19106"
+        },
+        {
+            "type": "file",
+            "name": "assets/index-1857746b.css",
+            "size": 82822,
+            "hash": "1857746b907b35f9439cc96d614d32d28ac0a16467780e180a8b16ab2901b4d8"
+        },
+        {
+            "type": "file",
+            "name": "assets/index-e240cd9e.js",
+            "size": 990843,
+            "hash": "94771c8d22c2ea44a0936a8bda027aeed1703d6e09abf18caef4cdd4f03396a9"
+        },
+        {
+            "type": "file",
+            "name": "documentos/RESUMEN DE INGRESOS-19-05-2026 CIERRE N°61.xlsx",
+            "size": 472257,
+            "hash": "9f3f0c0c6bb56d7cf367779e7418849552eaa2c17dc276cacffc0e88e6301e90"
+        },
+        {
+            "type": "file",
+            "name": "documentos/manual_procesos_unamis.md",
+            "size": 4393,
+            "hash": "b36c47b23f626db529482dec65a2db375095062dcda12101d08b08df657baa2d"
+        }
+    ]
+}

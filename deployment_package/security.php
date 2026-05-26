@@ -46,14 +46,21 @@ function get_authorized_user() {
     
     // ALTERNATIVA: Buscar el token en el cuerpo de la petición (POST)
     if (empty($auth_header)) {
-        global $data;
-        if (isset($data['token'])) {
-            $auth_header = 'Bearer ' . $data['token'];
-        } else {
-            $raw_input = file_get_contents('php://input');
-            $decoded = json_decode($raw_input, true);
-            if (isset($decoded['token'])) {
-                $auth_header = 'Bearer ' . $decoded['token'];
+        // 1. Para multipart/form-data (FormData con archivos), el token está en $_POST
+        if (isset($_POST['token'])) {
+            $auth_header = 'Bearer ' . $_POST['token'];
+        }
+        // 2. Para JSON body requests, buscar en $data global o php://input
+        if (empty($auth_header)) {
+            global $data;
+            if (isset($data['token'])) {
+                $auth_header = 'Bearer ' . $data['token'];
+            } else {
+                $raw_input = file_get_contents('php://input');
+                $decoded = json_decode($raw_input, true);
+                if (isset($decoded['token'])) {
+                    $auth_header = 'Bearer ' . $decoded['token'];
+                }
             }
         }
     }

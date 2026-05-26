@@ -14,6 +14,7 @@ import {
     XCircle,
     ChevronDown,
 } from 'lucide-react';
+import { fetchApi } from '../../services/ApiService';
 
 interface Arancel {
     id: number;
@@ -44,8 +45,7 @@ const ArancelesConfig: React.FC = () => {
     const fetchAranceles = async () => {
         setLoading(true);
         try {
-            const response = await fetch('api.php?aranceles=1');
-            const data = await response.json();
+            const data = await fetchApi('aranceles=1');
             if (Array.isArray(data)) {
                 setAranceles(data);
             }
@@ -85,12 +85,10 @@ const ArancelesConfig: React.FC = () => {
         }
 
         try {
-            const response = await fetch('api.php?save_arancel=1', {
+            const result = await fetchApi('save_arancel=1', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-            const result = await response.json();
 
             if (result.status === 'success') {
                 setSuccess(editingId ? 'Arancel actualizado' : 'Nuevo arancel agregado');
@@ -108,12 +106,11 @@ const ArancelesConfig: React.FC = () => {
     const toggleStatus = async (arancel: Arancel) => {
         try {
             const updated = { ...arancel, activo: arancel.activo === 1 ? 0 : 1 };
-            const response = await fetch('api.php?save_arancel=1', {
+            const result = await fetchApi('save_arancel=1', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
             });
-            if (response.ok) {
+            if (result.status === 'success') {
                 fetchAranceles();
             }
         } catch (err) {
