@@ -282,7 +282,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                 user.email
             );
             
-            if (response.success) {
+            if (response.status === 'success' || response.success) {
                 notificationService.send(
                     'Postulante Actualizado',
                     'Los datos del postulante han sido modificados correctamente.',

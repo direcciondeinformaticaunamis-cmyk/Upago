@@ -552,19 +552,35 @@ try {
       `correo` varchar(150) NOT NULL,
       `rol` enum('admin', 'academico') NOT NULL,
       `nombre_referencia` varchar(100) DEFAULT NULL,
+      `password_hash` varchar(255) DEFAULT NULL COMMENT 'Contraseña individual opcional. Si está vacío, usa ADMIN_PASS global.',
       PRIMARY KEY (`id`),
       UNIQUE KEY `correo_unique` (`correo`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    // Migración: agregar columna password_hash si no existe
+    try {
+        $conn->exec("ALTER TABLE `roles_institucionales` ADD COLUMN IF NOT EXISTS `password_hash` varchar(255) DEFAULT NULL COMMENT 'Contraseña individual opcional. Si está vacío, usa ADMIN_PASS global.'");
+    } catch (Exception $e) { /* Ignorar si ya existe o no soporta IF NOT EXISTS */ }
+
     $stmtRoles = $conn->query("SELECT COUNT(*) FROM `roles_institucionales`");
     if ($stmtRoles->fetchColumn() == 0) {
-        $conn->exec("INSERT INTO `roles_institucionales` (correo, rol, nombre_referencia) VALUES
-            ('informatica@unamis.edu.py', 'admin', 'Administrador Absoluto (Sistemas)'),
-            ('direccion.administrativa@unamis.edu.py', 'admin', 'Dirección Administrativa'),
-            ('direccion.financiera@unamis.edu.py', 'admin', 'Dirección Financiera'),
-            ('tesoreria@unamis.edu.py', 'admin', 'Tesorería'),
-            ('medicina@unamis.edu.py', 'academico', 'Coordinación Medicina')
+        $pwdMedicina = password_hash('Munamis*', PASSWORD_DEFAULT);
+        $conn->exec("INSERT INTO `roles_institucionales` (correo, rol, nombre_referencia, password_hash) VALUES
+            ('informatica@unamis.edu.py', 'admin', 'Administrador Absoluto (Sistemas)', NULL),
+            ('direccion.administrativa@unamis.edu.py', 'admin', 'Dirección Administrativa', NULL),
+            ('direccion.financiera@unamis.edu.py', 'admin', 'Dirección Financiera', NULL),
+            ('tesoreria@unamis.edu.py', 'admin', 'Tesorería', NULL),
+            ('medicina@unamis.edu.py', 'academico', 'Coordinación Medicina', '$pwdMedicina')
         ");
+    } else {
+        // Asegurar que medicina@unamis.edu.py tenga su contraseña individual
+        $stmtCheckPwd = $conn->prepare("SELECT id, password_hash FROM `roles_institucionales` WHERE correo = 'medicina@unamis.edu.py'");
+        $stmtCheckPwd->execute();
+        $rowMed = $stmtCheckPwd->fetch(PDO::FETCH_ASSOC);
+        if ($rowMed && empty($rowMed['password_hash'])) {
+            $pwdMedicina = password_hash('Munamis*', PASSWORD_DEFAULT);
+            $conn->prepare("UPDATE `roles_institucionales` SET password_hash = ? WHERE correo = 'medicina@unamis.edu.py'")->execute([$pwdMedicina]);
+        }
     }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `conciliaciones` (
@@ -654,7 +670,22 @@ if ($method === 'POST') {
         $stmtRole = $conn->prepare("SELECT * FROM roles_institucionales WHERE correo = ?");
         $stmtRole->execute([$user]);
         $manualRole = $stmtRole->fetch(PDO::FETCH_ASSOC);
-        if (($manualRole && $pass === ADMIN_PASS) || ($user === ADMIN_USER && $pass === ADMIN_PASS)) {
+
+        $authenticated = false;
+        if ($manualRole) {
+            // Si tiene contraseña individual, verificarla primero
+            if (!empty($manualRole['password_hash'])) {
+                $authenticated = password_verify($pass, $manualRole['password_hash']);
+            } else {
+                // Fallback a la contraseña global ADMIN_PASS
+                $authenticated = ($pass === ADMIN_PASS);
+            }
+        } elseif ($user === ADMIN_USER && $pass === ADMIN_PASS) {
+            // Super-admin hardcoded
+            $authenticated = true;
+        }
+
+        if ($authenticated) {
             $rol = $manualRole['rol'] ?? 'admin'; $nombre = $manualRole['nombre_referencia'] ?? "Admin";
             $token = function_exists('generate_token') ? generate_token(["email" => $user, "rol" => $rol, "nombre" => $nombre]) : null;
             echo json_encode(["status" => "success", "token" => $token, "user" => ["nombre" => $nombre, "email" => $user, "rol" => $rol]]);
