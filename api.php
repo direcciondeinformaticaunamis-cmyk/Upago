@@ -981,18 +981,22 @@ if ($method === 'POST') {
     if (isset($data['action']) && $data['action'] === 'delete_external_user') {
         require_admin('academico'); // Seguridad: Coordinadores y administradores
         try {
-            $cedula = $data['cedula'] ?? '';
+            $cedula = trim($data['cedula'] ?? '');
             $admin_user = $data['admin_user'] ?? 'superadmin';
 
+            if (empty($cedula)) {
+                throw new Exception("Cédula no proporcionada.");
+            }
+
             // Verificar si el usuario existe
-            $stmtGet = $conn->prepare("SELECT nombre, apellido, correo FROM postulantes WHERE cedula = ?");
+            $stmtGet = $conn->prepare("SELECT nombre, apellido, correo FROM postulantes WHERE TRIM(cedula) = ?");
             $stmtGet->execute([$cedula]);
             $user_data = $stmtGet->fetch(PDO::FETCH_ASSOC);
 
-            if (!$user_data) throw new Exception("Usuario no encontrado.");
+            if (!$user_data) throw new Exception("Usuario no encontrado con CI: " . $cedula);
 
             // Asegurarse de que sea externo
-            if (str_ends_with(strtolower($user_data['correo']), '@unamis.edu.py')) {
+            if (!empty($user_data['correo']) && str_ends_with(strtolower($user_data['correo']), '@unamis.edu.py')) {
                 throw new Exception("No se puede eliminar un usuario institucional.");
             }
 
@@ -1000,11 +1004,11 @@ if ($method === 'POST') {
             $conn->exec("SET FOREIGN_KEY_CHECKS = 0");
 
             // a. Eliminar expedientes del postulante
-            $stmtDelExp = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ?");
+            $stmtDelExp = $conn->prepare("DELETE FROM expedientes WHERE TRIM(postulante_id) = ?");
             $stmtDelExp->execute([$cedula]);
 
             // b. Eliminar usuario asociado de la tabla usuarios y sus dependencias si existe
-            $stmtGetUsr = $conn->prepare("SELECT id FROM usuarios WHERE cedula = ?");
+            $stmtGetUsr = $conn->prepare("SELECT id FROM usuarios WHERE TRIM(cedula) = ?");
             $stmtGetUsr->execute([$cedula]);
             $usr = $stmtGetUsr->fetch(PDO::FETCH_ASSOC);
             if ($usr) {
@@ -1016,11 +1020,11 @@ if ($method === 'POST') {
             }
 
             // c. Eliminar pagos del portal
-            $stmtDelP = $conn->prepare("DELETE FROM pagos WHERE postulante_cedula = ?");
+            $stmtDelP = $conn->prepare("DELETE FROM pagos WHERE TRIM(postulante_cedula) = ?");
             $stmtDelP->execute([$cedula]);
 
             // d. Eliminar de la base de datos (postulantes)
-            $stmtDelete = $conn->prepare("DELETE FROM postulantes WHERE cedula = ?");
+            $stmtDelete = $conn->prepare("DELETE FROM postulantes WHERE TRIM(cedula) = ?");
             $stmtDelete->execute([$cedula]);
 
             $conn->exec("SET FOREIGN_KEY_CHECKS = 1");
