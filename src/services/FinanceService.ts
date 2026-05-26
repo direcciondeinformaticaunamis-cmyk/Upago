@@ -43,7 +43,7 @@ export interface ReconciliationItem {
     fecha: string;
     detalle: string;
     banco: string;
-    estado: 'pendiente' | 'conciliado' | 'discrepancia';
+    estado: 'pendiente' | 'conciliado' | 'verificado' | 'discrepancia' | string;
     match: {
         postulante: string;
         concepto: string;

@@ -479,6 +479,7 @@ try {
       `comprobante_nombre` varchar(255) DEFAULT NULL,
       `num_comprobante` varchar(50) DEFAULT NULL,
       `asignatura` varchar(255) DEFAULT NULL,
+      `banco` varchar(100) DEFAULT NULL,
       `estado` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
       `observaciones` text DEFAULT NULL,
       `fecha_pago` date DEFAULT NULL,
@@ -494,7 +495,8 @@ try {
         "observaciones" => "text DEFAULT NULL",
         "fecha_pago" => "date DEFAULT NULL",
         "cierre_nro" => "int DEFAULT NULL",
-        "cierre_fecha" => "date DEFAULT NULL"
+        "cierre_fecha" => "date DEFAULT NULL",
+        "banco" => "varchar(100) DEFAULT NULL"
     ];
     foreach ($cols_pagos_mig as $col => $def) {
         try {
@@ -1957,82 +1959,84 @@ if ($method === 'GET') {
 
     if (isset($_GET['reconciliation_queue'])) {
         try {
-            // Get all bank transactions
-            $stmt = $conn->query("SELECT * FROM transacciones_bancarias ORDER BY fecha_transaccion DESC");
-            $transacciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Obtenemos los pagos pendientes y los ya verificados/conciliados
+            $stmt = $conn->query("
+                SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula 
+                FROM pagos p 
+                JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                WHERE p.estado IN ('pendiente', 'verificado', 'conciliado') 
+                ORDER BY p.fecha_registro DESC
+            ");
+            $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Obtenemos transacciones bancarias pendientes para buscar matches
+            $stmtTx = $conn->query("SELECT * FROM transacciones_bancarias WHERE estado IN ('pendiente', 'conciliado')");
+            $transacciones = $stmtTx->fetchAll(PDO::FETCH_ASSOC);
 
             $result = [];
-            foreach ($transacciones as $tx) {
-                // Find potential matches in pagos table with matching amount and pending status
-                $stmtPay = $conn->prepare("
-                    SELECT p.id as pago_id, p.concepto, p.num_comprobante, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula 
-                    FROM pagos p 
-                    JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
-                    WHERE p.estado = 'pendiente' AND p.monto = ?
-                ");
-                $stmtPay->execute([$tx['monto']]);
-                $potential_matches = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
-
+            foreach ($pagos as $p) {
                 $best_match = null;
                 $best_score = 0;
 
-                foreach ($potential_matches as $pm) {
-                    $score = 50; // Starting base score for matching amount
+                // Solo buscar matches si el pago está pendiente
+                if ($p['estado'] === 'pendiente') {
+                    foreach ($transacciones as $tx) {
+                        if ($tx['estado'] !== 'pendiente') continue; // Solo matchear con transacciones pendientes
 
-                    $tx_desc = strtolower($tx['descripcion'] ?? '');
-                    $tx_ref = strtolower($tx['referencia'] ?? '');
-                    $num_comp = strtolower($pm['num_comprobante'] ?? '');
-                    $cedula = strtolower($pm['cedula'] ?? '');
-                    $nombre = strtolower($pm['nombre'] ?? '');
-                    $apellido = strtolower($pm['apellido'] ?? '');
+                    $score = 0;
+                    if ((float)$tx['monto'] === (float)$p['monto']) {
+                        $score += 50;
 
-                    // Check if ticket number matches
-                    if (!empty($num_comp)) {
-                        if (strpos($tx_desc, $num_comp) !== false || strpos($tx_ref, $num_comp) !== false) {
+                        $tx_desc = strtolower($tx['descripcion'] ?? '');
+                        $tx_ref = strtolower($tx['referencia'] ?? '');
+                        $num_comp = strtolower($p['num_comprobante'] ?? '');
+                        $cedula = strtolower($p['cedula'] ?? '');
+                        $nombre = strtolower($p['nombre'] ?? '');
+                        $apellido = strtolower($p['apellido'] ?? '');
+
+                        if (!empty($num_comp) && (strpos($tx_desc, $num_comp) !== false || strpos($tx_ref, $num_comp) !== false)) {
                             $score += 40;
                         }
-                    }
-
-                    // Check if student ID matches
-                    if (!empty($cedula)) {
-                        if (strpos($tx_desc, $cedula) !== false || strpos($tx_ref, $cedula) !== false) {
+                        if (!empty($cedula) && (strpos($tx_desc, $cedula) !== false || strpos($tx_ref, $cedula) !== false)) {
                             $score += 10;
                         }
-                    }
+                        if (!empty($nombre) && strpos($tx_desc, $nombre) !== false) {
+                            $score += 5;
+                        }
+                        if (!empty($apellido) && strpos($tx_desc, $apellido) !== false) {
+                            $score += 5;
+                        }
 
-                    // Check if name or surname is found in bank description
-                    if (!empty($nombre) && strpos($tx_desc, $nombre) !== false) {
-                        $score += 5;
-                    }
-                    if (!empty($apellido) && strpos($tx_desc, $apellido) !== false) {
-                        $score += 5;
-                    }
-
-                    if ($score > $best_score) {
-                        $best_score = $score;
-                        $best_match = $pm;
+                        if ($score > $best_score) {
+                            $best_score = $score;
+                            $best_match = $tx;
+                        }
                     }
                 }
+                } // Cierre if estado === pendiente
 
                 $match_data = null;
                 if ($best_match && $best_score >= 60) {
                     $match_data = [
-                        "postulante" => strtoupper($best_match['nombre'] . ' ' . $best_match['apellido']),
-                        "concepto" => $best_match['concepto'],
-                        "pago_id" => (int)$best_match['pago_id'],
-                        "comprobante_url" => $best_match['comprobante_url'],
+                        "postulante" => "Match Bancario IA",
+                        "concepto" => $best_match['descripcion'],
+                        "pago_id" => (int)$best_match['id'], // usamos esto para transaccion_id en la UI
+                        "comprobante_url" => $p['comprobante_url'],
                         "puntaje" => $best_score
                     ];
                 }
 
                 $result[] = [
-                    "id" => (int)$tx['id'],
-                    "monto" => (float)$tx['monto'],
-                    "fecha" => $tx['fecha_transaccion'],
-                    "detalle" => $tx['descripcion'],
-                    "banco" => $tx['banco'],
-                    "estado" => $tx['estado'],
-                    "match" => $match_data
+                    "id" => (int)$p['id'],
+                    "monto" => (float)$p['monto'],
+                    "fecha" => $p['fecha_pago'] ? $p['fecha_pago'] : date('Y-m-d', strtotime($p['fecha_registro'])),
+                    "detalle" => $p['concepto'],
+                    "banco" => $p['banco'] ?: 'No especificado',
+                    "estado" => $p['estado'],
+                    "match" => $match_data,
+                    "postulante_nombre" => strtoupper($p['nombre'] . ' ' . $p['apellido']),
+                    "comprobante_url" => $p['comprobante_url'],
+                    "is_pago" => true
                 ];
             }
 

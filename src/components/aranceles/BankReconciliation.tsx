@@ -173,6 +173,7 @@ const BankReconciliation: React.FC = () => {
     const [isBotOpen, setIsBotOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewTitle, setPreviewTitle] = useState<string>('');
+    const [activeTab, setActiveTab] = useState<'pendientes' | 'historial'>('pendientes');
     const [messageInput, setMessageInput] = useState('');
     const [chatMessages, setChatMessages] = useState([
         { role: 'bot', text: '¡Hola! Soy tu asistente de Inteligencia Artificial para conciliación. Estoy listo para ayudarte a cuadrar las cuentas.' }
@@ -462,14 +463,30 @@ const BankReconciliation: React.FC = () => {
 
             {/* Main Table Card */}
             <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden mb-8">
+                {/* Tabs */}
+                <div className="flex border-b border-slate-100">
+                    <button 
+                        className={`flex-1 py-4 text-[13px] font-black uppercase tracking-widest text-center transition-colors ${activeTab === 'pendientes' ? 'border-b-2 border-[#002f6c] text-[#002f6c]' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => setActiveTab('pendientes')}
+                    >
+                        Pendientes
+                    </button>
+                    <button 
+                        className={`flex-1 py-4 text-[13px] font-black uppercase tracking-widest text-center transition-colors ${activeTab === 'historial' ? 'border-b-2 border-emerald-500 text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => setActiveTab('historial')}
+                    >
+                        Historial (Conciliados / Verificados)
+                    </button>
+                </div>
+
                 {/* Table Header */}
                 <div className="bg-[#f8fafc] px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Activity size={20} className="text-[#002f6c]" />
-                        <h3 className="font-bold text-[#001738] text-base">Registros Pendientes de Verificación</h3>
+                        <h3 className="font-bold text-[#001738] text-base">{activeTab === 'pendientes' ? 'Registros Pendientes' : 'Historial de Registros'}</h3>
                     </div>
                     <span className="bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {systemRecords.length} Registros Encontrados
+                        {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).length} Registros Encontrados
                     </span>
                 </div>
 
@@ -494,7 +511,7 @@ const BankReconciliation: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {systemRecords.map((row) => (
+                                {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).map((row) => (
                                     <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
                                         <td className="px-6 py-5 text-sm font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
                                         <td className="px-6 py-5">
@@ -546,10 +563,18 @@ const BankReconciliation: React.FC = () => {
                                                     <Eye size={18} />
                                                 </button>
                                                 <button 
-                                                    onClick={() => row.match && handleSingleReconcile(row.match.pago_id, row.id)}
-                                                    disabled={row.estado !== 'pendiente' || !row.match}
-                                                    className={`${row.estado === 'pendiente' && row.match ? 'text-emerald-500 hover:text-emerald-600' : 'text-slate-300 cursor-not-allowed'} transition-colors`}
-                                                    title="Conciliar Automáticamente"
+                                                    onClick={() => {
+                                                        if (row.match) {
+                                                            handleSingleReconcile(row.match.pago_id, row.id);
+                                                        } else if ((row as any).is_pago) {
+                                                            if (window.confirm('¿Desea aprobar y verificar este pago manualmente sin extracto bancario?')) {
+                                                                FinanceService.updatePagoEstado(row.id, 'verificado', 'Aprobado manualmente').then(() => loadRecords());
+                                                            }
+                                                        }
+                                                    }}
+                                                    disabled={row.estado !== 'pendiente'}
+                                                    className={`${row.estado === 'pendiente' ? 'text-emerald-500 hover:text-emerald-600' : 'text-slate-300 cursor-not-allowed'} transition-colors`}
+                                                    title={row.match ? "Conciliar Automáticamente" : "Verificar/Aprobar Manualmente"}
                                                 >
                                                     <CheckCircle2 size={18} />
                                                 </button>

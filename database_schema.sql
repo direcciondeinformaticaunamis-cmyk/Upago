@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `pagos` (
   `comprobante_url` text DEFAULT NULL,
   `comprobante_nombre` varchar(255) DEFAULT NULL,
   `asignatura` varchar(255) DEFAULT NULL,
+  `banco` varchar(100) DEFAULT NULL,
   `estado` enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
   `observaciones` text DEFAULT NULL,
   `fecha_pago` date DEFAULT NULL,
