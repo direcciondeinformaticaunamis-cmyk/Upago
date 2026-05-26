@@ -7,6 +7,8 @@ import { AcademicService, Expediente } from '../services/AcademicService';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
 import { fetchApi } from '../services/ApiService';
+import { CATALOGO_UNAMIS, TODAS_LAS_SEDES } from '../constants/catalogoUnamis';
+
 
 interface AcademicDashboardProps {
     user: { nombre: string; apellido: string; email: string; cedula: string; rol: string };
@@ -1101,9 +1103,13 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
                                     >
                                         <option value="">Seleccione carrera</option>
-                                        <option value="Medicina">Medicina</option>
-                                        <option value="Derecho">Derecho</option>
-                                        <option value="Ingeniería">Ingeniería</option>
+                                        {Object.entries(CATALOGO_UNAMIS).map(([sede, carreras]) => (
+                                            <optgroup key={sede} label={sede}>
+                                                {carreras.map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </optgroup>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>
@@ -1114,9 +1120,9 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
                                     >
                                         <option value="">Seleccione sede</option>
-                                        <option value="Santa Rosa">Santa Rosa</option>
-                                        <option value="San Ignacio">San Ignacio</option>
-                                        <option value="Ayolas">Ayolas</option>
+                                        {TODAS_LAS_SEDES.map(s => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>

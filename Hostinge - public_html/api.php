@@ -564,7 +564,7 @@ try {
 
     $stmtRoles = $conn->query("SELECT COUNT(*) FROM `roles_institucionales`");
     if ($stmtRoles->fetchColumn() == 0) {
-        $pwdMedicina = password_hash('Munamis*', PASSWORD_DEFAULT);
+        $pwdMedicina = password_hash('Munamis2025*', PASSWORD_DEFAULT);
         $conn->exec("INSERT INTO `roles_institucionales` (correo, rol, nombre_referencia, password_hash) VALUES
             ('informatica@unamis.edu.py', 'admin', 'Administrador Absoluto (Sistemas)', NULL),
             ('direccion.administrativa@unamis.edu.py', 'admin', 'Dirección Administrativa', NULL),
@@ -578,7 +578,7 @@ try {
         $stmtCheckPwd->execute();
         $rowMed = $stmtCheckPwd->fetch(PDO::FETCH_ASSOC);
         if ($rowMed && empty($rowMed['password_hash'])) {
-            $pwdMedicina = password_hash('Munamis*', PASSWORD_DEFAULT);
+            $pwdMedicina = password_hash('Munamis2025*', PASSWORD_DEFAULT);
             $conn->prepare("UPDATE `roles_institucionales` SET password_hash = ? WHERE correo = 'medicina@unamis.edu.py'")->execute([$pwdMedicina]);
         }
     }
