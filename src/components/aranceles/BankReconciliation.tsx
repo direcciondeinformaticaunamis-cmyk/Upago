@@ -511,18 +511,18 @@ const BankReconciliation: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).map((row) => (
+                                {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).map((row: any) => (
                                     <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
                                         <td className="px-6 py-5 text-sm font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
                                                 <div>
-                                                    <p className="text-sm font-bold text-[#001738]">{row.match ? row.match.postulante : 'No identificado'}</p>
+                                                    <p className="text-sm font-bold text-[#001738]">{row.postulante_nombre || (row.match ? row.match.postulante : 'No identificado')}</p>
                                                     <p className="text-[11px] text-slate-400 mt-0.5">{row.detalle}</p>
                                                 </div>
                                                 {row.match && (
                                                     <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                                                        <CheckCircle2 size={10} /> IA Match ({row.match.puntaje}%)
+                                                        <CheckCircle2 size={10} /> IA Match ({row.match.score || row.match.puntaje || 0}%)
                                                     </div>
                                                 )}
                                             </div>
@@ -531,7 +531,7 @@ const BankReconciliation: React.FC = () => {
                                         <td className="px-6 py-5">
                                             <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-sm font-medium text-slate-600">
                                                 <FileText size={14} className="text-slate-400" />
-                                                {row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF'}
+                                                {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF')}
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right font-bold text-[#001738] text-[15px] whitespace-nowrap">
