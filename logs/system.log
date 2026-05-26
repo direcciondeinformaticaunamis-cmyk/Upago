@@ -1,0 +1,5 @@
+[2026-05-26 22:07:44] [IP: ::1] [USER: admin@unamis.edu.py] ACTION: ADMIN_LOGIN | DETAILS: Exitoso
+[2026-05-26 22:07:44] [IP: ::1] [USER: superadmin] ACTION: DELETE_EXTERNAL_USER | DETAILS: Eliminó a JUAN COMAPY (CI: 1234567) y todos sus registros asociados.
+[2026-05-26 22:11:08] [IP: ::1] [USER: direccion.financiera@unamis.edu.py] ACTION: ADMIN_LOGIN | DETAILS: Exitoso
+[2026-05-26 22:18:25] [IP: ::1] [USER: admin@unamis.edu.py] ACTION: ADMIN_LOGIN | DETAILS: Exitoso
+[2026-05-26 22:21:21] [IP: ::1] [USER: admin@unamis.edu.py] ACTION: ADMIN_LOGIN | DETAILS: Exitoso

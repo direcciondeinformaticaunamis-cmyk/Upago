@@ -357,6 +357,12 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
 
     const pendientes = expedientes.filter(e => e.estado === 'pendiente').length;
 
+    const filteredExpedientes = expedientes?.filter(e => 
+        (e.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || e.cedula.includes(searchTerm)) &&
+        (filterCarrera === '' || e.carrera.includes(filterCarrera)) &&
+        (filterSede === '' || e.sede?.includes(filterSede))
+    ) || [];
+
     return (
         <div className="flex h-screen overflow-hidden bg-[#f7f9fb]">
             {/* SideNavBar */}
@@ -424,8 +430,14 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Revisión de Expedientes</h2>
                                     <p className="text-slate-500">Verifique los documentos digitales para habilitar el pago de aranceles.</p>
                                 </div>
-                                <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-emerald-200">
-                                    <Clock /> {pendientes} Pendientes de Revisión
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-blue-200">
+                                        <Group style={{ fontSize: 18 }} />
+                                        <span>Total: <strong>{filteredExpedientes.length}</strong> {filteredExpedientes.length !== expedientes.length && `(filtrados de ${expedientes.length})`}</span>
+                                    </div>
+                                    <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-emerald-200">
+                                        <Clock /> {pendientes} Pendientes de Revisión
+                                    </div>
                                 </div>
                             </section>
 
@@ -465,6 +477,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center w-12">#</th>
                                             <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Postulante / CI</th>
                                             <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Programa / Tipo</th>
                                             <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Fecha Envío</th>
@@ -473,14 +486,11 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {expedientes
-                                            ?.filter(e => 
-                                                (e.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || e.cedula.includes(searchTerm)) &&
-                                                (filterCarrera === '' || e.carrera.includes(filterCarrera)) &&
-                                                (filterSede === '' || e.sede?.includes(filterSede))
-                                            )
-                                            .map((exp) => (
+                                        {filteredExpedientes.map((exp, index) => (
                                             <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-4 py-4 text-sm font-mono text-slate-400 text-center font-bold">
+                                                    {index + 1}
+                                                </td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm font-bold text-slate-800">{exp.nombre}</p>
                                                     <div className="flex items-center gap-2">
