@@ -1942,8 +1942,13 @@ if ($method === 'GET') {
             $stmt = $conn->query("SELECT SUM(monto) as total FROM pagos WHERE estado = 'verificado' AND (DATE(fecha_registro) = CURDATE() OR DATE(fecha_pago) = CURDATE())");
             $recaudacion_hoy = (float)($stmt->fetchColumn() ?: 0);
 
-            // Pendientes de conciliar: pending transactions
-            $stmt = $conn->query("SELECT COUNT(*) FROM transacciones_bancarias WHERE estado = 'pendiente'");
+            // Pendientes de conciliar: pagos registrados sin transaccion asociada (de la tabla pagos)
+            $stmt = $conn->query("
+                SELECT COUNT(*) 
+                FROM pagos p 
+                WHERE p.estado IN ('pendiente', 'verificado') 
+                  AND NOT EXISTS (SELECT 1 FROM conciliaciones WHERE pago_id = p.id)
+            ");
             $pendientes_conciliar = (int)($stmt->fetchColumn() ?: 0);
 
             // Registrados hoy: postulantes registered today
