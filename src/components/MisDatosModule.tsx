@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import PersonalDataForm from './PersonalDataForm';
 import DocumentUploadSection from './DocumentUploadSection';
 import MedicinePrintForm from './MedicinePrintForm';
-import { CheckCircle, AccessTime as Clock, Error as ErrorIcon, Description, Person, School, ArrowRight, Print } from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Clock from '@mui/icons-material/AccessTime';
+import ErrorIcon from '@mui/icons-material/Error';
+import Description from '@mui/icons-material/Description';
+import Person from '@mui/icons-material/Person';
+import School from '@mui/icons-material/School';
+import ArrowRight from '@mui/icons-material/ArrowRight';
+import Print from '@mui/icons-material/Print';
 import { fetchApi } from '../services/ApiService';
 
 interface MisDatosModuleProps {
