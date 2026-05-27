@@ -2115,8 +2115,13 @@ if ($method === 'GET') {
     }
     if (isset($_GET['pagos'])) {
         $cedula = $_GET['pagos'];
-        if ($cedula && $cedula !== 'true') { $stmt = $conn->prepare("SELECT * FROM pagos WHERE postulante_cedula = ?"); $stmt->execute([$cedula]); }
-        else { $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); }
+        if ($cedula && $cedula !== 'true') { 
+            $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula WHERE p.postulante_cedula = ?"); 
+            $stmt->execute([$cedula]); 
+        }
+        else { 
+            $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 
+        }
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit;
     }
     if (isset($_GET['aranceles'])) { $stmt = $conn->query("SELECT * FROM aranceles WHERE activo = 1"); echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit; }

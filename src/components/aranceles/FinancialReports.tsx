@@ -46,7 +46,7 @@ const FinancialReports: React.FC = () => {
 
     const handleExportPDF = () => {
         const verifiedPayments = (payments || []).filter(p => p.estado === 'verificado');
-        const total = verifiedPayments.reduce((sum, p) => sum + p.monto, 0);
+        const total = verifiedPayments.reduce((sum, p) => sum + Number(p.monto), 0);
         
         const fechaReporte = new Date().toLocaleDateString('es-PY');
         
@@ -108,13 +108,14 @@ const FinancialReports: React.FC = () => {
                         ${verifiedPayments.map(p => `
                             <tr>
                                 <td>#${p.id.toString().padStart(6, '0')}</td>
-                                <td>${p.fecha_pago}</td>
+                                <td>${p.fecha_pago || '—'}</td>
                                 <td>
-                                    <strong>${p.nombre || 'N/A'}</strong><br>
-                                    <span style="color: #666; font-size: 10px;">CI: ${p.postulante_cedula || 'N/A'}</span>
+                                    <strong>${p.nombre || ''} ${p.apellido || ''}</strong><br>
+                                    <span style="color: #475569; font-size: 10px; font-weight: 500;">CI: ${p.postulante_cedula || 'N/A'}</span><br>
+                                    <span style="color: #0f172a; font-size: 9px; font-family: monospace; font-weight: bold; background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px; display: inline-block; margin-top: 2px;">Exp: ${p.numero_expediente || 'PENDIENTE'}</span>
                                 </td>
                                 <td>${p.concepto}</td>
-                                <td class="amount">${p.monto.toLocaleString('es-PY')}</td>
+                                <td class="amount">${Number(p.monto).toLocaleString('es-PY')}</td>
                             </tr>
                         `).join('')}
                         <tr class="total-row">

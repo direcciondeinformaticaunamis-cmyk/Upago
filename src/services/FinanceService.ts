@@ -28,6 +28,7 @@ export interface Payment {
     asignatura?: string;
     cierre_nro?: number | null;
     cierre_fecha?: string | null;
+    numero_expediente?: string;
 }
 
 export interface FinanceStats {
