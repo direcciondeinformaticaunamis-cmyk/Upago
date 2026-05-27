@@ -279,7 +279,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-extrabold text-[#002f6c] leading-tight tracking-tight flex items-center gap-3">
-                        <FileSpreadsheet className="text-[#a31e32]" size={36} />
+                        <FileSpreadsheet className="text-[#002f6c]" size={36} />
                         Cierres de Caja e Ingresos
                     </h1>
                     <p className="text-slate-500 font-medium text-sm mt-1">
@@ -303,7 +303,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                     onClick={() => setActiveTab('nuevo')}
                     className={`px-8 py-4 font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${
                         activeTab === 'nuevo' 
-                            ? 'border-[#a31e32] text-[#a31e32]' 
+                            ? 'border-[#002f6c] text-[#002f6c]' 
                             : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                 >
@@ -316,7 +316,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                     }}
                     className={`px-8 py-4 font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${
                         activeTab === 'historial' 
-                            ? 'border-[#a31e32] text-[#a31e32]' 
+                            ? 'border-[#002f6c] text-[#002f6c]' 
                             : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                 >
@@ -332,7 +332,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                     <div className="xl:col-span-1 space-y-6">
                         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6">
                             <h3 className="text-sm font-bold text-[#002f6c] uppercase tracking-wider border-b pb-3 flex items-center gap-2">
-                                <Hash size={18} className="text-[#a31e32]" />
+                                <Hash size={18} className="text-[#002f6c]" />
                                 Parámetros del Cierre
                             </h3>
 
@@ -346,7 +346,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                             type="date"
                                             value={fechaCierre}
                                             onChange={(e) => setFechaCierre(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#a31e32] transition-colors"
+                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -359,7 +359,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                             type="number"
                                             value={nroCierre}
                                             onChange={(e) => setNroCierre(Number(e.target.value))}
-                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#a31e32] transition-colors"
+                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-colors"
                                             placeholder="Nro. Cierre"
                                         />
                                     </div>
@@ -387,7 +387,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                     </div>
                                     <div className="border-t border-slate-200 my-2 pt-2 flex justify-between items-center text-sm">
                                         <span className="text-[#002f6c] font-black uppercase tracking-wider">Monto Total:</span>
-                                        <span className="font-extrabold text-[#a31e32]">{formatGs(totalGeneral)}</span>
+                                        <span className="font-extrabold text-[#002f6c]">{formatGs(totalGeneral)}</span>
                                     </div>
                                 </div>
 
@@ -413,7 +413,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                 <button 
                                     onClick={handleProcesarCierre}
                                     disabled={selectedPaymentIds.length === 0 || processingCierre}
-                                    className="w-full py-3.5 bg-gradient-to-r from-[#a31e32] to-[#7a1424] text-white hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-extrabold text-xs uppercase tracking-widest transition-all shadow-md shadow-[#a31e32]/10 flex items-center justify-center gap-2"
+                                    className="w-full py-3.5 bg-gradient-to-r from-[#002f6c] to-[#001d4a] text-white hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-extrabold text-xs uppercase tracking-widest transition-all shadow-md shadow-[#002f6c]/10 flex items-center justify-center gap-2"
                                 >
                                     {processingCierre ? (
                                         <>
@@ -494,7 +494,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                                             type="checkbox"
                                                             checked={isSelected}
                                                             onChange={() => handleToggleSelect(p.id)}
-                                                            className="rounded border-slate-300 text-[#a31e32] focus:ring-[#a31e32] w-4 h-4"
+                                                            className="rounded border-slate-300 text-[#002f6c] focus:ring-[#002f6c] w-4 h-4"
                                                         />
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -584,7 +584,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                     <tbody className="divide-y divide-slate-100">
                                         {historicCierres.map((c) => (
                                             <tr key={c.cierre_nro} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-8 py-5 text-sm font-black text-[#a31e32]">
+                                                <td className="px-8 py-5 text-sm font-black text-[#002f6c]">
                                                     CIERRE N° {c.cierre_nro}
                                                 </td>
                                                 <td className="px-8 py-5 text-xs text-slate-600 font-bold">
@@ -647,7 +647,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                         <div className="p-4 bg-gradient-to-r from-[#002f6c] to-[#001738] text-white flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                                    <Bot size={20} className="text-[#a31e32]" />
+                                    <Bot size={20} className="text-[#002f6c]" />
                                 </div>
                                 <div>
                                     <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
@@ -674,12 +674,12 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                 >
                                     {m.sender === 'bot' && (
                                         <div className="w-7 h-7 rounded-lg bg-slate-100 border flex items-center justify-center shrink-0">
-                                            <Bot size={14} className="text-[#a31e32]" />
+                                            <Bot size={14} className="text-[#002f6c]" />
                                         </div>
                                     )}
                                     <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
                                         m.sender === 'user'
-                                            ? 'bg-[#a31e32] text-white rounded-tr-none'
+                                            ? 'bg-[#002f6c] text-white rounded-tr-none'
                                             : 'bg-white text-slate-700 border rounded-tl-none font-medium'
                                     }`}>
                                         {/* Renderizado básico para negritas en Markdown */}
@@ -744,7 +744,7 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                 placeholder="Hazme una pregunta sobre el cierre..."
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
-                                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#a31e32] transition-colors"
+                                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#002f6c] transition-colors"
                             />
                             <button 
                                 type="submit"

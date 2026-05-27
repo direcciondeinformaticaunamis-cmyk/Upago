@@ -6,7 +6,7 @@ import { TrendingUp, Users, GraduationCap, DollarSign, Award, ArrowUpRight, Arro
 const InstitutionalAnalytics: React.FC = () => {
     // Datos simulados para los gráficos
     const carreraInscritos = [
-        { name: 'Medicina', value: 450, color: '#a31e32' },
+        { name: 'Medicina', value: 450, color: '#002f6c' },
         { name: 'Enfermería', value: 280, color: '#002f6c' },
         { name: 'Contabilidad', value: 150, color: '#a37c58' },
         { name: 'Derecho', value: 120, color: '#475569' },
@@ -30,7 +30,7 @@ const InstitutionalAnalytics: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 bg-red-50 rounded-2xl text-[#a31e32]">
+                        <div className="p-3 bg-red-50 rounded-2xl text-[#002f6c]">
                             <Users size={24} />
                         </div>
                         <span className="flex items-center gap-1 text-emerald-600 font-black text-[10px]">
@@ -87,7 +87,7 @@ const InstitutionalAnalytics: React.FC = () => {
                         <div className="relative w-48 h-48">
                             <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                                 <circle cx="18" cy="18" r="16" fill="transparent" stroke="#f1f5f9" strokeWidth="4"></circle>
-                                <circle cx="18" cy="18" r="16" fill="transparent" stroke="#a31e32" strokeWidth="4" strokeDasharray="40 100"></circle>
+                                <circle cx="18" cy="18" r="16" fill="transparent" stroke="#002f6c" strokeWidth="4" strokeDasharray="40 100"></circle>
                                 <circle cx="18" cy="18" r="16" fill="transparent" stroke="#002f6c" strokeWidth="4" strokeDasharray="25 100" strokeDashoffset="-40"></circle>
                                 <circle cx="18" cy="18" r="16" fill="transparent" stroke="#a37c58" strokeWidth="4" strokeDasharray="15 100" strokeDashoffset="-65"></circle>
                             </svg>
@@ -124,9 +124,9 @@ const InstitutionalAnalytics: React.FC = () => {
                                 <motion.div 
                                     initial={{ height: 0 }}
                                     animate={{ height: `${(m.value / 310) * 100}%` }}
-                                    className="w-full bg-[#001738]/5 group-hover:bg-[#a31e32] transition-colors rounded-t-xl relative"
+                                    className="w-full bg-[#001738]/5 group-hover:bg-[#002f6c] transition-colors rounded-t-xl relative"
                                 >
-                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-[#a31e32] rounded-full scale-x-0 group-hover:scale-x-100 transition-transform"></div>
+                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-[#002f6c] rounded-full scale-x-0 group-hover:scale-x-100 transition-transform"></div>
                                 </motion.div>
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.month}</span>
                             </div>

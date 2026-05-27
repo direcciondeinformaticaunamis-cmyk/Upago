@@ -652,14 +652,14 @@ const BankReconciliation: React.FC = () => {
 
                 {/* Pendientes de Conciliar */}
                 <div className="bg-white border border-slate-100 p-6 rounded-[1.5rem] shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[160px]">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#a31e32]"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#002f6c]"></div>
                     <div className="pl-3">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Pendientes de Conciliar</p>
                         <h3 className="text-4xl font-black text-[#001738] tracking-tight">
                             {stats.pendientes_conciliar} Registros
                         </h3>
                     </div>
-                    <div className="flex items-center gap-2 mt-6 text-[#a31e32] text-[11px] font-black pl-3">
+                    <div className="flex items-center gap-2 mt-6 text-[#002f6c] text-[11px] font-black pl-3">
                         <AlertTriangle size={14} /> 
                         <span>Requiere atención administrativa</span>
                     </div>
@@ -753,7 +753,7 @@ const BankReconciliation: React.FC = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsBotOpen(!isBotOpen)}
-                    className="w-14 h-14 bg-[#a31e32] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(128,0,32,0.4)] hover:bg-[#7a1424] transition-colors relative"
+                    className="w-14 h-14 bg-[#002f6c] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0, 47, 108,0.4)] hover:bg-[#001d4a] transition-colors relative"
                 >
                     <Bot size={24} />
                 </motion.button>
@@ -810,7 +810,7 @@ const BankReconciliation: React.FC = () => {
                             <div className="flex-1 p-8 overflow-y-auto space-y-6">
                                 {/* Top Explanation */}
                                 <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-5 flex items-start gap-4">
-                                    <Sparkles className="text-[#a31e32] shrink-0 mt-0.5" size={20} />
+                                    <Sparkles className="text-[#002f6c] shrink-0 mt-0.5" size={20} />
                                     <div>
                                         <h4 className="font-bold text-sm text-[#001738] mb-1">Carga Inteligente de Extractos</h4>
                                         <p className="text-xs text-slate-600 leading-relaxed">
@@ -846,7 +846,7 @@ const BankReconciliation: React.FC = () => {
                                             type="button"
                                             onClick={handleImportDemo}
                                             disabled={isImporting || isSubmittingImport}
-                                            className="px-4 py-1.5 bg-[#a31e32]/10 text-[#a31e32] hover:bg-[#a31e32]/20 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
+                                            className="px-4 py-1.5 bg-[#002f6c]/10 text-[#002f6c] hover:bg-[#002f6c]/20 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
                                         >
                                             {isImporting ? <RefreshCw className="animate-spin" size={12} /> : <Bot size={12} />}
                                             Cargar Demo
@@ -1012,7 +1012,7 @@ const BankReconciliation: React.FC = () => {
                             {/* Header */}
                             <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
                                 <div>
-                                    <span className="text-[10px] font-black text-[#a31e32] uppercase tracking-[0.2em] mb-1 block">Módulo de Conciliación</span>
+                                    <span className="text-[10px] font-black text-[#002f6c] uppercase tracking-[0.2em] mb-1 block">Módulo de Conciliación</span>
                                     <h3 className="text-lg font-black text-[#001738] tracking-tight">Cruce y Vinculación Manual de Transacciones</h3>
                                 </div>
                                 <button

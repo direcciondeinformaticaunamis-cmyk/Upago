@@ -6,12 +6,12 @@
 @tailwind utilities;
 
 :root {
-  /* Institutional Burgundy - Refined */
-  --primary: #a31e32;
-  --primary-light: #c42b45;
-  --primary-dark: #7a1424;
-  --primary-50: rgba(163, 30, 50, 0.03);
-  --primary-100: rgba(163, 30, 50, 0.08);
+  /* Institutional Navy Blue */
+  --primary: #002f6c;
+  --primary-light: #0a4794;
+  --primary-dark: #001d4a;
+  --primary-50: rgba(0, 47, 108, 0.03);
+  --primary-100: rgba(0, 47, 108, 0.08);
   
   /* Neutral Palette - Ultra Clean */
   --background: #fcfcfd;
@@ -51,7 +51,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 10px 30px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
   --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
-  --shadow-premium: 0 32px 64px -15px rgba(163, 30, 50, 0.08);
+  --shadow-premium: 0 32px 64px -15px rgba(0, 47, 108, 0.08);
   
   --glass: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.4);
@@ -100,7 +100,7 @@
   }
 
   .shadow-premium-hover {
-    box-shadow: 0 40px 80px rgba(163, 30, 50, 0.12);
+    box-shadow: 0 40px 80px rgba(0, 47, 108, 0.12);
   }
   
   .shadow-card {

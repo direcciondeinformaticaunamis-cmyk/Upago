@@ -178,11 +178,11 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                             {/* Welcome Section */}
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                                 <div>
-                                    <h1 className="text-[3.5rem] font-extrabold text-[#a31e32] leading-tight tracking-tight">Dashboard</h1>
+                                    <h1 className="text-[3.5rem] font-extrabold text-[#002f6c] leading-tight tracking-tight">Dashboard</h1>
                                     <p className="text-[#43474f] font-medium">Resumen administrativo de la Sede Central</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setActiveSection('pagos')} className="px-6 py-2.5 bg-gradient-to-r from-[#a31e32] to-[#7a1424] text-white rounded-lg font-semibold text-sm shadow-md flex items-center gap-2">
+                                    <button onClick={() => setActiveSection('pagos')} className="px-6 py-2.5 bg-gradient-to-r from-[#002f6c] to-[#001d4a] text-white rounded-lg font-semibold text-sm shadow-md flex items-center gap-2">
                                         <Add style={{fontSize: 18}} />
                                         Nuevo Registro
                                     </button>
@@ -191,15 +191,15 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
                             {/* Bento Grid Summary Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                <div className="bg-white p-6 rounded-xl shadow-sm group hover:bg-[#a31e32] transition-all duration-300">
+                                <div className="bg-white p-6 rounded-xl shadow-sm group hover:bg-[#002f6c] transition-all duration-300">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="p-2 bg-[#d5e3ff] rounded-lg text-[#a31e32] group-hover:bg-white group-hover:text-[#a31e32] transition-colors">
+                                        <div className="p-2 bg-[#d5e3ff] rounded-lg text-[#002f6c] group-hover:bg-white group-hover:text-[#002f6c] transition-colors">
                                             <Payments style={{fontSize: 20}} />
                                         </div>
                                         <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest group-hover:text-white/70">Hoy</span>
                                     </div>
                                     <h3 className="text-[#43474f] text-sm font-semibold mb-1 group-hover:text-white/80 transition-colors">Recaudación del Día</h3>
-                                    <p className="text-2xl font-extrabold text-[#a31e32] group-hover:text-white transition-colors">{stats ? formatCurrency(stats.recaudacion_hoy) : '0'}</p>
+                                    <p className="text-2xl font-extrabold text-[#002f6c] group-hover:text-white transition-colors">{stats ? formatCurrency(stats.recaudacion_hoy) : '0'}</p>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#381300] group-hover:text-white/90">
                                         <TrendingUp style={{fontSize: 14}} />
                                         <span>Actualizado</span>
@@ -214,14 +214,14 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest">Pendientes</span>
                                     </div>
                                     <h3 className="text-[#43474f] text-sm font-semibold mb-1">Pagos por Conciliar</h3>
-                                    <p className="text-3xl font-extrabold text-[#a31e32]">{stats?.pendientes_conciliar || 0}</p>
+                                    <p className="text-3xl font-extrabold text-[#002f6c]">{stats?.pendientes_conciliar || 0}</p>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#43474f]">
                                         <Schedule style={{fontSize: 14}} />
                                         <span>Cola de espera</span>
                                     </div>
                                 </div>
 
-                                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-[#a31e32]">
+                                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-[#002f6c]">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="p-2 bg-[#d5e3fc] rounded-lg text-[#515f74]">
                                             <Group style={{fontSize: 20}} />
@@ -229,7 +229,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                         <span className="text-xs font-bold text-[#43474f] uppercase tracking-widest">Postulantes</span>
                                     </div>
                                     <h3 className="text-[#43474f] text-sm font-semibold mb-1">Registrados hoy</h3>
-                                    <p className="text-3xl font-extrabold text-[#a31e32]">{stats?.registrados_hoy || 0}</p>
+                                    <p className="text-3xl font-extrabold text-[#002f6c]">{stats?.registrados_hoy || 0}</p>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#43474f]">
                                         <PersonAdd style={{fontSize: 14}} />
                                         <span>Nuevos ingresos</span>
@@ -255,7 +255,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                                 <div className="lg:col-span-3 bg-white rounded-xl p-8 shadow-sm">
                                     <div className="flex justify-between items-center mb-8">
-                                        <h2 className="text-xl font-bold text-[#a31e32]">Tendencia Mensual de Pagos</h2>
+                                        <h2 className="text-xl font-bold text-[#002f6c]">Tendencia Mensual de Pagos</h2>
                                         <div className="flex gap-2">
                                             <span className="px-3 py-1 bg-[#f2f4f6] text-[#43474f] text-[10px] font-bold rounded-md uppercase">{new Date().getFullYear()}</span>
                                             <MoreVert className="text-[#737780] cursor-pointer" />
@@ -263,8 +263,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     </div>
                                     <div className="relative h-64 w-full flex items-end gap-2">
                                         {stats?.tendencia?.map((item, idx) => (
-                                            <div key={idx} className="flex-1 bg-[#a31e32]/10 rounded-t-sm relative group" style={{ height: `${Math.min(100, (item.total / 10000000) * 100)}%` }}>
-                                                <div className="absolute -top-1 bg-[#a31e32] w-full h-1 rounded-full"></div>
+                                            <div key={idx} className="flex-1 bg-[#002f6c]/10 rounded-t-sm relative group" style={{ height: `${Math.min(100, (item.total / 10000000) * 100)}%` }}>
+                                                <div className="absolute -top-1 bg-[#002f6c] w-full h-1 rounded-full"></div>
                                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#001738] text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                                     {item.mes}: {formatCurrency(item.total)}
                                                 </div>
@@ -277,7 +277,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                 </div>
 
                                 <div className="lg:col-span-2 space-y-8">
-                                    <div className="bg-[#a31e32] p-8 rounded-xl text-white relative overflow-hidden">
+                                    <div className="bg-[#002f6c] p-8 rounded-xl text-white relative overflow-hidden">
                                         <div className="relative z-10">
                                             <h3 className="text-sm font-semibold opacity-80 mb-2 uppercase tracking-widest">Objetivo Mensual</h3>
                                             <p className="text-3xl font-black mb-4">450.000.000 PYG</p>
@@ -292,25 +292,25 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     </div>
 
                                     <div className="bg-white p-6 rounded-xl shadow-sm">
-                                        <h2 className="text-sm font-bold text-[#a31e32] mb-4 uppercase tracking-widest">Accesos Rápidos</h2>
+                                        <h2 className="text-sm font-bold text-[#002f6c] mb-4 uppercase tracking-widest">Accesos Rápidos</h2>
                                         <div className="grid grid-cols-2 gap-4">
                                             <button 
                                                 onClick={handleExportExcel}
                                                 className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
                                             >
-                                                <FileDownload className="text-[#a31e32]" />
-                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Exp. Excel</span>
+                                                <FileDownload className="text-[#002f6c]" />
+                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#002f6c]">Exp. Excel</span>
                                             </button>
                                             <button onClick={() => setActiveSection('facturas')} className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group">
-                                                <Print className="text-[#a31e32]" />
-                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">FACTURAS</span>
+                                                <Print className="text-[#002f6c]" />
+                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#002f6c]">FACTURAS</span>
                                             </button>
                                             <button 
                                                 onClick={() => setActiveSection('cierres')}
                                                 className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
                                             >
-                                                <History className="text-[#a31e32]" />
-                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Bitácora</span>
+                                                <History className="text-[#002f6c]" />
+                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#002f6c]">Bitácora</span>
                                             </button>
                                             <button 
                                                 onClick={() => window.location.href = `${window.location.origin}/api.php?action=export_db`}
@@ -323,8 +323,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 onClick={() => alert("Bandeja de avisos: No hay alertas urgentes pendientes en este momento.")}
                                                 className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
                                             >
-                                                <Mail className="text-[#a31e32]" />
-                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Avisos</span>
+                                                <Mail className="text-[#002f6c]" />
+                                                <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#002f6c]">Avisos</span>
                                             </button>
                                         </div>
                                     </div>
@@ -333,8 +333,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
                             <div className="bg-white rounded-xl overflow-hidden shadow-sm">
                                 <div className="px-8 py-6 flex justify-between items-center border-b border-[#e6e8ea]">
-                                    <h2 className="text-xl font-bold text-[#a31e32]">Actividades Recientes (Pagos)</h2>
-                                    <button onClick={() => setActiveSection('reportes')} className="text-[#a31e32] font-bold text-xs uppercase hover:underline">Ver Todo</button>
+                                    <h2 className="text-xl font-bold text-[#002f6c]">Actividades Recientes (Pagos)</h2>
+                                    <button onClick={() => setActiveSection('reportes')} className="text-[#002f6c] font-bold text-xs uppercase hover:underline">Ver Todo</button>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
@@ -354,11 +354,11 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                     <td className="px-4 py-3 text-xs font-bold text-[#001738]">{p.numero_expediente || 'PENDIENTE'}</td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded bg-[#a31e32] flex items-center justify-center text-white font-bold text-xs">
+                                                            <div className="w-8 h-8 rounded bg-[#002f6c] flex items-center justify-center text-white font-bold text-xs">
                                                                 {p.nombre?.[0]}{p.apellido?.[0]}
                                                             </div>
                                                             <div>
-                                                                <div className="text-sm font-bold text-[#a31e32]">
+                                                                <div className="text-sm font-bold text-[#002f6c]">
                                                                     {p.nombre} {p.apellido}
                                                                 </div>
                                                                 <div className="text-[10px] text-[#43474f]">ID: {p.postulante_cedula}</div>
@@ -401,7 +401,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                                     setActiveSection('facturas');
                                                                 }}
                                                             >
-                                                                <Receipt className="text-[#a31e32]" />
+                                                                <Receipt className="text-[#002f6c]" />
                                                             </span>
                                                         </div>
                                                     </td>
@@ -446,19 +446,19 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                         <div className="space-y-6">
                             <div className="flex justify-between items-center mb-8">
                                 <div>
-                                    <h1 className="text-3xl font-black text-[#a31e32] tracking-tight">Gestión de Usuarios</h1>
+                                    <h1 className="text-3xl font-black text-[#002f6c] tracking-tight">Gestión de Usuarios</h1>
                                     <p className="text-slate-500 font-medium text-sm">Listado total de postulantes y concursantes docentes registrados.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     {user.rol === 'superadmin' && (
                                         <button 
                                             onClick={() => setActiveSection('external')}
-                                            className="px-6 py-2 bg-[#a31e32] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#7a1424] transition-all shadow-md flex items-center gap-2"
+                                            className="px-6 py-2 bg-[#002f6c] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#001d4a] transition-all shadow-md flex items-center gap-2"
                                         >
                                             <PersonAdd style={{fontSize: 18}} /> Cuentas Externas
                                         </button>
                                     )}
-                                    <button onClick={loadData} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-[#a31e32]">
+                                    <button onClick={loadData} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-[#002f6c]">
                                         <History />
                                     </button>
                                 </div>
@@ -484,7 +484,7 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                     <p className="text-sm font-bold text-slate-800">{post.nombre} {post.apellido}</p>
                                                     <p className="text-[10px] text-slate-400 font-mono">{post.correo}</p>
                                                 </td>
-                                                <td className="px-4 py-4 text-sm font-black text-[#a31e32]">{post.cedula}</td>
+                                                <td className="px-4 py-4 text-sm font-black text-[#002f6c]">{post.cedula}</td>
                                                 <td className="px-4 py-4 text-sm font-medium text-slate-600">{post.carrera || 'No especificada'}</td>
                                                 <td className="px-4 py-4">
                                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.tipo_usuario === 'postulante' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
@@ -534,8 +534,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                 <footer className="flex justify-between items-center px-12 w-full py-4 border-t border-[#e6e8ea] bg-[#f7f9fb]">
                     <p className="text-[11px] font-normal text-[#43474f]">© {new Date().getFullYear()} UPAGO - Gestión Institucional</p>
                     <div className="flex gap-6">
-                        <a className="text-[11px] text-[#43474f] hover:text-[#800020] transition-colors" href="#">Privacidad</a>
-                        <a className="text-[11px] text-[#43474f] hover:text-[#800020] transition-colors" href="#">Términos</a>
+                        <a className="text-[11px] text-[#43474f] hover:text-[#002f6c] transition-colors" href="#">Privacidad</a>
+                        <a className="text-[11px] text-[#43474f] hover:text-[#002f6c] transition-colors" href="#">Términos</a>
                     </div>
                 </footer>
             </main>

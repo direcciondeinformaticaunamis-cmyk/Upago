@@ -87,7 +87,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
 
     const generarBoletaHTML = (pago: Pago) => {
         return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BOLETA ${pago.numero_boleta}</title>
-<style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #a31e32;padding-bottom:20px;margin-bottom:30px}.logo{font-size:32px;font-weight:bold;color:#a31e32}.monto{font-size:28px;font-weight:bold;color:#a31e32;margin:20px 0}</style></head>
+<style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #002f6c;padding-bottom:20px;margin-bottom:30px}.logo{font-size:32px;font-weight:bold;color:#002f6c}.monto{font-size:28px;font-weight:bold;color:#002f6c;margin:20px 0}</style></head>
 <body><div class="header"><div class="logo">UNIVERSIDAD NACIONAL DE MISIONES</div><div>BOLETA OFICIAL DE PAGO</div></div>
 <p><strong>Número:</strong> ${pago.numero_boleta}</p><p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}</p>
 <p><strong>Postulante:</strong> ${user.nombre} ${user.apellido}</p><p><strong>Email:</strong> ${user.email}</p>
@@ -159,7 +159,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                 <button 
                     onClick={() => setActiveSection('registro_pago')} 
                     disabled={!user.expediente_aprobado && !isMedicina && user.rol !== 'concursante_docente' && user.rol !== 'auxiliar_docente'}
-                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${(user.expediente_aprobado || isMedicina || user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente') ? 'bg-gradient-to-r from-[#a31e32] to-[#5a0015]' : 'bg-slate-400 cursor-not-allowed'}`}
+                    className={`w-full py-3 px-4 text-white rounded-md font-bold text-sm shadow-lg flex items-center justify-center gap-2 mb-4 transition-all ${(user.expediente_aprobado || isMedicina || user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente') ? 'bg-gradient-to-r from-[#002f6c] to-[#001738]' : 'bg-slate-400 cursor-not-allowed'}`}
                     title={(!user.expediente_aprobado && !isMedicina && user.rol !== 'concursante_docente' && user.rol !== 'auxiliar_docente') ? 'Requiere aprobación de expediente' : ''}
                 >
                     <CloudUpload style={{fontSize: 18}} />
@@ -237,7 +237,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                             {/* Postulante Profile Summary */}
                             <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <h2 className="text-3xl md:text-4xl font-black text-[#a31e32] tracking-tight mb-2">
+                            <h2 className="text-3xl md:text-4xl font-black text-[#002f6c] tracking-tight mb-2">
                                 {(user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente') ? 'Mis Concursos' : 'Mis Pagos'}
                             </h2>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -258,7 +258,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                         </div>
                         <button 
                             onClick={() => setActiveSection('registro_pago')} 
-                            className="px-6 py-3 rounded-md font-bold shadow-lg flex items-center gap-2 self-start md:self-auto transition-transform bg-gradient-to-br from-[#a31e32] to-[#5a0015] text-white active:scale-95"
+                            className="px-6 py-3 rounded-md font-bold shadow-lg flex items-center gap-2 self-start md:self-auto transition-transform bg-gradient-to-br from-[#002f6c] to-[#001738] text-white active:scale-95"
                         >
                             <AddCircle />
                             Subir Nuevo Comprobante
@@ -393,11 +393,11 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                     {/* Support Cards */}
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                         <div className="flex gap-4 p-6 bg-[#d5e3fc]/30 rounded-xl">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#a31e32] shadow-sm">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#002f6c] shadow-sm">
                                 <SupportAgent />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[#a31e32] mb-1">¿Necesitas ayuda con tus pagos?</h4>
+                                <h4 className="font-bold text-[#002f6c] mb-1">¿Necesitas ayuda con tus pagos?</h4>
                                 <p className="text-sm text-[#43474f] leading-relaxed">Si tienes problemas con la validación de tus comprobantes, contacta a Tesorería al (021) 123-4567 o escribe a pagos@unamis.edu.py</p>
                             </div>
                         </div>
@@ -406,7 +406,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                 <InfoIcon />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[#a31e32] mb-1">Políticas de Pago</h4>
+                                <h4 className="font-bold text-[#002f6c] mb-1">Políticas de Pago</h4>
                                 <p className="text-sm text-[#43474f] leading-relaxed">Recuerda que los pagos realizados vía transferencia bancaria pueden tardar hasta 48 horas hábiles en ser validados por nuestro equipo administrativo.</p>
                             </div>
                         </div>
@@ -433,7 +433,7 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                         </div>
                     ) : (
                         <div className="text-center py-20 text-[#43474f] bg-white rounded-xl shadow-sm border border-[#e6e8ea]">
-                            <h2 className="text-2xl font-bold mb-2 text-[#800020]">Sección en construcción</h2>
+                            <h2 className="text-2xl font-bold mb-2 text-[#002f6c]">Sección en construcción</h2>
                             <p>Esta sección estará disponible próximamente.</p>
                         </div>
                     )}
@@ -442,15 +442,15 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
 
             {/* BottomNavBar for Mobile */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#c3c6d1]/10 px-6 py-3 flex justify-between items-center z-50">
-                <button onClick={() => setActiveSection('datos')} className={`flex flex-col items-center gap-1 ${activeSection === 'datos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('datos')} className={`flex flex-col items-center gap-1 ${activeSection === 'datos' ? 'text-[#002f6c]' : 'text-[#43474f]'}`}>
                     <Dashboard />
                     <span className="text-[10px] font-medium">Mis Datos</span>
                 </button>
-                <button onClick={() => setActiveSection('pagos')} className={`flex flex-col items-center gap-1 ${activeSection === 'pagos' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('pagos')} className={`flex flex-col items-center gap-1 ${activeSection === 'pagos' ? 'text-[#002f6c]' : 'text-[#43474f]'}`}>
                     <Wallet />
                     <span className="text-[10px] font-bold">Pagos</span>
                 </button>
-                <button onClick={() => setActiveSection('documentos_digitales')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos_digitales' ? 'text-[#800020]' : 'text-[#43474f]'}`}>
+                <button onClick={() => setActiveSection('documentos_digitales')} className={`flex flex-col items-center gap-1 ${activeSection === 'documentos_digitales' ? 'text-[#002f6c]' : 'text-[#43474f]'}`}>
                     <Description />
                     <span className="text-[10px] font-medium">Trámites</span>
                 </button>

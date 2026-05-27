@@ -666,7 +666,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     <p className="text-2xl font-black text-slate-800">{expedientes.filter(e => e.tipo === 'docente').length}</p>
                                     <p className="mt-4 text-[10px] text-slate-400 font-medium">Postulaciones activas</p>
                                 </div>
-                                <div className="bg-[#800020] p-6 rounded-2xl border border-red-900 shadow-xl shadow-red-100">
+                                <div className="bg-[#002f6c] p-6 rounded-2xl border border-blue-900 shadow-xl shadow-blue-100">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="p-2 bg-white/10 rounded-lg text-white">
                                             <TrendingUp />
@@ -716,7 +716,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 </div>
                                 <button 
                                     onClick={() => window.print()}
-                                    className="flex items-center gap-2 px-6 py-3 bg-[#800020] text-white rounded-xl font-bold hover:bg-[#5a0015] transition-all shadow-lg shadow-red-100"
+                                    className="flex items-center gap-2 px-6 py-3 bg-[#002f6c] text-white rounded-xl font-bold hover:bg-[#001738] transition-all shadow-lg shadow-blue-100"
                                 >
                                     <Print /> Imprimir Listado
                                 </button>
@@ -726,7 +726,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 {/* Encabezado Institucional (Solo visible en impresión) */}
                                 <div className="hidden print:flex flex-col items-center text-center border-b-2 border-black pb-6 mb-8">
                                     <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-16 h-16 bg-[#800020] rounded-lg flex items-center justify-center text-white text-3xl font-black">U</div>
+                                        <div className="w-16 h-16 bg-[#002f6c] rounded-lg flex items-center justify-center text-white text-3xl font-black">U</div>
                                         <div className="text-left">
                                             <h1 className="text-xl font-black uppercase leading-tight">Universidad Nacional de Misiones</h1>
                                             <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Rectorado - Secretaría General</p>
@@ -1253,7 +1253,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
-                <div className="p-6 bg-[#800020] text-white flex justify-between items-center">
+                <div className="p-6 bg-[#002f6c] text-white flex justify-between items-center">
                     <div>
                         <h3 className="text-lg font-black tracking-tight flex items-center gap-2 uppercase">
                             🏦 Pago Manual Ventanilla
@@ -1300,7 +1300,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
                                     setMonto(350000);
                                 }
                             }}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#002f6c] transition-shadow"
                         >
                             <option value="Examen de Admisión - Medicina (San Ignacio)">Examen de Admisión - Medicina (San Ignacio) - Gs. 1.000.000</option>
                             <option value="Inscripción General - Grado">Inscripción General - Grado - Gs. 350.000</option>
@@ -1315,7 +1315,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
                             type="number"
                             value={monto}
                             onChange={(e) => setMonto(parseInt(e.target.value) || 0)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#002f6c] transition-shadow"
                             placeholder="Monto en guaraníes"
                             required
                         />
@@ -1327,7 +1327,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
                             type="text"
                             value={numComprobante}
                             onChange={(e) => setNumComprobante(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#800020] transition-shadow"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#002f6c] transition-shadow"
                             placeholder="Ej. T-100245 o Caja-02"
                             required
                         />
@@ -1335,7 +1335,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
 
                     <div className="space-y-1.5 text-left">
                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Foto/Escaneado del Comprobante (Opcional)</label>
-                        <label className="flex flex-col items-center justify-center p-5 border border-dashed rounded-2xl cursor-pointer transition-all border-slate-300 hover:border-[#800020]/30 hover:bg-slate-50">
+                        <label className="flex flex-col items-center justify-center p-5 border border-dashed rounded-2xl cursor-pointer transition-all border-slate-300 hover:border-[#002f6c]/30 hover:bg-slate-50">
                             <input 
                                 type="file" 
                                 className="hidden" 
@@ -1363,7 +1363,7 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
                         <button 
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 py-3 bg-[#800020] hover:bg-[#600018] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-100 text-sm disabled:opacity-50"
+                            className="flex-1 py-3 bg-[#002f6c] hover:bg-[#001738] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-100 text-sm disabled:opacity-50"
                         >
                             {isSubmitting ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

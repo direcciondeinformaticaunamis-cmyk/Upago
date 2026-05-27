@@ -481,7 +481,7 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
                                 {ocrState === 'idle' && (
                                     <button 
                                         onClick={handleScan}
-                                        className="w-full flex items-center justify-center gap-2 py-4 bg-[var(--primary)] hover:bg-[#a31e32] text-white text-sm font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/25 hover:shadow-primary/35 transition-all duration-300"
+                                        className="w-full flex items-center justify-center gap-2 py-4 bg-[var(--primary)] hover:bg-[#002f6c] text-white text-sm font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/25 hover:shadow-primary/35 transition-all duration-300"
                                     >
                                         ✨ Analizar y Extraer Datos (OCR)
                                     </button>

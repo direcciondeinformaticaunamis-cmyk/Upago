@@ -65,7 +65,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
             <aside className="w-72 bg-slate-900 text-white flex flex-col p-6 shadow-2xl z-50">
                 <div className="mb-10 px-2">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-[#a31e32] rounded-xl flex items-center justify-center shadow-lg shadow-[#a31e32]/20">
+                        <div className="w-10 h-10 bg-[#002f6c] rounded-xl flex items-center justify-center shadow-lg shadow-[#002f6c]/20">
                             <ShieldCheck size={24} />
                         </div>
                         <h2 className="text-xl font-black tracking-tighter">SUPER ADMIN</h2>
@@ -80,7 +80,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                             onClick={() => setActiveTab(item.id as any)}
                             className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl transition-all duration-300 ${
                                 activeTab === item.id 
-                                    ? 'bg-[#a31e32] text-white shadow-lg shadow-[#a31e32]/20 font-bold' 
+                                    ? 'bg-[#002f6c] text-white shadow-lg shadow-[#002f6c]/20 font-bold' 
                                     : 'text-slate-400 hover:bg-white/5 hover:text-white font-medium'
                             }`}
                         >
@@ -115,9 +115,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Servidor Online</span>
                         </div>
-                        <button className="relative text-slate-400 hover:text-[#a31e32] transition-colors">
+                        <button className="relative text-slate-400 hover:text-[#002f6c] transition-colors">
                             <Bell size={20} />
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#a31e32] rounded-full"></span>
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#002f6c] rounded-full"></span>
                         </button>
                     </div>
                 </header>
@@ -162,7 +162,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                                     <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
                                         <div className="flex items-center justify-between mb-8">
                                             <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Actividad Global Reciente</h3>
-                                            <button className="text-xs font-black text-[#a31e32] uppercase tracking-widest hover:underline">Ver logs completos</button>
+                                            <button className="text-xs font-black text-[#002f6c] uppercase tracking-widest hover:underline">Ver logs completos</button>
                                         </div>
                                         <div className="space-y-4">
                                             {logs.length > 0 ? logs.slice(0, 5).map((log, i) => (
@@ -205,7 +205,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                                             <h1 className="text-3xl font-black text-slate-800 tracking-tight">Registro de Auditoría</h1>
                                             <p className="text-slate-500 font-medium text-sm">Trazabilidad completa de las acciones del sistema.</p>
                                         </div>
-                                        <button onClick={fetchLogs} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-[#a31e32]">
+                                        <button onClick={fetchLogs} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-[#002f6c]">
                                             <Activity size={20} />
                                         </button>
                                     </div>
@@ -235,7 +235,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                                                                     <p className="text-[10px] text-slate-400 font-mono">{log.timestamp.split(' ')[1]}</p>
                                                                 </td>
                                                                 <td className="px-8 py-4">
-                                                                    <span className="text-xs font-bold text-[#a31e32] bg-[#a31e32]/10 px-3 py-1 rounded-full">
+                                                                    <span className="text-xs font-bold text-[#002f6c] bg-[#002f6c]/10 px-3 py-1 rounded-full">
                                                                         {log.user}
                                                                     </span>
                                                                 </td>

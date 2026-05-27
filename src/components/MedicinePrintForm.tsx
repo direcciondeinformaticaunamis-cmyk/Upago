@@ -38,7 +38,7 @@ const MedicinePrintForm: React.FC<MedicinePrintFormProps> = ({ data, onClose }) 
                         ESCUDO<br/>UNAMIS
                     </div>
                     <div className="text-center flex-1 px-4">
-                        <h1 className="text-xl font-black text-[#a31e32] uppercase tracking-tight">Universidad Nacional de Misiones</h1>
+                        <h1 className="text-xl font-black text-[#002f6c] uppercase tracking-tight">Universidad Nacional de Misiones</h1>
                         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.15em] mt-1">Carrera de Medicina</p>
                         <p className="text-[8px] font-bold text-slate-400 mt-0.5">San Ignacio Guazú, Misiones - Paraguay</p>
                         <p className="text-[8px] font-bold text-primary mt-0.5 underline">Web: www.unamis.edu.py Correo: medicina@unamis.edu.py</p>
@@ -49,7 +49,7 @@ const MedicinePrintForm: React.FC<MedicinePrintFormProps> = ({ data, onClose }) 
                 </div>
 
                 {/* Title Bar */}
-                <div className="bg-[#a31e32] text-white text-center py-2.5 rounded-lg mb-6">
+                <div className="bg-[#002f6c] text-white text-center py-2.5 rounded-lg mb-6">
                     <h2 className="text-xs font-black uppercase tracking-[0.2em]">Formulario de Inscripción para la Evaluación de Admisión</h2>
                 </div>
 

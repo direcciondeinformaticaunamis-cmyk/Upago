@@ -152,7 +152,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                         {formData.carrera === 'Medicina' && (
                             <button 
                                 onClick={() => setShowPrintForm(true)}
-                                className="flex items-center gap-2 px-5 py-3 bg-[#a31e32] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                className="flex items-center gap-2 px-5 py-3 bg-[#002f6c] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                             >
                                 <Print fontSize="small" /> Imprimir Formulario Oficial
                             </button>
@@ -200,7 +200,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                                     setIsSubmitted(false);
                                     setStep(1);
                                 }}
-                                className="text-xs font-black uppercase tracking-wider text-[var(--primary)] hover:text-[#5a0015] flex items-center gap-1 transition-colors"
+                                className="text-xs font-black uppercase tracking-wider text-[var(--primary)] hover:text-[#001738] flex items-center gap-1 transition-colors"
                             >
                                 ✏️ Editar
                             </button>
@@ -233,7 +233,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                                     setIsSubmitted(false);
                                     setStep(1);
                                 }}
-                                className="text-xs font-black uppercase tracking-wider text-[var(--primary)] hover:text-[#5a0015] flex items-center gap-1 transition-colors"
+                                className="text-xs font-black uppercase tracking-wider text-[var(--primary)] hover:text-[#001738] flex items-center gap-1 transition-colors"
                             >
                                 ✏️ Editar
                             </button>

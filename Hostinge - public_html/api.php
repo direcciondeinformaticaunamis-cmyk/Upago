@@ -320,12 +320,12 @@ function send_institutional_email($to, $subject, $message) {
         <style>
             body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 40px; }
             .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e6e8ea; }
-            .header { background: #a31e32; padding: 30px; text-align: center; color: white; }
+            .header { background: #002f6c; padding: 30px; text-align: center; color: white; }
             .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
             .content { padding: 40px; color: #43474f; line-height: 1.6; }
             .footer { background: #f2f4f6; padding: 20px; text-align: center; font-size: 12px; color: #737780; border-top: 1px solid #e6e8ea; }
-            .btn { display: inline-block; background: #a31e32; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
-            .highlight { background: #fdf2f4; padding: 15px; border-left: 4px solid #a31e32; border-radius: 4px; margin: 20px 0; font-weight: bold; }
+            .btn { display: inline-block; background: #002f6c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+            .highlight { background: #fdf2f4; padding: 15px; border-left: 4px solid #002f6c; border-radius: 4px; margin: 20px 0; font-weight: bold; }
         </style>
     </head>
     <body>
@@ -846,11 +846,11 @@ if ($method === 'POST') {
             // Enviar el correo al correo personal antiguo notificando el cambio
             $asunto = "¡Bienvenido a tu cuenta institucional UNAMIS!";
             $mensajeHTML = "
-                <h2 style='color: #a31e32;'>¡Hola {$user_data['nombre']} {$user_data['apellido']}!</h2>
+                <h2 style='color: #002f6c;'>¡Hola {$user_data['nombre']} {$user_data['apellido']}!</h2>
                 <p>Tu expediente ha sido procesado con éxito y hemos activado tu nueva identidad institucional.</p>
                 <div class='highlight'>
                     <p style='margin: 0 0 5px 0;'><strong>Tu nuevo correo es:</strong></p>
-                    <p style='margin: 0; font-size: 18px; color: #a31e32;'>$nuevo_correo</p>
+                    <p style='margin: 0; font-size: 18px; color: #002f6c;'>$nuevo_correo</p>
                 </div>
                 <p>A partir de ahora, todo acceso al Portal Digital, Aulas Virtuales y servicios de Microsoft 365 debe realizarse exclusivamente con esta nueva cuenta.</p>
                 <p><strong>Clave temporal:</strong> $temp_password <em>(Se te pedirá cambiarla al iniciar sesión por primera vez en Microsoft)</em></p>
@@ -1367,7 +1367,7 @@ if ($method === 'POST') {
                 $monto_f = number_format($student['monto'], 0, ',', '.');
                 $asunto = "Verificación de Pago Confirmada - UNAMIS";
                 $mensajeHTML = "
-                    <h2 style='color: #a31e32;'>¡Hola {$student['nombre']} {$student['apellido']}!</h2>
+                    <h2 style='color: #002f6c;'>¡Hola {$student['nombre']} {$student['apellido']}!</h2>
                     <p>Nos complace informarte que tu pago para el concepto de <strong>{$student['concepto']}</strong> por valor de <strong>Gs. {$monto_f}</strong> ha sido verificado y conciliado con éxito.</p>
                     <div class='highlight'>
                         <p style='margin: 0;'><strong>Estado del Pago:</strong> Verificado</p>
@@ -1474,7 +1474,7 @@ if ($method === 'POST') {
                     $monto_f = number_format($tx['monto'], 0, ',', '.');
                     $asunto = "Pago Conciliado Automáticamente por IA - UNAMIS";
                     $mensajeHTML = "
-                        <h2 style='color: #a31e32;'>¡Hola {$best_match['nombre']} {$best_match['apellido']}!</h2>
+                        <h2 style='color: #002f6c;'>¡Hola {$best_match['nombre']} {$best_match['apellido']}!</h2>
                         <p>Tu pago para el concepto de <strong>{$best_match['concepto']}</strong> por valor de <strong>Gs. {$monto_f}</strong> ha sido verificado y conciliado de manera automática por nuestro sistema de Inteligencia Artificial.</p>
                         <div class='highlight'>
                             <p style='margin: 0;'><strong>Estado del Pago:</strong> Verificado</p>
