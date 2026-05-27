@@ -58,6 +58,14 @@ export interface ReconciliationItem {
         comprobante_url?: string;
         puntaje: number;
     } | null;
+    tx_banco?: string | null;
+    tx_referencia?: string | null;
+    tx_fecha?: string | null;
+    tx_descripcion?: string | null;
+    tx_monto?: number | null;
+    conc_metodo?: 'manual' | 'automatico' | string | null;
+    conc_fecha?: string | null;
+    conc_usuario?: string | null;
 }
 
 export interface ReconciliationInput {
@@ -119,6 +127,24 @@ export const FinanceService = {
             method: 'POST',
             body: JSON.stringify({ action: 'delete_bank_transaction', id })
         });
+    },
+
+    clearPendingBankTransactions: async (): Promise<{ status: string, message: string, deleted: number }> => {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'clear_pending_bank_transactions' })
+        });
+    },
+
+    deleteCierre: async (cierre_nro: number): Promise<{ status: string, message: string }> => {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete_cierre', cierre_nro })
+        });
+    },
+
+    getPendingBankTransactions: async (): Promise<any[]> => {
+        return fetchApi('get_pending_bank_transactions');
     },
 
     deletePago: async (id: number): Promise<any> => {

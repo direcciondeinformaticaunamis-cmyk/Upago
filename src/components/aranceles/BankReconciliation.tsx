@@ -273,6 +273,7 @@ const BankReconciliation: React.FC = () => {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
     const [selectedTx, setSelectedTx] = useState<ReconciliationItem | null>(null);
+    const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
     const [importedTxQueue, setImportedTxQueue] = useState<any[]>([]);
     const [rawTextToParse, setRawTextToParse] = useState('');
     const [isParsing, setIsParsing] = useState(false);
@@ -414,18 +415,18 @@ const BankReconciliation: React.FC = () => {
         setIsManualModalOpen(true);
         
         try {
-            const payments = await FinanceService.getPagos();
-            const pending = payments.filter(p => !p.transaccion_id);
-            setAllPendingPayments(pending);
+            const pendingTx = await FinanceService.getPendingBankTransactions();
+            setAllPendingPayments(pendingTx);
         } catch (err) {
-            console.error("Error loading pending payments:", err);
+            console.error("Error loading pending bank transactions:", err);
         }
     };
 
     const handleConfirmManualLink = async () => {
         if (!selectedTx || !selectedPaymentForTx) return;
         try {
-            await FinanceService.reconcile(selectedPaymentForTx.id, selectedTx.id);
+            // selectedTx = the payment record; selectedPaymentForTx = the bank transaction from the statement
+            await FinanceService.reconcile(selectedTx.id, selectedPaymentForTx.id);
             await loadRecords();
             setIsManualModalOpen(false);
             setSelectedTx(null);
@@ -500,6 +501,350 @@ const BankReconciliation: React.FC = () => {
         }, 1000);
     };
 
+    const toggleRowExpand = (id: number) => {
+        setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const handleClearPendingTransactions = async () => {
+        if (window.confirm("¿Está seguro de que desea eliminar todas las transacciones bancarias importadas pendientes? Esto no afectará a los pagos ya conciliados.")) {
+            try {
+                const res = await FinanceService.clearPendingBankTransactions();
+                alert(res.message || `Se eliminaron las transacciones bancarias pendientes.`);
+                loadRecords();
+            } catch (err) {
+                console.error("Error clearing pending transactions:", err);
+                alert("Ocurrió un error al limpiar los datos bancarios.");
+            }
+        }
+    };
+
+    const handleGenerateReconciliationReport = () => {
+        const reportWindow = window.open('', '_blank');
+        if (!reportWindow) {
+            alert("Por favor habilite las ventanas emergentes para imprimir el reporte.");
+            return;
+        }
+
+        const reconciledRecords = systemRecords.filter(r => !!r.transaccion_id);
+        const totalConciliado = reconciledRecords.reduce((acc, r) => acc + r.monto, 0);
+        const manualCount = reconciledRecords.filter(r => r.conc_metodo === 'manual').length;
+        const autoCount = reconciledRecords.filter(r => r.conc_metodo === 'automatico').length;
+
+        const dateStr = new Date().toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' });
+        const timeStr = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+
+        const rowsHtml = reconciledRecords.map(r => `
+            <tr>
+                <td>${r.fecha}</td>
+                <td>${r.numero_expediente || 'N/A'}</td>
+                <td>
+                    <div class="bold-text">${r.postulante_nombre || 'N/A'}</div>
+                    <div class="sub-text">${r.detalle}</div>
+                </td>
+                <td>${r.banco}</td>
+                <td>${new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(r.monto)}</td>
+                <td>
+                    <div class="bold-text">${r.tx_banco || 'Banco Continental'}</div>
+                    <div class="font-mono text-[10px]">${r.tx_referencia || 'N/A'}</div>
+                </td>
+                <td>
+                    <span class="badge ${r.conc_metodo === 'automatico' ? 'badge-auto' : 'badge-manual'}">
+                        ${r.conc_metodo === 'automatico' ? '🤖 Automático' : '👤 Manual'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Reporte de Conciliación Bancaria — UNAMIS</title>
+                <style>
+                    body {
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                        color: #1e293b;
+                        margin: 0;
+                        padding: 40px;
+                        background: #fff;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: start;
+                        border-bottom: 3px double #e2e8f0;
+                        padding-bottom: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .logo-area h1 {
+                        margin: 0;
+                        font-size: 24px;
+                        font-weight: 900;
+                        color: #002f6c;
+                        letter-spacing: -0.5px;
+                    }
+                    .logo-area p {
+                        margin: 4px 0 0 0;
+                        font-size: 11px;
+                        color: #64748b;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    .meta-info {
+                        text-align: right;
+                        font-size: 12px;
+                        color: #475569;
+                    }
+                    .meta-info table {
+                        border-collapse: collapse;
+                        margin-left: auto;
+                    }
+                    .meta-info td {
+                        padding: 3px 6px;
+                    }
+                    .meta-info td.label {
+                        font-weight: bold;
+                        color: #94a3b8;
+                        text-transform: uppercase;
+                        font-size: 10px;
+                    }
+                    .title-section {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .title-section h2 {
+                        margin: 0;
+                        font-size: 20px;
+                        font-weight: 800;
+                        color: #0f172a;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    .title-section p {
+                        margin: 5px 0 0 0;
+                        font-size: 13px;
+                        color: #64748b;
+                    }
+                    .stats-grid {
+                        display: grid;
+                        grid-template-cols: repeat(4, 1fr);
+                        gap: 15px;
+                        margin-bottom: 30px;
+                    }
+                    .stat-card {
+                        border: 1px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 15px;
+                        background: #f8fafc;
+                        box-sizing: border-box;
+                    }
+                    .stat-card .label {
+                        font-size: 9px;
+                        font-weight: 800;
+                        color: #64748b;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 5px;
+                    }
+                    .stat-card .val {
+                        font-size: 16px;
+                        font-weight: 800;
+                        color: #0f172a;
+                    }
+                    .report-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 11px;
+                        margin-bottom: 50px;
+                    }
+                    .report-table th {
+                        background: #002f6c;
+                        color: white;
+                        text-align: left;
+                        padding: 10px 12px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        font-size: 9px;
+                        letter-spacing: 0.5px;
+                    }
+                    .report-table td {
+                        padding: 10px 12px;
+                        border-bottom: 1px solid #e2e8f0;
+                        vertical-align: top;
+                    }
+                    .report-table tr:nth-child(even) td {
+                        background: #f8fafc;
+                    }
+                    .bold-text {
+                        font-weight: bold;
+                        color: #0f172a;
+                    }
+                    .sub-text {
+                        color: #64748b;
+                        font-size: 10px;
+                        margin-top: 2px;
+                    }
+                    .font-mono {
+                        font-family: monospace;
+                    }
+                    .badge {
+                        display: inline-block;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        font-size: 9px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                    }
+                    .badge-auto {
+                        background: #d1fae5;
+                        color: #065f46;
+                    }
+                    .badge-manual {
+                        background: #dbeafe;
+                        color: #1e40af;
+                    }
+                    .signatures-section {
+                        margin-top: 80px;
+                        display: flex;
+                        justify-content: space-around;
+                        page-break-inside: avoid;
+                    }
+                    .signature-box {
+                        text-align: center;
+                        width: 200px;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #475569;
+                        margin-bottom: 8px;
+                    }
+                    .signature-box p {
+                        margin: 0;
+                        font-size: 11px;
+                        color: #475569;
+                    }
+                    .signature-box .role {
+                        font-weight: bold;
+                        color: #0f172a;
+                        margin-top: 2px;
+                    }
+                    .print-btn-container {
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        z-index: 1000;
+                    }
+                    .print-btn {
+                        background: #002f6c;
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        font-weight: bold;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(0,47,108,0.25);
+                        font-size: 13px;
+                    }
+                    @media print {
+                        .print-btn-container {
+                            display: none;
+                        }
+                        body {
+                            padding: 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-btn-container">
+                    <button class="print-btn" onclick="window.print()">🖨️ Imprimir Reporte</button>
+                </div>
+
+                <div class="header">
+                    <div class="logo-area">
+                        <h1>UNAMIS — PORTAL DE ADMISIÓN</h1>
+                        <p>Dirección Administrativa y Financiera</p>
+                    </div>
+                    <div class="meta-info">
+                        <table>
+                            <tr>
+                                <td class="label">Fecha Emisión</td>
+                                <td>${dateStr}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Hora Emisión</td>
+                                <td>${timeStr}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Estado</td>
+                                <td style="color:#059669; font-weight:bold;">CERTIFICADO</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="title-section">
+                    <h2>Planilla de Conciliación Bancaria</h2>
+                    <p>Cruce definitivo de pagos registrados y movimientos de caja bancaria</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Total Conciliado</div>
+                        <div class="val">${new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(totalConciliado)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Registros Procesados</div>
+                        <div class="val">${reconciledRecords.length} Pagos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Cruce Automático (IA)</div>
+                        <div class="val">${autoCount} Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Cruce Manual (Admin)</div>
+                        <div class="val">${manualCount} Verif.</div>
+                    </div>
+                </div>
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha Pago</th>
+                            <th>Expediente N°</th>
+                            <th>Postulante / Concepto</th>
+                            <th>Banco Pago</th>
+                            <th>Monto</th>
+                            <th>Extracto Bancario (Referencia)</th>
+                            <th>Método</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding: 20px;">No se encontraron registros conciliados en este período.</td></tr>'}
+                    </tbody>
+                </table>
+
+                <div class="signatures-section">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <p class="role">Encargado de Caja / Conciliación</p>
+                        <p>Depto. de Finanzas</p>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <p class="role">Director Financiero</p>
+                        <p>Dirección Administrativa</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        reportWindow.document.write(htmlContent);
+        reportWindow.document.close();
+    };
+
     return (
         <div className="w-full max-w-7xl mx-auto pb-12 pt-4">
             {/* Title Area */}
@@ -512,13 +857,23 @@ const BankReconciliation: React.FC = () => {
                         Cruce de información entre los registros administrativos institucionales y los estados bancarios externos para asegurar la integridad financiera.
                     </p>
                 </div>
-                <button 
-                    onClick={() => setIsImportModalOpen(true)}
-                    className="flex items-center justify-center gap-3 px-6 py-3.5 bg-[#002f6c] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#002f6c]/20 hover:bg-[#001738] transition-all shrink-0 whitespace-nowrap"
-                >
-                    <FileText size={18} />
-                    Importar Estado Bancario
-                </button>
+                <div className="flex gap-3 shrink-0">
+                    <button 
+                        onClick={handleClearPendingTransactions}
+                        className="flex items-center justify-center gap-3 px-5 py-3.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-sm font-bold border border-red-200 transition-all whitespace-nowrap"
+                        title="Eliminar transacciones bancarias importadas que no están conciliadas"
+                    >
+                        <Trash2 size={18} />
+                        Limpiar Extracto Pendiente
+                    </button>
+                    <button 
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="flex items-center justify-center gap-3 px-6 py-3.5 bg-[#002f6c] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#002f6c]/20 hover:bg-[#001738] transition-all whitespace-nowrap"
+                    >
+                        <FileText size={18} />
+                        Importar Estado Bancario
+                    </button>
+                </div>
             </div>
 
             {/* Filters Area */}
@@ -584,9 +939,20 @@ const BankReconciliation: React.FC = () => {
                         <Activity size={20} className="text-[#002f6c]" />
                         <h3 className="font-bold text-[#001738] text-base">{activeTab === 'pendientes' ? 'Registros Pendientes' : 'Historial de Registros'}</h3>
                     </div>
-                    <span className="bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {filteredRecords.length} Registros Encontrados
-                    </span>
+                    <div className="flex items-center gap-3">
+                        {activeTab === 'historial' && filteredRecords.length > 0 && (
+                            <button
+                                onClick={handleGenerateReconciliationReport}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold border border-emerald-200 transition-all shadow-sm"
+                            >
+                                <FileText size={14} />
+                                Exportar Reporte de Conciliación
+                            </button>
+                        )}
+                        <span className="bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+                            {filteredRecords.length} Registros Encontrados
+                        </span>
+                    </div>
                 </div>
 
                 {/* Table Content */}
@@ -612,105 +978,207 @@ const BankReconciliation: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredRecords.map((row: any) => (
-                                    <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
-                                        <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
-                                        <td className="px-3 py-4 text-xs font-bold text-[#001738] whitespace-nowrap">{row.numero_expediente || row.match?.numero_expediente || 'PENDIENTE'}</td>
-                                        <td className="px-3 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div>
-                                                    <p className="text-xs font-bold text-[#001738]">{row.postulante_nombre || (row.match ? row.match.postulante : 'No identificado')}</p>
-                                                    <p className="text-[10px] text-slate-400 mt-0.5">{row.detalle}</p>
-                                                </div>
-                                                {row.match && (
-                                                    <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                                                        <CheckCircle2 size={10} /> IA Match ({row.match.score || row.match.puntaje || 0}%)
+                                    <React.Fragment key={row.id}>
+                                        <tr className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
+                                            <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
+                                            <td className="px-3 py-4 text-xs font-bold text-[#001738] whitespace-nowrap">{row.numero_expediente || row.match?.numero_expediente || 'PENDIENTE'}</td>
+                                            <td className="px-3 py-4">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-xs font-bold text-[#001738]">{row.postulante_nombre || 'No identificado'}</p>
+                                                        {row.match && (
+                                                            <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                                                                <CheckCircle2 size={10} /> IA Match ({row.match.score || row.match.puntaje || 0}%)
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.banco}</td>
-                                        <td className="px-3 py-4">
-                                            <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-xs font-medium text-slate-600">
-                                                <FileText size={14} className="text-slate-400" />
-                                                {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF')}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 text-right font-bold text-[#001738] text-[14px] whitespace-nowrap">
-                                            {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(row.monto)}
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-2 h-2 rounded-full ${
-                                                    row.transaccion_id 
-                                                    ? 'bg-emerald-500' 
-                                                    : (row.estado === 'verificado' ? 'bg-blue-500' : (row.estado === 'pendiente' ? 'bg-[#a37c58]' : 'bg-red-500'))
-                                                }`}></div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest ${
-                                                    row.transaccion_id 
-                                                    ? 'text-emerald-600' 
-                                                    : (row.estado === 'verificado' ? 'text-blue-600' : (row.estado === 'pendiente' ? 'text-[#a37c58]' : 'text-red-600'))
-                                                }`}>
-                                                    {row.transaccion_id ? 'conciliado' : row.estado}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 text-center whitespace-nowrap">
-                                            <div className="flex items-center justify-center gap-3">
-                                                <button 
-                                                    onClick={() => {
-                                                        const receiptUrl = row.comprobante_url || row.match?.comprobante_url;
-                                                        if (receiptUrl) {
-                                                            setPreviewUrl(receiptUrl);
-                                                            setPreviewTitle(`Comprobante - ${row.postulante_nombre || row.match?.postulante || 'Pago'}`);
-                                                        } else {
-                                                            alert('Esta transacción no tiene comprobante adjunto.');
-                                                        }
-                                                    }}
-                                                    disabled={!(row.comprobante_url || row.match?.comprobante_url)}
-                                                    className={`${(row.comprobante_url || row.match?.comprobante_url) ? 'text-[#002f6c] hover:text-[#001738] hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
-                                                    title={(row.comprobante_url || row.match?.comprobante_url) ? 'Ver Comprobante Cargado' : 'Sin comprobante disponible'}
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => {
-                                                        if (row.match) {
-                                                            handleSingleReconcile(row.match.pago_id, row.id);
-                                                        } else if ((row as any).is_pago) {
-                                                            if (window.confirm('¿Desea aprobar y verificar este pago manualmente sin extracto bancario?')) {
-                                                                FinanceService.updatePagoEstado(row.id, 'verificado', 'Aprobado manualmente').then(() => loadRecords());
-                                                            }
-                                                        }
-                                                    }}
-                                                    disabled={row.estado !== 'pendiente'}
-                                                    className={`${row.estado === 'pendiente' ? 'text-emerald-500 hover:text-emerald-600' : 'text-slate-300 cursor-not-allowed'} transition-colors`}
-                                                    title={row.match ? "Conciliar Automáticamente" : "Verificar/Aprobar Manualmente"}
-                                                >
-                                                    <CheckCircle2 size={18} />
-                                                </button>
-                                                {row.estado === 'pendiente' && (
+                                                    <p className="text-[10px] text-slate-400 font-medium">{row.detalle}</p>
+                                                    {row.match && (
+                                                        <div className="mt-1.5 p-2 bg-emerald-50/80 border border-emerald-100/50 rounded-xl text-[10px] text-emerald-800 space-y-0.5 font-medium max-w-md">
+                                                            <p className="font-black flex items-center gap-1 text-emerald-950 uppercase tracking-wider text-[8px]">
+                                                                <span>🤖 Propuesta de Conciliación (Confianza: {row.match.puntaje}%)</span>
+                                                            </p>
+                                                            <p className="text-slate-700"><strong>Extracto:</strong> {row.match.concepto}</p>
+                                                            <p className="text-slate-600"><strong>Detalles:</strong> Banco: {row.match.banco || 'Continental'} | Ref: {row.match.referencia || 'N/A'} | Fecha: {row.match.fecha || 'N/A'}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.banco}</td>
+                                            <td className="px-3 py-4">
+                                                <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-xs font-medium text-slate-600">
+                                                    <FileText size={14} className="text-slate-400" />
+                                                    {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF')}
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-4 text-right font-bold text-[#001738] text-[14px] whitespace-nowrap">
+                                                {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(row.monto)}
+                                            </td>
+                                            <td className="px-3 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-2 h-2 rounded-full ${
+                                                        row.transaccion_id 
+                                                        ? 'bg-emerald-500' 
+                                                        : (row.estado === 'verificado' ? 'bg-blue-500' : (row.estado === 'pendiente' ? 'bg-[#a37c58]' : 'bg-red-500'))
+                                                    }`}></div>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest ${
+                                                        row.transaccion_id 
+                                                        ? 'text-emerald-600' 
+                                                        : (row.estado === 'verificado' ? 'text-blue-600' : (row.estado === 'pendiente' ? 'text-[#a37c58]' : 'text-red-600'))
+                                                    }`}>
+                                                        {row.transaccion_id ? 'conciliado' : row.estado}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-4 text-center whitespace-nowrap">
+                                                <div className="flex items-center justify-center gap-3">
                                                     <button 
-                                                        onClick={() => handleOpenManualReconcile(row)}
-                                                        className="text-[#002f6c] hover:text-[#001738] hover:scale-110 transition-all"
-                                                        title="Vincular Pago Manualmente"
+                                                        onClick={() => {
+                                                            const receiptUrl = row.comprobante_url || row.match?.comprobante_url;
+                                                            if (receiptUrl) {
+                                                                setPreviewUrl(receiptUrl);
+                                                                setPreviewTitle(`Comprobante - ${row.postulante_nombre || 'Pago'}`);
+                                                            } else {
+                                                                alert('Esta transacción no tiene comprobante adjunto.');
+                                                            }
+                                                        }}
+                                                        disabled={!(row.comprobante_url || row.match?.comprobante_url)}
+                                                        className={`${(row.comprobante_url || row.match?.comprobante_url) ? 'text-[#002f6c] hover:text-[#001738] hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
+                                                        title={(row.comprobante_url || row.match?.comprobante_url) ? 'Ver Comprobante Cargado' : 'Sin comprobante disponible'}
                                                     >
-                                                        <Link size={18} />
+                                                        <Eye size={18} />
                                                     </button>
-                                                )}
-                                                <button 
-                                                    onClick={() => handleDeleteTransaction(row)}
-                                                    className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
-                                                    title="Eliminar Transacción / Carga"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (row.match) {
+                                                                handleSingleReconcile(row.id, row.match.pago_id);
+                                                            } else if (row.estado === 'pendiente') {
+                                                                if (window.confirm('¿Desea aprobar y verificar este pago manualmente sin extracto bancario?')) {
+                                                                    FinanceService.updatePagoEstado(row.id, 'verificado', 'Aprobado manualmente').then(() => loadRecords());
+                                                                }
+                                                            }
+                                                        }}
+                                                        disabled={row.estado === 'conciliado' || (row.estado === 'verificado' && !row.match)}
+                                                        className={`${(row.estado === 'pendiente' || (row.estado === 'verificado' && row.match)) ? 'text-emerald-500 hover:text-emerald-600 hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
+                                                        title={row.match ? "Confirmar conciliación automática de IA" : "Verificar/Aprobar Pago Manualmente"}
+                                                    >
+                                                        <CheckCircle2 size={18} />
+                                                    </button>
+                                                    {!row.transaccion_id && (
+                                                        <button 
+                                                            onClick={() => handleOpenManualReconcile(row)}
+                                                            className="text-[#002f6c] hover:text-[#001738] hover:scale-110 transition-all"
+                                                            title="Vincular Pago Manualmente con Extracto"
+                                                        >
+                                                            <Link size={18} />
+                                                        </button>
+                                                    )}
+                                                    {activeTab === 'historial' && row.transaccion_id && (
+                                                        <button 
+                                                            onClick={() => toggleRowExpand(row.id)}
+                                                            className={`text-slate-500 hover:text-[#002f6c] hover:scale-110 transition-all duration-200 ${expandedRows[row.id] ? 'rotate-180 text-[#002f6c]' : ''}`}
+                                                            title={expandedRows[row.id] ? "Ocultar Detalle del Banco" : "Ver Detalle de la Conciliación"}
+                                                        >
+                                                            <ChevronDown size={18} />
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => handleDeleteTransaction(row)}
+                                                        className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
+                                                        title={row.estado === 'conciliado' ? "Deshacer Conciliación" : "Eliminar Pago permanentemente"}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {/* Fila de detalle expandible en el Historial */}
+                                        {activeTab === 'historial' && row.transaccion_id && expandedRows[row.id] && (
+                                            <tr className="bg-slate-50/80">
+                                                <td colSpan={8} className="px-6 py-4 border-b border-slate-100">
+                                                    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 max-w-4xl mx-auto">
+                                                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                                                            <Activity size={16} className="text-[#002f6c]" />
+                                                            <h4 className="text-xs font-black text-[#001738] uppercase tracking-wider">
+                                                                Detalles de Conciliación Bancaria
+                                                            </h4>
+                                                        </div>
+                                                        
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                                                            {/* Datos del Extracto Bancario */}
+                                                            <div className="space-y-3">
+                                                                <h5 className="font-bold text-slate-500 uppercase tracking-widest text-[9px]">
+                                                                    Datos del Extracto Bancario
+                                                                </h5>
+                                                                <div className="bg-slate-50 rounded-xl p-3.5 space-y-2 border border-slate-100">
+                                                                    <div>
+                                                                        <span className="text-[10px] text-slate-400 font-bold block">Banco Emisor</span>
+                                                                        <span className="font-bold text-slate-800">{row.tx_banco || 'Banco Continental'}</span>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <span className="text-[10px] text-slate-400 font-bold block">Fecha Valor</span>
+                                                                            <span className="font-bold text-slate-800">{row.tx_fecha || row.fecha}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-[10px] text-slate-400 font-bold block">Monto en Extracto</span>
+                                                                            <span className="font-bold text-slate-800">
+                                                                                {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(row.tx_monto || row.monto)}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="text-[10px] text-slate-400 font-bold block">Referencia Bancaria</span>
+                                                                        <span className="font-mono text-xs font-bold text-[#002f6c]">{row.tx_referencia || 'N/A'}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="text-[10px] text-slate-400 font-bold block">Descripción en Extracto</span>
+                                                                        <p className="text-slate-600 mt-0.5 leading-relaxed">{row.tx_descripcion || 'Movimiento conciliado sin descripción.'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Información de Auditoría del Cruce */}
+                                                            <div className="space-y-3">
+                                                                <h5 className="font-bold text-slate-500 uppercase tracking-widest text-[9px]">
+                                                                    Información del Cruce (Auditoría)
+                                                                </h5>
+                                                                <div className="bg-slate-50 rounded-xl p-3.5 space-y-2 border border-slate-100 flex flex-col justify-between h-[80%]">
+                                                                    <div className="space-y-2">
+                                                                        <div>
+                                                                            <span className="text-[10px] text-slate-400 font-bold block">Método de Conciliación</span>
+                                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider mt-1 ${
+                                                                                row.conc_metodo === 'automatico' 
+                                                                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                                                                    : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                                                            }`}>
+                                                                                {row.conc_metodo === 'automatico' ? '🤖 AUTOMÁTICO (IA MATCH)' : '👤 MANUAL (ADMINIST.)'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-[10px] text-slate-400 font-bold block">Fecha de Ejecución</span>
+                                                                            <span className="font-bold text-slate-800">{row.conc_fecha || 'N/A'}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-[10px] text-slate-400 font-bold block">Administrador Responsable</span>
+                                                                            <span className="font-bold text-slate-800 font-mono text-[11px]">{row.conc_usuario || 'AI Bot'}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-[10px] text-slate-400 font-semibold leading-relaxed border-t border-slate-200/50 pt-2.5 mt-2.5">
+                                                                        * Esta conciliación certifica la paridad absoluta entre la boleta digital y el abono en cuenta recíproca.
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))}
                                 {filteredRecords.length === 0 && !isLoading && (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-medium">
+                                        <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
                                             No hay registros {activeTab === 'pendientes' ? 'pendientes de conciliación' : 'conciliados en el historial'}.
                                         </td>
                                     </tr>
@@ -1135,49 +1603,86 @@ const BankReconciliation: React.FC = () => {
 
                             {/* Side by Side Body */}
                             <div className="flex-1 flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                                {/* Left Side: Bank Movement Details */}
+                                {/* Left Side: Payment Details */}
                                 <div className="w-full md:w-5/12 p-8 overflow-y-auto bg-slate-50/50 flex flex-col justify-between">
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-2.5">
-                                            <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
-                                                Estado Bancario
+                                            <span className="bg-[#002f6c]/10 text-[#002f6c] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                                Registro de Pago
                                             </span>
-                                            <span className="bg-[#a37c58]/10 text-[#a37c58] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                selectedTx.estado === 'verificado'
+                                                    ? 'bg-blue-100 text-blue-800'
+                                                    : 'bg-[#a37c58]/10 text-[#a37c58]'
+                                            }`}>
                                                 {selectedTx.estado}
                                             </span>
                                         </div>
 
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Monto de la Transacción</label>
-                                                <h3 className="text-3xl font-black text-[#001738] tracking-tight">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Monto del Pago Registrado</label>
+                                                <h3 className="text-3xl font-black text-[#002f6c] tracking-tight">
                                                     {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(selectedTx.monto)}
                                                 </h3>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4 pt-2">
                                                 <div>
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Banco</label>
-                                                    <p className="text-xs font-bold text-slate-800">{selectedTx.banco}</p>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Postulante</label>
+                                                    <p className="text-xs font-bold text-slate-800">{selectedTx.postulante_nombre || 'No identificado'}</p>
                                                 </div>
                                                 <div>
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Fecha Valor</label>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Nro. Expediente</label>
+                                                    <p className="text-xs font-mono font-bold text-slate-800">{selectedTx.numero_expediente || 'PENDIENTE'}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Fecha Registro</label>
                                                     <p className="text-xs font-bold text-slate-800">{selectedTx.fecha}</p>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Banco Declarado</label>
+                                                    <p className="text-xs font-bold text-slate-800">{selectedTx.banco || 'No especificado'}</p>
                                                 </div>
                                             </div>
 
                                             <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Referencia Bancaria</label>
-                                                <p className="text-xs font-mono font-bold text-slate-800 bg-white border border-slate-200/60 rounded-lg px-2.5 py-1.5 inline-block">
-                                                    {selectedTx.detalle.match(/Ref:\s*([\w\d\-]+)/)?.[1] || 'Sin Referencia Explícita'}
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Concepto del Arancel</label>
+                                                <p className="text-xs font-bold text-[#001738] bg-white border border-slate-200/60 rounded-lg px-2.5 py-1.5 inline-block">
+                                                    {selectedTx.detalle}
                                                 </p>
                                             </div>
 
                                             <div>
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Descripción de Movimiento</label>
-                                                <p className="text-xs text-slate-700 bg-white border border-slate-200/60 rounded-xl p-3 leading-relaxed">
-                                                    {selectedTx.detalle}
-                                                </p>
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Boleta Digital Cargada</label>
+                                                {selectedTx.comprobante_url ? (
+                                                    <div className="space-y-2">
+                                                        <div className="bg-[#f1f5f9] border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                                                            <div className="flex items-center gap-2 text-slate-600">
+                                                                <FileText size={16} />
+                                                                <span className="text-xs font-semibold truncate max-w-[150px]">Comprobante adjunto</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setPreviewUrl(selectedTx.comprobante_url || null);
+                                                                    setPreviewTitle(`Comprobante Alumno: ${selectedTx.postulante_nombre}`);
+                                                                }}
+                                                                className="text-[#002f6c] hover:underline text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0"
+                                                            >
+                                                                <Eye size={12} />
+                                                                Ver Adjunto
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-amber-600 italic bg-amber-50 border border-amber-100 rounded-xl p-3">
+                                                        * No se adjuntó comprobante visual para este pago.
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1187,13 +1692,13 @@ const BankReconciliation: React.FC = () => {
                                         <div className="bg-[#002f6c]/5 border border-[#002f6c]/10 rounded-xl p-4 flex gap-3">
                                             <Bot className="text-[#002f6c] shrink-0 mt-0.5" size={16} />
                                             <p className="text-[11px] text-slate-600 leading-normal">
-                                                Para conciliar esta transacción, selecciona el pago correspondiente cargado por el alumno en la columna derecha. Si posee comprobante adjunto, puedes verificarlo visualmente.
+                                                Selecciona de la lista de la derecha el movimiento bancario correspondiente del extracto que ampare el ingreso de <strong>{new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(selectedTx.monto)}</strong>.
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Right Side: Search and List Payments */}
+                                {/* Right Side: Search and List Bank Movements */}
                                 <div className="w-full md:w-7/12 p-8 flex flex-col overflow-hidden">
                                     {/* Controls & Search */}
                                     <div className="space-y-4 mb-6 shrink-0">
@@ -1202,7 +1707,7 @@ const BankReconciliation: React.FC = () => {
                                                 type="text"
                                                 value={searchPaymentQuery}
                                                 onChange={(e) => setSearchPaymentQuery(e.target.value)}
-                                                placeholder="Buscar pago por Alumno, CI, Concepto o Comprobante..."
+                                                placeholder="Buscar por Descripción, Referencia o Banco..."
                                                 className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#002f6c] focus:ring-2 focus:ring-[#002f6c]/10 rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-all"
                                             />
                                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -1226,31 +1731,30 @@ const BankReconciliation: React.FC = () => {
                                                     className="rounded border-slate-300 text-[#002f6c] focus:ring-[#002f6c] w-4 h-4"
                                                 />
                                                 <span className="text-xs font-bold text-slate-600">
-                                                    Solo pagos con el mismo monto exacto (<strong>{new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(selectedTx.monto)}</strong>)
+                                                    Solo transacciones bancarias con el mismo monto exacto (<strong>{new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(selectedTx.monto)}</strong>)
                                                 </span>
                                             </label>
                                         </div>
                                     </div>
 
-                                    {/* Payments List */}
+                                    {/* Bank Transactions List */}
                                     <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                                         {allPendingPayments.length === 0 ? (
                                             <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
                                                 <RefreshCw className="animate-spin text-slate-300" size={24} />
-                                                <p className="text-xs font-medium">Cargando pagos del sistema...</p>
+                                                <p className="text-xs font-medium">Cargando movimientos del extracto...</p>
                                             </div>
                                         ) : (() => {
-                                            const filtered = allPendingPayments.filter(payment => {
-                                                if (filterExactAmount && payment.monto !== selectedTx.monto) {
+                                            const filtered = allPendingPayments.filter(tx => {
+                                                if (filterExactAmount && tx.monto !== selectedTx.monto) {
                                                     return false;
                                                 }
                                                 if (searchPaymentQuery.trim()) {
                                                     const q = searchPaymentQuery.toLowerCase();
-                                                    const nameMatch = payment.nombre?.toLowerCase().includes(q) || payment.apellido?.toLowerCase().includes(q);
-                                                    const ciMatch = payment.postulante_cedula?.toLowerCase().includes(q);
-                                                    const numMatch = payment.num_comprobante?.toLowerCase().includes(q) || payment.numero_boleta?.toLowerCase().includes(q);
-                                                    const conceptMatch = payment.concepto?.toLowerCase().includes(q);
-                                                    return nameMatch || ciMatch || numMatch || conceptMatch;
+                                                    const descMatch = tx.descripcion?.toLowerCase().includes(q);
+                                                    const refMatch = tx.referencia?.toLowerCase().includes(q);
+                                                    const bancoMatch = tx.banco?.toLowerCase().includes(q);
+                                                    return descMatch || refMatch || bancoMatch;
                                                 }
                                                 return true;
                                             });
@@ -1259,17 +1763,17 @@ const BankReconciliation: React.FC = () => {
                                                 return (
                                                     <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-400">
                                                         <AlertTriangle className="mx-auto mb-2 text-slate-300" size={24} />
-                                                        <p className="text-xs font-medium">No se encontraron pagos pendientes que cumplan los filtros.</p>
+                                                        <p className="text-xs font-medium">No se encontraron transacciones bancarias pendientes que cumplan los filtros.</p>
                                                     </div>
                                                 );
                                             }
 
-                                            return filtered.map((payment) => {
-                                                const isSelected = selectedPaymentForTx?.id === payment.id;
+                                            return filtered.map((tx) => {
+                                                const isSelected = selectedPaymentForTx?.id === tx.id;
                                                 return (
                                                     <div
-                                                        key={payment.id}
-                                                        onClick={() => setSelectedPaymentForTx(payment)}
+                                                        key={tx.id}
+                                                        onClick={() => setSelectedPaymentForTx(tx)}
                                                         className={`border rounded-2xl p-4 transition-all cursor-pointer flex items-center justify-between gap-4 ${
                                                             isSelected
                                                                 ? 'border-[#002f6c] bg-[#002f6c]/5 shadow-sm'
@@ -1279,41 +1783,23 @@ const BankReconciliation: React.FC = () => {
                                                         <div className="flex-1 min-w-0 space-y-1">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-xs font-black text-slate-800">
-                                                                    {payment.nombre ? `${payment.nombre} ${payment.apellido}` : `C.I. ${payment.postulante_cedula}`}
+                                                                    {tx.descripcion || 'Transacción Bancaria'}
                                                                 </span>
-                                                                {payment.postulante_cedula && payment.nombre && (
-                                                                    <span className="text-[10px] text-slate-400 font-mono">({payment.postulante_cedula})</span>
-                                                                )}
                                                             </div>
                                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 font-medium">
-                                                                <span>Ref: <strong className="text-slate-700 font-mono">{payment.num_comprobante || payment.numero_boleta || 'N/A'}</strong></span>
+                                                                <span>Ref: <strong className="text-slate-700 font-mono">{tx.referencia || 'Sin Referencia'}</strong></span>
                                                                 <span>•</span>
-                                                                <span>Fecha Registro: {payment.fecha_registro.split(' ')[0]}</span>
-                                                            </div>
-                                                            <div className="text-[11px] text-slate-600 bg-slate-100 rounded px-2 py-0.5 inline-block font-bold">
-                                                                {payment.concepto}
+                                                                <span>Fecha: {tx.fecha_transaccion}</span>
+                                                                <span>•</span>
+                                                                <span>Banco: <strong>{tx.banco || 'Banco Continental'}</strong></span>
                                                             </div>
                                                         </div>
 
                                                         <div className="flex items-center gap-3 shrink-0">
                                                             <div className="text-right">
                                                                 <p className="text-sm font-black text-slate-800">
-                                                                    {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(payment.monto)}
+                                                                    {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(tx.monto)}
                                                                 </p>
-                                                                {payment.comprobante_url && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setPreviewUrl(payment.comprobante_url);
-                                                                            setPreviewTitle(`Comprobante Alumno: ${payment.nombre || payment.postulante_cedula}`);
-                                                                        }}
-                                                                        className="text-[#002f6c] hover:underline text-[10px] font-black uppercase tracking-wider flex items-center gap-1 mt-1 justify-end"
-                                                                    >
-                                                                        <Eye size={10} />
-                                                                        Ver Comprobante
-                                                                    </button>
-                                                                )}
                                                             </div>
                                                             <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
                                                                 isSelected
@@ -1336,11 +1822,11 @@ const BankReconciliation: React.FC = () => {
                                 <div>
                                     {selectedPaymentForTx ? (
                                         <p className="text-xs text-slate-600 font-medium">
-                                            Seleccionado: <strong className="text-slate-800">{selectedPaymentForTx.nombre || selectedPaymentForTx.postulante_cedula}</strong>
+                                            Seleccionado: Movimiento <strong className="text-slate-800">{selectedPaymentForTx.descripcion}</strong> (Ref: {selectedPaymentForTx.referencia || 'N/A'})
                                         </p>
                                     ) : (
                                         <p className="text-xs text-slate-400 italic">
-                                            Ningún pago seleccionado en la lista
+                                            Ninguna transacción bancaria seleccionada en la lista
                                         </p>
                                     )}
                                 </div>

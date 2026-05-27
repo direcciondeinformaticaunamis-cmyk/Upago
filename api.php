@@ -820,6 +820,50 @@ if ($method === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'clear_pending_bank_transactions') {
+        require_admin('finance'); // Seguridad
+        try {
+            $conn->beginTransaction();
+            // Delete all pending bank transactions
+            $stmt = $conn->query("DELETE FROM transacciones_bancarias WHERE estado = 'pendiente'");
+            $deleted = $stmt->rowCount();
+            $conn->commit();
+
+            write_system_log("CLEAR_PENDING_BANK_TRANSACTIONS", $data['admin_user'] ?? 'Admin', "Limpió $deleted transacciones bancarias pendientes.");
+            echo json_encode(["status" => "success", "message" => "Se han eliminado $deleted transacciones bancarias pendientes.", "deleted" => $deleted]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+    if (isset($data['action']) && $data['action'] === 'delete_cierre') {
+        require_admin('finance'); // Seguridad
+        try {
+            $cierre_nro = (int)($data['cierre_nro'] ?? 0);
+            if ($cierre_nro <= 0) {
+                throw new Exception("Número de cierre inválido.");
+            }
+            $conn->beginTransaction();
+            // Undo the closure for all payments
+            $stmt = $conn->prepare("UPDATE pagos SET cierre_nro = NULL, cierre_fecha = NULL WHERE cierre_nro = ?");
+            $stmt->execute([$cierre_nro]);
+            $updated = $stmt->rowCount();
+            $conn->commit();
+
+            write_system_log("DELETE_CIERRE", $data['admin_user'] ?? 'Finance', "Eliminó/deshizo el cierre N° $cierre_nro ($updated transacciones liberadas).");
+            echo json_encode(["status" => "success", "message" => "Cierre N° $cierre_nro eliminado con éxito. Se liberaron $updated transacciones.", "updated" => $updated]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'delete_pago') {
         require_admin('finance'); // Seguridad: Solo administradores y finanzas
         try {
@@ -2001,12 +2045,22 @@ if ($method === 'GET') {
             // Run backfill to ensure all postulantes have expediente numbers
             $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
             
-            // Obtenemos los pagos pendientes y los ya verificados/conciliados
+            // Obtenemos los pagos pendientes y los ya verificados/conciliados con detalles de la transaccion
             $stmt = $conn->query("
                 SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula, pos.numero_expediente,
-                       (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
+                       c.transaccion_bancaria_id as transaccion_id,
+                       tx.banco as tx_banco,
+                       tx.referencia as tx_referencia,
+                       tx.fecha_transaccion as tx_fecha,
+                       tx.descripcion as tx_descripcion,
+                       tx.monto as tx_monto,
+                       c.metodo as conc_metodo,
+                       c.fecha_conciliacion as conc_fecha,
+                       c.usuario_admin as conc_usuario
                 FROM pagos p 
-                JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                LEFT JOIN conciliaciones c ON c.pago_id = p.id
+                LEFT JOIN transacciones_bancarias tx ON tx.id = c.transaccion_bancaria_id
                 WHERE p.estado IN ('pendiente', 'verificado', 'conciliado') 
                 ORDER BY p.fecha_registro DESC
             ");
@@ -2069,7 +2123,11 @@ if ($method === 'GET') {
                         "concepto" => $best_match['descripcion'],
                         "pago_id" => (int)$best_match['id'], // usamos esto para transaccion_id en la UI
                         "comprobante_url" => $p['comprobante_url'],
-                        "puntaje" => $best_score
+                        "puntaje" => $best_score,
+                        "monto" => (float)$best_match['monto'],
+                        "fecha" => $best_match['fecha_transaccion'],
+                        "referencia" => $best_match['referencia'],
+                        "banco" => $best_match['banco']
                     ];
                 }
 
@@ -2085,7 +2143,16 @@ if ($method === 'GET') {
                     "numero_expediente" => $p['numero_expediente'],
                     "comprobante_url" => $p['comprobante_url'],
                     "transaccion_id" => $p['transaccion_id'] ? (int)$p['transaccion_id'] : null,
-                    "is_pago" => true
+                    "is_pago" => true,
+                    // Nuevos campos para desplegar detalles de la conciliación
+                    "tx_banco" => $p['tx_banco'],
+                    "tx_referencia" => $p['tx_referencia'],
+                    "tx_fecha" => $p['tx_fecha'],
+                    "tx_descripcion" => $p['tx_descripcion'],
+                    "tx_monto" => $p['tx_monto'] ? (float)$p['tx_monto'] : null,
+                    "conc_metodo" => $p['conc_metodo'],
+                    "conc_fecha" => $p['conc_fecha'],
+                    "conc_usuario" => $p['conc_usuario']
                 ];
             }
 
@@ -2158,6 +2225,17 @@ if ($method === 'GET') {
         $stmt = $conn->prepare("SELECT * FROM expedientes WHERE postulante_id = ? ORDER BY fecha_carga DESC");
         $stmt->execute([$_GET['docs']]); echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit;
     }
+    if (isset($_GET['get_pending_bank_transactions'])) {
+        require_admin('finance'); // Seguridad
+        try {
+            $stmt = $conn->query("SELECT * FROM transacciones_bancarias WHERE estado = 'pendiente' ORDER BY fecha_transaccion DESC");
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
     if (isset($_GET['pagos'])) {
         $cedula = $_GET['pagos'];
         // Run backfill to ensure all postulantes have expediente numbers
@@ -2166,7 +2244,7 @@ if ($method === 'GET') {
             $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
                                            (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
                                     FROM pagos p 
-                                    JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                                    LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
                                     WHERE p.postulante_cedula = ?"); 
             $stmt->execute([$cedula]); 
         }
@@ -2174,7 +2252,7 @@ if ($method === 'GET') {
             $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
                                          (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
                                   FROM pagos p 
-                                  JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 
+                                  LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 
         }
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit;
     }

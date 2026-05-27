@@ -4,7 +4,7 @@ import {
     Calendar, Hash, Receipt, Download, FileSpreadsheet, 
     CheckCircle, AlertTriangle, RefreshCw, Send, HelpCircle, 
     Bot, X, ShieldAlert, Sparkles, ChevronDown, ChevronUp, 
-    Check, Play, FileText, Landmark, User, DollarSign
+    Check, Play, FileText, Landmark, User, DollarSign, Trash2
 } from 'lucide-react';
 import { FinanceService, Payment } from '../../services/FinanceService';
 
@@ -271,6 +271,21 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
     const handleDescargarHistorico = (cierreNro: number, cierreFecha: string) => {
         const downloadUrl = FinanceService.getDownloadCierreUrl(cierreNro, cierreFecha);
         window.location.href = downloadUrl;
+    };
+
+    const handleEliminarCierre = async (cierreNro: number) => {
+        if (window.confirm(`¿Está seguro de que desea eliminar permanentemente el Cierre N° ${cierreNro}? Todas las transacciones asociadas volverán a quedar pendientes para un nuevo cierre.`)) {
+            try {
+                const response = await FinanceService.deleteCierre(cierreNro);
+                alert(response.message || `Cierre N° ${cierreNro} eliminado.`);
+                await loadHistory();
+                await loadPendingPayments();
+                await loadNextCorrelativo();
+            } catch (err: any) {
+                console.error("Error al eliminar cierre:", err);
+                alert(`Error: ${err.message || err}`);
+            }
+        }
     };
 
     return (
@@ -602,12 +617,21 @@ Puedes descargar el Excel de cierres anteriores en cualquier momento desde la pe
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-5 text-right">
-                                                    <button 
-                                                        onClick={() => handleDescargarHistorico(c.cierre_nro, c.cierre_fecha)}
-                                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition-all ml-auto"
-                                                    >
-                                                        <Download size={14} /> Descargar
-                                                    </button>
+                                                    <div className="flex items-center justify-end gap-3">
+                                                        <button 
+                                                            onClick={() => handleDescargarHistorico(c.cierre_nro, c.cierre_fecha)}
+                                                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+                                                        >
+                                                            <Download size={14} /> Descargar
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleEliminarCierre(c.cierre_nro)}
+                                                            className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 border border-red-200 transition-all"
+                                                            title="Eliminar este cierre y liberar las transacciones"
+                                                        >
+                                                            <Trash2 size={14} /> Eliminar
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
