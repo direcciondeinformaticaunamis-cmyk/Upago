@@ -548,8 +548,12 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                         </p>
                                                     )}
                                                     <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${exp.tipo === 'docente' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                            {exp.tipo}
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                            exp.tipo_usuario === 'concursante_docente' 
+                                                                ? 'bg-purple-100 text-purple-700' 
+                                                                : (exp.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
+                                                        }`}>
+                                                            {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante')}
                                                         </span>
                                                         {(exp.totalDocs ?? 0) > 0 ? (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
@@ -783,7 +787,9 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                              </div>
                                                          )}
                                                      </td>
-                                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">{exp.tipo}</td>
+                                                     <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
+                                                         {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante')}
+                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`text-[10px] font-black uppercase ${exp.estado === 'aprobado' ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                             {exp.estado === 'aprobado' ? '✓ VERIFICADO' : '◌ PENDIENTE'}
@@ -1207,12 +1213,19 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Tipo de Usuario</label>
                                     <select 
                                         value={editForm.tipo_usuario}
-                                        onChange={(e) => setEditForm({ ...editForm, tipo_usuario: e.target.value })}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setEditForm(prev => ({
+                                                ...prev,
+                                                tipo_usuario: val,
+                                                catedra: val === 'postulante' ? '' : prev.catedra
+                                            }));
+                                        }}
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
                                     >
                                         <option value="postulante">Postulante</option>
-                                        <option value="concursante_docente">Concursante Docente</option>
-                                        <option value="auxiliar_docente">Auxiliar Docente</option>
+                                        <option value="concursante_docente">Docente Encargado</option>
+                                        <option value="auxiliar_docente">Docente Auxiliar</option>
                                     </select>
                                 </div>
                                 {(editForm.tipo_usuario === 'concursante_docente' || editForm.tipo_usuario === 'auxiliar_docente') && (

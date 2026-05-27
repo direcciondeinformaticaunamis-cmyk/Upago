@@ -22,7 +22,7 @@ interface ExternalUser {
     apellido: string;
     cedula: string;
     correo_actual: string;
-    tipo: 'postulante' | 'docente';
+    tipo: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
     fecha_registro: string;
     estado: 'activo' | 'migrado';
 }
@@ -62,7 +62,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
                 // Fallback temporal si no existe el endpoint aún
                 setUsers([
                     { id: '1', nombre: 'Carlos', apellido: 'Ramírez', cedula: '4.555.222', correo_actual: 'carlos.ext@gmail.com', tipo: 'postulante', fecha_registro: '2026-02-10', estado: 'activo' },
-                    { id: '2', nombre: 'Ana', apellido: 'Martínez', cedula: '3.888.111', correo_actual: 'ana.docente@yahoo.es', tipo: 'docente', fecha_registro: '2026-03-01', estado: 'activo' }
+                    { id: '2', nombre: 'Ana', apellido: 'Martínez', cedula: '3.888.111', correo_actual: 'ana.docente@yahoo.es', tipo: 'concursante_docente', fecha_registro: '2026-03-01', estado: 'activo' }
                 ]);
             }
         } catch (error) {
@@ -204,7 +204,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-lg ${
-                                            user.tipo === 'docente' ? 'bg-purple-600' : 'bg-[var(--primary)]'
+                                            (user.tipo === 'concursante_docente' || user.tipo === 'auxiliar_docente') ? 'bg-purple-600' : 'bg-[var(--primary)]'
                                         }`}>
                                             {user.nombre[0]}{user.apellido[0]}
                                         </div>
@@ -213,7 +213,9 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
                                             <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                                 <span>CI: {user.cedula}</span>
                                                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                <span className={user.tipo === 'docente' ? 'text-purple-600' : 'text-[var(--primary)]'}>{user.tipo}</span>
+                                                <span className={(user.tipo === 'concursante_docente' || user.tipo === 'auxiliar_docente') ? 'text-purple-600' : 'text-[var(--primary)]'}>
+                                                     {user.tipo === 'concursante_docente' ? 'Docente Encargado' : (user.tipo === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante')}
+                                                 </span>
                                             </div>
                                         </div>
                                     </div>
