@@ -13,11 +13,13 @@ try {
     ]);
     $conn->exec("set names utf8mb4");
 
-    $stmt = $conn->prepare("SELECT * FROM postulantes WHERE nombre LIKE '%Mario%'");
+    $stmt = $conn->prepare("SELECT id, nombre, apellido, cedula, correo, carrera, sede, tipo_usuario, estado_revision FROM postulantes ORDER BY fecha_registro DESC");
     $stmt->execute();
     $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo "Postulantes in DB:\n";
-    print_r($res);
+    echo "COUNT: " . count($res) . "\n";
+    foreach ($res as $i => $p) {
+        echo ($i + 1) . ") " . $p['nombre'] . " " . $p['apellido'] . " (CI: " . $p['cedula'] . ") - Status: " . $p['estado_revision'] . "\n";
+    }
     
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();

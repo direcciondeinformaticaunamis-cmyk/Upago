@@ -2,14 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Search, Bell, Settings2, User, Calendar, 
-    ChevronDown, Download, FileSpreadsheet, RefreshCw
+    ChevronDown, Download, FileSpreadsheet, RefreshCw, Eye
 } from 'lucide-react';
 import { FinanceService, Payment, FinanceStats } from '../../services/FinanceService';
+import { API_BASE_URL } from '../../services/ApiService';
 
 const FinancialReports: React.FC = () => {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [stats, setStats] = useState<FinanceStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const resolveDocUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const clean = url.replace(/^\/+/, '');
+        return `${API_BASE_URL}/${clean}`;
+    };
 
     const loadData = async () => {
         setIsLoading(true);
@@ -267,6 +276,8 @@ const FinancialReports: React.FC = () => {
                         <input 
                             type="text" 
                             placeholder="Buscar en pagos..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-700"
                         />
                     </div>
@@ -281,10 +292,21 @@ const FinancialReports: React.FC = () => {
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Comprobante</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {payments?.map((p) => (
+                            {((payments || []).filter(p => {
+                                const term = searchTerm.toLowerCase();
+                                return (
+                                    p.nombre?.toLowerCase().includes(term) ||
+                                    p.apellido?.toLowerCase().includes(term) ||
+                                    p.postulante_cedula?.includes(term) ||
+                                    p.concepto?.toLowerCase().includes(term) ||
+                                    p.monto?.toString().includes(term) ||
+                                    p.estado?.toLowerCase().includes(term)
+                                );
+                            })).map((p) => (
                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-6 py-5 text-sm font-medium text-[#001738]">{new Date(p.fecha_registro).toLocaleDateString()}</td>
                                     <td className="px-6 py-5">
@@ -302,12 +324,44 @@ const FinancialReports: React.FC = () => {
                                             {p.estado}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-5 text-right">
+                                        {p.comprobante_url ? (
+                                            <a 
+                                                href={resolveDocUrl(p.comprobante_url)} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="inline-flex items-center justify-center p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg hover:text-blue-600 transition-colors shadow-sm"
+                                                title="Ver Comprobante de Pago"
+                                            >
+                                                <Eye size={14} />
+                                            </a>
+                                        ) : (
+                                            <span className="text-[10px] text-slate-400 italic">Sin archivo</span>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                             {payments.length === 0 && !isLoading && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium italic">
                                         No hay pagos registrados en la base de datos.
+                                    </td>
+                                </tr>
+                            )}
+                            {payments.length > 0 && ((payments || []).filter(p => {
+                                const term = searchTerm.toLowerCase();
+                                return (
+                                    p.nombre?.toLowerCase().includes(term) ||
+                                    p.apellido?.toLowerCase().includes(term) ||
+                                    p.postulante_cedula?.includes(term) ||
+                                    p.concepto?.toLowerCase().includes(term) ||
+                                    p.monto?.toString().includes(term) ||
+                                    p.estado?.toLowerCase().includes(term)
+                                );
+                            })).length === 0 && !isLoading && (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                                        No se encontraron pagos coincidentes con "{searchTerm}".
                                     </td>
                                 </tr>
                             )}
