@@ -1435,14 +1435,16 @@ if ($method === 'POST') {
             $conciliated_count = 0;
 
             foreach ($transacciones as $tx) {
-                // Find matching pending payments by amount
+                // Find matching pending payments by amount and proximity of +/- 1 day
                 $stmtPay = $conn->prepare("
                     SELECT p.id as pago_id, p.concepto, p.num_comprobante, pos.nombre, pos.apellido, pos.cedula, pos.correo 
                     FROM pagos p 
                     JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
                     WHERE p.estado = 'pendiente' AND p.monto = ?
+                      AND DATE(p.fecha_pago) >= DATE_SUB(DATE(?), INTERVAL 1 DAY) 
+                      AND DATE(p.fecha_pago) <= DATE_ADD(DATE(?), INTERVAL 1 DAY)
                 ");
-                $stmtPay->execute([$tx['monto']]);
+                $stmtPay->execute([$tx['monto'], $tx['fecha_transaccion'], $tx['fecha_transaccion']]);
                 $potential_matches = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
 
                 $best_match = null;
@@ -1460,7 +1462,7 @@ if ($method === 'POST') {
 
                     if (!empty($num_comp)) {
                         if (strpos($tx_desc, $num_comp) !== false || strpos($tx_ref, $num_comp) !== false) {
-                            $score += 40;
+                            $score += 50; // High confidence if receipt number matches
                         }
                     }
 
@@ -2018,7 +2020,11 @@ if ($method === 'GET') {
                         if ($tx['estado'] !== 'pendiente') continue; // Solo matchear con transacciones pendientes
 
                     $score = 0;
-                    if ((float)$tx['monto'] === (float)$p['monto']) {
+                    $p_date = substr($p['fecha_pago'] ?? $p['fecha_registro'], 0, 10);
+                    $tx_date = substr($tx['fecha_transaccion'], 0, 10);
+                    $diff_days = round((strtotime($p_date) - strtotime($tx_date)) / 86400);
+
+                    if (abs($diff_days) <= 1 && (float)$tx['monto'] === (float)$p['monto']) {
                         $score += 50;
 
                         $tx_desc = strtolower($tx['descripcion'] ?? '');
@@ -2029,7 +2035,7 @@ if ($method === 'GET') {
                         $apellido = strtolower($p['apellido'] ?? '');
 
                         if (!empty($num_comp) && (strpos($tx_desc, $num_comp) !== false || strpos($tx_ref, $num_comp) !== false)) {
-                            $score += 40;
+                            $score += 50; // High confidence if receipt matches
                         }
                         if (!empty($cedula) && (strpos($tx_desc, $cedula) !== false || strpos($tx_ref, $cedula) !== false)) {
                             $score += 10;
