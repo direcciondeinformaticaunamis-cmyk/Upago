@@ -66,13 +66,13 @@ const FinancialReports: React.FC = () => {
                     .sub-text { font-size: 14px; color: #666; margin-top: 5px; }
                     .report-title { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: center; text-transform: uppercase; }
                     .meta-info { margin-bottom: 30px; font-size: 14px; }
-                    table { w-full; width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
-                    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                    th { background-color: #f8fafc; font-weight: bold; color: #001738; text-transform: uppercase; font-size: 11px; }
-                    .amount { text-align: right; font-family: monospace; font-size: 13px; font-weight: bold; }
+                    table { w-full; width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 10px; }
+                    th, td { border: 1px solid #ddd; padding: 6px 4px; text-align: left; }
+                    th { background-color: #f8fafc; font-weight: bold; color: #001738; text-transform: uppercase; font-size: 9px; }
+                    .amount { text-align: right; font-family: monospace; font-size: 11px; font-weight: bold; }
                     .total-row { background-color: #001738; color: white; font-weight: bold; }
                     .total-row td { border-color: #001738; }
-                    .footer { margin-top: 80px; text-align: center; font-size: 12px; }
+                    .footer { margin-top: 80px; text-align: center; font-size: 11px; }
                     .signature-line { width: 250px; border-top: 1px solid #000; margin: 0 auto 10px auto; }
                     @media print {
                         @page { margin: 1.5cm; }
@@ -289,12 +289,13 @@ const FinancialReports: React.FC = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#f8fafc] border-b border-slate-100">
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Postulante / Cédula</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Comprobante</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Fecha</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Expediente N°</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Postulante / Cédula</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Concepto</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Monto</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest">Estado</th>
+                                <th className="px-3 py-3 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Comprobante</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -310,15 +311,16 @@ const FinancialReports: React.FC = () => {
                                 );
                             })).map((p) => (
                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-5 text-sm font-medium text-[#001738]">{new Date(p.fecha_registro).toLocaleDateString()}</td>
-                                    <td className="px-6 py-5">
-                                        <p className="text-sm font-bold text-[#001738]">{p.nombre} {p.apellido}</p>
+                                    <td className="px-3 py-4 text-xs font-medium text-[#001738]">{new Date(p.fecha_registro).toLocaleDateString()}</td>
+                                    <td className="px-3 py-4 text-xs font-bold text-[#001738]">{p.numero_expediente || 'PENDIENTE'}</td>
+                                    <td className="px-3 py-4">
+                                        <p className="text-xs font-bold text-[#001738]">{p.nombre} {p.apellido}</p>
                                         <p className="text-[10px] text-slate-400">{p.postulante_cedula}</p>
                                     </td>
-                                    <td className="px-6 py-5 text-sm text-slate-600">{p.concepto}</td>
-                                    <td className="px-6 py-5 text-sm font-bold text-[#001738] font-mono">{formatCurrency(p.monto)}</td>
-                                    <td className="px-6 py-5">
-                                        <span className={`px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest ${
+                                    <td className="px-3 py-4 text-xs text-slate-600">{p.concepto}</td>
+                                    <td className="px-3 py-4 text-xs font-bold text-[#001738] font-mono">{formatCurrency(p.monto)}</td>
+                                    <td className="px-3 py-4">
+                                        <span className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${
                                             p.estado === 'verificado' 
                                             ? 'bg-emerald-100 text-emerald-700' 
                                             : p.estado === 'rechazado' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
@@ -326,16 +328,16 @@ const FinancialReports: React.FC = () => {
                                             {p.estado}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-5 text-right">
+                                    <td className="px-3 py-4 text-right">
                                         {p.comprobante_url ? (
                                             <a 
                                                 href={resolveDocUrl(p.comprobante_url)} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer" 
-                                                className="inline-flex items-center justify-center p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg hover:text-blue-600 transition-colors shadow-sm"
+                                                className="inline-flex items-center justify-center p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded hover:text-blue-600 transition-colors shadow-sm"
                                                 title="Ver Comprobante de Pago"
                                             >
-                                                <Eye size={14} />
+                                                <Eye size={12} />
                                             </a>
                                         ) : (
                                             <span className="text-[10px] text-slate-400 italic">Sin archivo</span>
@@ -345,7 +347,7 @@ const FinancialReports: React.FC = () => {
                             ))}
                             {payments.length === 0 && !isLoading && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                                    <td colSpan={7} className="px-3 py-8 text-center text-slate-400 font-medium italic">
                                         No hay pagos registrados en la base de datos.
                                     </td>
                                 </tr>
@@ -362,7 +364,7 @@ const FinancialReports: React.FC = () => {
                                 );
                             })).length === 0 && !isLoading && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                                    <td colSpan={7} className="px-3 py-8 text-center text-slate-400 font-medium italic">
                                         No se encontraron pagos coincidentes con "{searchTerm}".
                                     </td>
                                 </tr>

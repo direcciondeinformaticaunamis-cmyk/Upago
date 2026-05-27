@@ -367,16 +367,20 @@ const BankReconciliation: React.FC = () => {
 
     const handleDeleteTransaction = async (row: ReconciliationItem) => {
         const confirmMsg = row.estado === 'conciliado'
-            ? `¿Estás seguro de que deseas eliminar esta transacción? Al estar ya conciliada, el pago asociado volverá a quedar pendiente.`
-            : `¿Estás seguro de que deseas eliminar esta transacción bancaria?`;
+            ? `¿Estás seguro de que deseas deshacer esta conciliación? El pago asociado volverá a quedar en estado pendiente.`
+            : `¿Estás seguro de que deseas eliminar permanentemente este pago de "${row.postulante_nombre || 'Postulante'}"?`;
             
         if (window.confirm(confirmMsg)) {
             try {
-                await FinanceService.deleteBankTransaction(row.id);
+                if (row.estado === 'conciliado' && row.transaccion_id) {
+                    await FinanceService.deleteBankTransaction(row.transaccion_id);
+                } else {
+                    await FinanceService.deletePago(row.id);
+                }
                 await loadRecords();
             } catch (e) {
-                console.error("Error deleting bank transaction:", e);
-                alert('Error al eliminar la transacción bancaria.');
+                console.error("Error deleting record:", e);
+                alert('Error al procesar la eliminación.');
             }
         }
     };
@@ -501,24 +505,26 @@ const BankReconciliation: React.FC = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100">
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Fecha</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Postulante / Detalle</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Banco</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Ref. Pago</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Monto</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Estado</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Acciones</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Fecha</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Expediente N°</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Postulante / Detalle</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Banco</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Ref. Pago</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Monto</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Estado</th>
+                                    <th className="px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).map((row: any) => (
                                     <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
-                                        <td className="px-6 py-5 text-sm font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
+                                        <td className="px-3 py-4 text-xs font-bold text-[#001738] whitespace-nowrap">{row.numero_expediente || row.match?.numero_expediente || 'PENDIENTE'}</td>
+                                        <td className="px-3 py-4">
                                             <div className="flex items-center gap-2">
                                                 <div>
-                                                    <p className="text-sm font-bold text-[#001738]">{row.postulante_nombre || (row.match ? row.match.postulante : 'No identificado')}</p>
-                                                    <p className="text-[11px] text-slate-400 mt-0.5">{row.detalle}</p>
+                                                    <p className="text-xs font-bold text-[#001738]">{row.postulante_nombre || (row.match ? row.match.postulante : 'No identificado')}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">{row.detalle}</p>
                                                 </div>
                                                 {row.match && (
                                                     <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
@@ -527,38 +533,39 @@ const BankReconciliation: React.FC = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-sm font-medium text-slate-600 whitespace-nowrap">{row.banco}</td>
-                                        <td className="px-6 py-5">
-                                            <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-sm font-medium text-slate-600">
+                                        <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.banco}</td>
+                                        <td className="px-3 py-4">
+                                            <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-xs font-medium text-slate-600">
                                                 <FileText size={14} className="text-slate-400" />
                                                 {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF')}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-right font-bold text-[#001738] text-[15px] whitespace-nowrap">
+                                        <td className="px-3 py-4 text-right font-bold text-[#001738] text-[14px] whitespace-nowrap">
                                             {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(row.monto)}
                                         </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
+                                        <td className="px-3 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${row.estado === 'pendiente' ? 'bg-[#a37c58]' : row.estado === 'conciliado' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${row.estado === 'pendiente' ? 'text-[#a37c58]' : row.estado === 'conciliado' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${row.estado === 'pendiente' ? 'text-[#a37c58]' : row.estado === 'conciliado' ? 'text-emerald-600' : 'text-red-600'}`}>
                                                     {row.estado}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-center whitespace-nowrap">
+                                        <td className="px-3 py-4 text-center whitespace-nowrap">
                                             <div className="flex items-center justify-center gap-3">
                                                 <button 
                                                     onClick={() => {
-                                                        if (row.match && row.match.comprobante_url) {
-                                                            setPreviewUrl(row.match.comprobante_url);
-                                                            setPreviewTitle(`Comprobante - ${row.match.postulante}`);
+                                                        const receiptUrl = row.comprobante_url || row.match?.comprobante_url;
+                                                        if (receiptUrl) {
+                                                            setPreviewUrl(receiptUrl);
+                                                            setPreviewTitle(`Comprobante - ${row.postulante_nombre || row.match?.postulante || 'Pago'}`);
                                                         } else {
-                                                            alert('Esta transacción no tiene comprobante adjunto o aún no ha sido vinculada con un pago.');
+                                                            alert('Esta transacción no tiene comprobante adjunto.');
                                                         }
                                                     }}
-                                                    disabled={!row.match?.comprobante_url}
-                                                    className={`${row.match?.comprobante_url ? 'text-[#002f6c] hover:text-[#001738] hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
-                                                    title={row.match?.comprobante_url ? 'Ver Comprobante Cargado' : 'Sin comprobante disponible'}
+                                                    disabled={!(row.comprobante_url || row.match?.comprobante_url)}
+                                                    className={`${(row.comprobante_url || row.match?.comprobante_url) ? 'text-[#002f6c] hover:text-[#001738] hover:scale-110' : 'text-slate-300 cursor-not-allowed'} transition-all`}
+                                                    title={(row.comprobante_url || row.match?.comprobante_url) ? 'Ver Comprobante Cargado' : 'Sin comprobante disponible'}
                                                 >
                                                     <Eye size={18} />
                                                 </button>

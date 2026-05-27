@@ -819,6 +819,32 @@ if ($method === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'delete_pago') {
+        require_admin('finance'); // Seguridad: Solo administradores y finanzas
+        try {
+            $pago_id = (int)($data['id'] ?? 0);
+            if ($pago_id <= 0) {
+                throw new Exception("ID de pago inválido.");
+            }
+            $conn->beginTransaction();
+            // Eliminar de conciliaciones
+            $conn->prepare("DELETE FROM conciliaciones WHERE pago_id = ?")->execute([$pago_id]);
+            // Eliminar de pagos
+            $conn->prepare("DELETE FROM pagos WHERE id = ?")->execute([$pago_id]);
+            $conn->commit();
+            
+            write_system_log("DELETE_PAYMENT", $data['admin_user'] ?? 'Admin', "Eliminó pago ID: $pago_id");
+            echo json_encode(["status" => "success", "message" => "Pago de arancel eliminado con éxito."]);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'migrate_user') {
         require_admin('admin'); // Seguridad: Solo administradores
         try {
@@ -1963,9 +1989,13 @@ if ($method === 'GET') {
 
     if (isset($_GET['reconciliation_queue'])) {
         try {
+            // Run backfill to ensure all postulantes have expediente numbers
+            $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
+            
             // Obtenemos los pagos pendientes y los ya verificados/conciliados
             $stmt = $conn->query("
-                SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula 
+                SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula, pos.numero_expediente,
+                       (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
                 FROM pagos p 
                 JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
                 WHERE p.estado IN ('pendiente', 'verificado', 'conciliado') 
@@ -2039,7 +2069,9 @@ if ($method === 'GET') {
                     "estado" => $p['estado'],
                     "match" => $match_data,
                     "postulante_nombre" => strtoupper($p['nombre'] . ' ' . $p['apellido']),
+                    "numero_expediente" => $p['numero_expediente'],
                     "comprobante_url" => $p['comprobante_url'],
+                    "transaccion_id" => $p['transaccion_id'] ? (int)$p['transaccion_id'] : null,
                     "is_pago" => true
                 ];
             }
@@ -2115,6 +2147,8 @@ if ($method === 'GET') {
     }
     if (isset($_GET['pagos'])) {
         $cedula = $_GET['pagos'];
+        // Run backfill to ensure all postulantes have expediente numbers
+        $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
         if ($cedula && $cedula !== 'true') { 
             $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula WHERE p.postulante_cedula = ?"); 
             $stmt->execute([$cedula]); 

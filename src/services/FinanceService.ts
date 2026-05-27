@@ -44,7 +44,12 @@ export interface ReconciliationItem {
     fecha: string;
     detalle: string;
     banco: string;
-    estado: 'pendiente' | 'conciliado' | 'verificado' | 'discrepancia' | string;
+    estado: 'pendiente' | 'conciliado' | 'verificado' | 'discrepancy' | string;
+    transaccion_id?: number | null;
+    postulante_nombre?: string;
+    numero_expediente?: string;
+    comprobante_url?: string;
+    is_pago?: boolean;
     match: {
         postulante: string;
         concepto: string;
@@ -112,6 +117,13 @@ export const FinanceService = {
         return fetchApi('', {
             method: 'POST',
             body: JSON.stringify({ action: 'delete_bank_transaction', id })
+        });
+    },
+
+    deletePago: async (id: number): Promise<any> => {
+        return fetchApi('', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete_pago', id })
         });
     },
 

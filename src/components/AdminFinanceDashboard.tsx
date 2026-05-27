@@ -35,6 +35,7 @@ import InstitutionalAnalytics from './aranceles/InstitutionalAnalytics';
 import SystemSettings from './SystemSettings';
 import ExternalUserManager from './ExternalUserManager';
 import { CashClosures } from './aranceles/CashClosures';
+import DocumentPreviewModal from './DocumentPreviewModal';
 
 interface AdminDashboardProps {
     user: { nombre: string; apellido: string; email: string; rol: string };
@@ -48,6 +49,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
     const [stats, setStats] = useState<FinanceStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewTitle, setPreviewTitle] = useState<string>('');
 
     const loadData = async () => {
         setIsLoading(true);
@@ -74,6 +77,36 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(amount);
+    };
+
+    const handleExportExcel = () => {
+        if (!payments || payments.length === 0) {
+            alert("No hay registros de pagos para exportar.");
+            return;
+        }
+
+        const headers = ["ID", "Fecha de Registro", "Nombre", "Apellido", "Cédula/ID", "Concepto", "Monto", "Estado"];
+        const rows = payments.map(p => [
+            p.id,
+            p.fecha_pago || (p.fecha_registro ? new Date(p.fecha_registro).toLocaleDateString() : 'N/A'),
+            p.nombre || '',
+            p.apellido || '',
+            p.postulante_cedula || '',
+            p.concepto || '',
+            p.monto || 0,
+            p.estado || ''
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+            + [headers.join(","), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))].join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Reporte_Pagos_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -261,7 +294,10 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     <div className="bg-white p-6 rounded-xl shadow-sm">
                                         <h2 className="text-sm font-bold text-[#a31e32] mb-4 uppercase tracking-widest">Accesos Rápidos</h2>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <button className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group">
+                                            <button 
+                                                onClick={handleExportExcel}
+                                                className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
+                                            >
                                                 <FileDownload className="text-[#a31e32]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Exp. Excel</span>
                                             </button>
@@ -269,7 +305,10 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 <Print className="text-[#a31e32]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">FACTURAS</span>
                                             </button>
-                                            <button className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group">
+                                            <button 
+                                                onClick={() => setActiveSection('cierres')}
+                                                className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
+                                            >
                                                 <History className="text-[#a31e32]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Bitácora</span>
                                             </button>
@@ -280,7 +319,10 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 <Storage className="text-emerald-400" />
                                                 <span className="text-[10px] font-bold uppercase text-white group-hover:text-emerald-400">Respaldo SQL</span>
                                             </button>
-                                            <button className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group">
+                                            <button 
+                                                onClick={() => alert("Bandeja de avisos: No hay alertas urgentes pendientes en este momento.")}
+                                                className="flex flex-col items-center justify-center p-4 bg-[#f7f9fb] rounded-lg hover:bg-[#d5e3ff] transition-colors gap-2 group"
+                                            >
                                                 <Mail className="text-[#a31e32]" />
                                                 <span className="text-[10px] font-bold uppercase text-[#43474f] group-hover:text-[#a31e32]">Avisos</span>
                                             </button>
@@ -298,17 +340,19 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-[#f2f4f6]">
-                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Postulante</th>
-                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Concepto</th>
-                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Monto</th>
-                                                <th className="px-8 py-4 text-[10px] font-black text-[#43474f] uppercase tracking-widest">Estado</th>
-                                                <th className="px-8 py-4 text-right"></th>
+                                                <th className="px-4 py-3 text-[9px] font-black text-[#43474f] uppercase tracking-widest">Expediente N°</th>
+                                                <th className="px-4 py-3 text-[9px] font-black text-[#43474f] uppercase tracking-widest">Postulante</th>
+                                                <th className="px-4 py-3 text-[9px] font-black text-[#43474f] uppercase tracking-widest">Concepto</th>
+                                                <th className="px-4 py-3 text-[9px] font-black text-[#43474f] uppercase tracking-widest">Monto</th>
+                                                <th className="px-4 py-3 text-[9px] font-black text-[#43474f] uppercase tracking-widest">Estado</th>
+                                                <th className="px-4 py-3 text-right"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {payments?.map((p) => (
                                                 <tr key={p.id} className="hover:bg-[#e6e8ea] transition-colors">
-                                                    <td className="px-8 py-4">
+                                                    <td className="px-4 py-3 text-xs font-bold text-[#001738]">{p.numero_expediente || 'PENDIENTE'}</td>
+                                                    <td className="px-4 py-3">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded bg-[#a31e32] flex items-center justify-center text-white font-bold text-xs">
                                                                 {p.nombre?.[0]}{p.apellido?.[0]}
@@ -321,30 +365,51 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-8 py-4 text-sm font-medium">{p.concepto}</td>
-                                                    <td className="px-8 py-4 text-sm font-bold">{formatCurrency(p.monto)}</td>
-                                                    <td className="px-8 py-4">
-                                                        <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase ${
+                                                    <td className="px-4 py-3 text-xs font-medium">{p.concepto}</td>
+                                                    <td className="px-4 py-3 text-xs font-bold">{formatCurrency(p.monto)}</td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`px-2 py-1 text-[9px] font-bold rounded uppercase ${
                                                             p.estado === 'verificado' ? 'bg-green-100 text-green-700' :
                                                             p.estado === 'pendiente' ? 'bg-[#ffdbca] text-[#381300]' : 'bg-[#ffdad6] text-[#93000a]'
                                                         }`}>
                                                             {p.estado}
                                                         </span>
                                                     </td>
-                                                    <td className="px-8 py-4 text-right">
-                                                        <Visibility 
-                                                            className="text-[#737780] cursor-pointer hover:text-[#a31e32]" 
-                                                            onClick={() => {
-                                                                setSelectedPayment(p);
-                                                                setActiveSection('facturas');
-                                                            }}
-                                                        />
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex justify-end gap-3 items-center">
+                                                            {p.comprobante_url ? (
+                                                                <span 
+                                                                    className="cursor-pointer hover:scale-115 transition-transform flex items-center"
+                                                                    title="Ver Comprobante Cargado"
+                                                                    onClick={() => {
+                                                                        setPreviewUrl(p.comprobante_url || null);
+                                                                        setPreviewTitle(`Comprobante - ${p.nombre} ${p.apellido}`);
+                                                                    }}
+                                                                >
+                                                                    <Visibility className="text-[#002f6c]" />
+                                                                </span>
+                                                            ) : (
+                                                                <span title="Sin comprobante cargado" className="flex items-center">
+                                                                    <Visibility className="text-slate-200 cursor-not-allowed" />
+                                                                </span>
+                                                            )}
+                                                            <span 
+                                                                className="cursor-pointer hover:scale-115 transition-transform flex items-center"
+                                                                title="Ver Factura / Recibo Oficial"
+                                                                onClick={() => {
+                                                                    setSelectedPayment(p);
+                                                                    setActiveSection('facturas');
+                                                                }}
+                                                            >
+                                                                <Receipt className="text-[#a31e32]" />
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {(payments?.length === 0 || !payments) && !isLoading && (
                                                 <tr>
-                                                    <td colSpan={5} className="px-8 py-10 text-center text-slate-400 italic">No hay actividad reciente.</td>
+                                                    <td colSpan={6} className="px-4 py-10 text-center text-slate-400 italic">No hay actividad reciente.</td>
                                                 </tr>
                                             )}
                                         </tbody>
@@ -403,28 +468,30 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="bg-slate-50">
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre y Apellido</th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">CI / Cédula</th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Carrera / Área</th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil</th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Expediente N°</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Nombre y Apellido</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">CI / Cédula</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Carrera / Área</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Perfil</th>
+                                            <th className="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         {postulantes?.map((post: any) => (
                                             <tr key={post.cedula} className="hover:bg-slate-50 transition-colors group">
-                                                <td className="px-8 py-5">
+                                                <td className="px-4 py-4 text-sm font-bold text-slate-700">{post.numero_expediente || 'PENDIENTE'}</td>
+                                                <td className="px-4 py-4">
                                                     <p className="text-sm font-bold text-slate-800">{post.nombre} {post.apellido}</p>
                                                     <p className="text-[10px] text-slate-400 font-mono">{post.correo}</p>
                                                 </td>
-                                                <td className="px-8 py-5 text-sm font-black text-[#a31e32]">{post.cedula}</td>
-                                                <td className="px-8 py-5 text-sm font-medium text-slate-600">{post.carrera || 'No especificada'}</td>
-                                                <td className="px-8 py-5">
+                                                <td className="px-4 py-4 text-sm font-black text-[#a31e32]">{post.cedula}</td>
+                                                <td className="px-4 py-4 text-sm font-medium text-slate-600">{post.carrera || 'No especificada'}</td>
+                                                <td className="px-4 py-4">
                                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.tipo_usuario === 'postulante' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
                                                         {post.tipo_usuario === 'postulante' ? 'Postulante' : 'Concursante'}
                                                     </span>
                                                 </td>
-                                                <td className="px-8 py-5">
+                                                <td className="px-4 py-4">
                                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.estado_revision === 'verificado' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                                                         {post.estado_revision}
                                                     </span>
@@ -454,6 +521,14 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                     )}
                     <div className="h-8"></div>
                 </div>
+
+                {/* Modal de Vista Previa de Comprobante */}
+                <DocumentPreviewModal 
+                    isOpen={!!previewUrl} 
+                    onClose={() => setPreviewUrl(null)} 
+                    url={previewUrl || ''} 
+                    title={previewTitle} 
+                />
 
                 {/* Footer */}
                 <footer className="flex justify-between items-center px-12 w-full py-4 border-t border-[#e6e8ea] bg-[#f7f9fb]">
