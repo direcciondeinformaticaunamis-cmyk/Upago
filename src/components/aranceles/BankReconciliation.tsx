@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { FinanceService, ReconciliationItem } from '../../services/FinanceService';
 import DocumentPreviewModal from '../DocumentPreviewModal';
+import * as XLSX from 'xlsx';
 
 // Dynamic script loader for pdfjs-dist
 const loadPdfJs = () => {
@@ -166,6 +167,91 @@ const parseContinentalText = (text: string): { transactions: any[], startDate: D
     return { transactions, startDate, endDate };
 };
 
+const parseContinentalExcel = async (file: File): Promise<{ transactions: any[], startDate: Date | null, endDate: Date | null }> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                const transactions: any[] = [];
+                let headerRowIdx = -1;
+                let colIndices: any = {};
+                for (let i = 0; i < Math.min(20, json.length); i++) {
+                    const row = json[i];
+                    if (Array.isArray(row) && row.includes('HABER') && row.includes('MOVIMIENTO')) {
+                        headerRowIdx = i;
+                        row.forEach((col: string, idx: number) => {
+                            if (col) colIndices[col.toUpperCase().trim()] = idx;
+                        });
+                        break;
+                    }
+                }
+
+                if (headerRowIdx === -1) {
+                    throw new Error('No se encontraron las columnas HABER y MOVIMIENTO en el Excel.');
+                }
+
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
+
+                for (let i = headerRowIdx + 1; i < json.length; i++) {
+                    const row = json[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    const haber = row[colIndices['HABER']];
+                    if (!haber || isNaN(Number(haber))) continue;
+                    
+                    const amount = Number(haber);
+                    const movement = row[colIndices['MOVIMIENTO']]?.toString().trim() || row[colIndices['COMPROBANTE']]?.toString().trim() || '';
+                    const description = row[colIndices['DESCRIP']]?.toString().trim() || '';
+                    const dayCont = row[colIndices['DIACONT']]?.toString().trim() || '';
+                    
+                    let fecha_transaccion = '';
+                    
+                    const serialDate = row[colIndices['FECHAMOVI']] || row[colIndices['FECHACONT']];
+                    if (serialDate && typeof serialDate === 'number') {
+                        const date = new Date((serialDate - (25567 + 2)) * 86400 * 1000);
+                        const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+                        const yyyy = utcDate.getFullYear();
+                        const mm = String(utcDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(utcDate.getDate()).padStart(2, '0');
+                        fecha_transaccion = `${yyyy}-${mm}-${dd}`;
+                    } else if (dayCont) {
+                        const day = parseInt(dayCont);
+                        const yyyy = currentYear;
+                        const mm = String(currentMonth + 1).padStart(2, '0');
+                        const dd = String(day).padStart(2, '0');
+                        fecha_transaccion = `${yyyy}-${mm}-${dd}`;
+                    } else {
+                        fecha_transaccion = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    }
+                    
+                    transactions.push({
+                        banco: 'BANCO CONTINENTAL',
+                        referencia: movement,
+                        monto: amount,
+                        fecha_transaccion,
+                        descripcion: description
+                    });
+                }
+                
+                resolve({ transactions, startDate: null, endDate: null });
+            } catch (err) {
+                reject(err);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+};
+
+
 const BankReconciliation: React.FC = () => {
     const [systemRecords, setSystemRecords] = useState<ReconciliationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -252,16 +338,21 @@ const BankReconciliation: React.FC = () => {
 
         setIsParsing(true);
         try {
-            const extractedText = await parsePdfFile(file);
-            const parsed = parseContinentalText(extractedText);
+            let parsed;
+            if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                parsed = await parseContinentalExcel(file);
+            } else {
+                const extractedText = await parsePdfFile(file);
+                parsed = parseContinentalText(extractedText);
+            }
             setImportedTxQueue(parsed.transactions);
             
             if (parsed.transactions.length === 0) {
-                alert("No se encontraron transacciones válidas en el PDF de Banco Continental.");
+                alert("No se encontraron transacciones válidas en el archivo seleccionado de Banco Continental.");
             }
         } catch (err) {
-            console.error("Error parsing PDF file:", err);
-            alert("Error al procesar el archivo PDF. Intente copiar y pegar el texto del PDF directamente en la caja de texto.");
+            console.error("Error parsing file:", err);
+            alert("Error al procesar el archivo. Verifique el formato e intente nuevamente.");
         } finally {
             setIsParsing(false);
         }
@@ -814,7 +905,7 @@ const BankReconciliation: React.FC = () => {
                                     <div>
                                         <h4 className="font-bold text-sm text-[#001738] mb-1">Carga Inteligente de Extractos</h4>
                                         <p className="text-xs text-slate-600 leading-relaxed">
-                                            Sube el extracto digital de <strong>Banco Continental</strong> en formato PDF. El parser extraerá las transacciones del rango de fechas, omitirá de forma inteligente los débitos/egresos y reconstruirá las fechas completas. También puedes pegar el texto copiado del PDF o usar datos de demostración para pruebas.
+                                            Sube el extracto digital de <strong>Banco Continental</strong> en formato PDF o Excel (.xlsx). El parser extraerá las transacciones del rango de fechas, omitirá de forma inteligente los débitos/egresos y reconstruirá las fechas completas. También puedes pegar el texto copiado del PDF o usar datos de demostración para pruebas.
                                         </p>
                                     </div>
                                 </div>
@@ -829,7 +920,7 @@ const BankReconciliation: React.FC = () => {
                                                 : 'border-transparent text-slate-400 hover:text-slate-600'
                                         }`}
                                     >
-                                        Subir PDF Oficial
+                                        Subir Archivo (PDF/Excel)
                                     </button>
                                     <button
                                         onClick={() => setActiveImportTab('text')}
@@ -861,7 +952,7 @@ const BankReconciliation: React.FC = () => {
                                             <div className="border-2 border-dashed border-slate-200 hover:border-[#002f6c] rounded-2xl p-8 transition-colors bg-slate-50/50 flex flex-col items-center justify-center text-center group cursor-pointer relative">
                                                 <input
                                                     type="file"
-                                                    accept=".pdf"
+                                                    accept=".pdf,.xlsx,.xls"
                                                     onChange={handleFileChange}
                                                     disabled={isParsing || isSubmittingImport}
                                                     className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
@@ -872,13 +963,13 @@ const BankReconciliation: React.FC = () => {
                                                 {isParsing ? (
                                                     <div className="flex flex-col items-center gap-2">
                                                         <RefreshCw className="animate-spin text-[#002f6c]" size={20} />
-                                                        <p className="text-sm font-bold text-[#001738]">Analizando documento PDF...</p>
-                                                        <p className="text-xs text-slate-500">Agrupando texto por coordenadas e infiriendo fechas...</p>
+                                                        <p className="text-sm font-bold text-[#001738]">Analizando documento...</p>
+                                                        <p className="text-xs text-slate-500">Extrayendo transacciones y cruzando fechas...</p>
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <p className="text-sm font-bold text-[#001738] mb-1">Arrastra tu extracto PDF aquí</p>
-                                                        <p className="text-xs text-slate-500">O haz clic para explorar tus archivos locales (solo archivos .pdf)</p>
+                                                        <p className="text-sm font-bold text-[#001738] mb-1">Arrastra tu extracto PDF o Excel aquí</p>
+                                                        <p className="text-xs text-slate-500">O haz clic para explorar tus archivos locales (.pdf, .xlsx)</p>
                                                     </>
                                                 )}
                                             </div>
