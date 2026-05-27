@@ -17,9 +17,10 @@ interface MisDatosModuleProps {
     initialStep?: number;
     forceEdit?: boolean;
     isAcademic?: boolean;
+    onGoToPayment?: (data: any) => void;
 }
 
-const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false, isAcademic = false }) => {
+const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, forceEdit = false, isAcademic = false, onGoToPayment }) => {
     // Solo mostrar el resumen si el expediente está aprobado o si ya se envió (tiene carrera y teléfono cargado) y no estamos forzando edición.
     const hasSubmittedData = user?.expediente_aprobado || (user?.nombre && (user as any).carrera && (user as any).telefono);
     const [isSubmitted, setIsSubmitted] = useState(!forceEdit && hasSubmittedData);
@@ -123,6 +124,33 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         }
     };
 
+    const handleSkipToPayment = async () => {
+        const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
+        const missing = required.filter(field => !formData[field as keyof typeof formData]);
+        
+        if (missing.length > 0) {
+            setErrors(missing);
+            setSubmitError("Por favor, complete todos los campos obligatorios resaltados en rojo.");
+            return;
+        }
+        
+        setSubmitError(null);
+        try {
+            const result = await fetchApi('', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+            if (result.status === 'success') {
+                if (onGoToPayment) onGoToPayment(formData);
+            } else {
+                setSubmitError("Error al guardar datos: " + result.message);
+            }
+        } catch (err) {
+            console.error("Error saving personal data:", err);
+            setSubmitError("Error de conexión al guardar los datos.");
+        }
+    };
+
     const handleFinish = () => {
         setIsSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -155,6 +183,14 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                                 className="flex items-center gap-2 px-5 py-3 bg-[#002f6c] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                             >
                                 <Print fontSize="small" /> Imprimir Formulario Oficial
+                            </button>
+                        )}
+                        {onGoToPayment && (
+                            <button 
+                                onClick={() => onGoToPayment(formData)}
+                                className="flex items-center gap-2 px-5 py-3 bg-[#002f6c] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all"
+                            >
+                                💳 Registrar Pago
                             </button>
                         )}
                     </div>
@@ -311,12 +347,14 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                     onChange={handleChange}
                     onContinue={handleContinue}
                     isAcademic={isAcademic}
+                    onSkipToPayment={onGoToPayment ? handleSkipToPayment : undefined}
                 />
             ) : (
                 <DocumentUploadSection
                     postulanteData={formData}
                     photo={photo}
                     onFinish={handleFinish}
+                    onSkipToPayment={onGoToPayment ? () => onGoToPayment(formData) : undefined}
                 />
             )}
 

@@ -63,6 +63,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         asignatura?: string;
         concepto: string;
     } | null>(null);
+    const [prefilledPaymentData, setPrefilledPaymentData] = useState<any>(null);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingExpediente, setEditingExpediente] = useState<Expediente | null>(null);
@@ -619,7 +620,15 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     Cancelar
                                 </button>
                             </div>
-                            <MisDatosModule forceEdit={true} initialStep={1} isAcademic={true} />
+                            <MisDatosModule 
+                                forceEdit={true} 
+                                initialStep={1} 
+                                isAcademic={true} 
+                                onGoToPayment={(data) => {
+                                    setPrefilledPaymentData(data);
+                                    setActiveSection('registro_pago');
+                                }}
+                            />
                         </div>
                     )}
                     {activeSection === 'dashboard' && (
@@ -798,8 +807,18 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                             </div>
                             <PaymentRegistrationForm 
                                 mode="admin" 
-                                onSuccess={() => setActiveSection('admision')} 
-                                onBack={() => setActiveSection('admision')} 
+                                postulanteName={prefilledPaymentData ? `${prefilledPaymentData.nombre || ''} ${prefilledPaymentData.apellido || ''}`.trim() : undefined}
+                                postulanteCedula={prefilledPaymentData?.cedula}
+                                postulanteCarrera={prefilledPaymentData?.carrera}
+                                postulanteSede={prefilledPaymentData?.sede}
+                                onSuccess={() => {
+                                    setActiveSection('admision');
+                                    setPrefilledPaymentData(null);
+                                }} 
+                                onBack={() => {
+                                    setActiveSection('admision');
+                                    setPrefilledPaymentData(null);
+                                }} 
                             />
                         </div>
                     )}

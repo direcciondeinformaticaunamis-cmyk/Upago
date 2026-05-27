@@ -61,9 +61,10 @@ interface DocumentUploadSectionProps {
     postulanteData: PostulanteData;
     photo: string | null;
     onFinish?: () => void;
+    onSkipToPayment?: () => void;
 }
 
-const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulanteData, photo, onFinish }) => {
+const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulanteData, photo, onFinish, onSkipToPayment }) => {
     const [documents, setDocuments] = useState<DocumentItem[]>(() => {
         // --- CASO DOCENTE / CONCURSANTE (MEDICINA Y OTROS) ---
         if (postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') {
@@ -605,7 +606,16 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                         Al enviar la documentación digitalizada, declaro bajo juramento que toda la información y archivos adjuntados son copias fieles de sus originales vigentes.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-6">
+                        {onSkipToPayment && (
+                            <button
+                                type="button"
+                                onClick={onSkipToPayment}
+                                className="sm:px-8 py-3 bg-[#002f6c] text-white hover:bg-[#001d4a] rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                            >
+                                💳 Saltar y Registrar Pago
+                            </button>
+                        )}
                         <AppButton
                             onClick={handleFinalize}
                             variant={isFullyComplete ? 'primary' : 'secondary'}

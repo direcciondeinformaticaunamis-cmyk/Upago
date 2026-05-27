@@ -82,9 +82,10 @@ interface PersonalDataFormProps {
     onContinue: () => void;
     isLoading?: boolean;
     isAcademic?: boolean;
+    onSkipToPayment?: () => void;
 }
 
-const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false }) => {
+const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false, onSkipToPayment }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
 
@@ -725,16 +726,28 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     <CheckCircle2 size={14} className="text-[var(--success)]" /> Verifique todos los campos obligatorios antes de avanzar
                 </div>
-                <AppButton
-                    size="lg"
-                    icon={ArrowRight}
-                    iconPosition="right"
-                    onClick={onContinue}
-                    className="w-full sm:w-auto"
-                    loading={isLoading}
-                >
-                    {isLoading ? 'Guardando datos...' : 'Siguiente: Carga de Documentos'}
-                </AppButton>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    {onSkipToPayment && (
+                        <button
+                            type="button"
+                            onClick={onSkipToPayment}
+                            disabled={isLoading}
+                            className="w-full sm:w-auto px-6 py-3 bg-[#002f6c] text-white hover:bg-[#001d4a] rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                        >
+                            {isLoading ? 'Guardando...' : '💳 Guardar e Ir a Caja (Saltar Docs)'}
+                        </button>
+                    )}
+                    <AppButton
+                        size="lg"
+                        icon={ArrowRight}
+                        iconPosition="right"
+                        onClick={onContinue}
+                        className="w-full sm:w-auto"
+                        loading={isLoading}
+                    >
+                        {isLoading ? 'Guardando...' : 'Siguiente: Carga de Documentos'}
+                    </AppButton>
+                </div>
             </div>
             
             <OcrUploadModal
