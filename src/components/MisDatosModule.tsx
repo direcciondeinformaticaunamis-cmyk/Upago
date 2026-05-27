@@ -45,6 +45,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         carrera: (user as any)?.carrera || '',
         sede: (user as any)?.sede || '',
         tipoUsuario: (user as any)?.tipo_usuario || (user as any)?.tipoUsuario || 'postulante' as 'postulante' | 'concursante_docente' | 'auxiliar_docente',
+        catedra: (user as any)?.catedra || '',
         numero_expediente: (user as any)?.numero_expediente || (user as any)?.numeroExpediente || '',
         
         // Salud
@@ -87,6 +88,9 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
 
     const handleContinue = async () => {
         const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
+        if (formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') {
+            required.push('catedra');
+        }
         const missing = required.filter(field => !formData[field as keyof typeof formData]);
         
         if (missing.length > 0) {
@@ -126,6 +130,9 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
 
     const handleSkipToPayment = async () => {
         const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
+        if (formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') {
+            required.push('catedra');
+        }
         const missing = required.filter(field => !formData[field as keyof typeof formData]);
         
         if (missing.length > 0) {
@@ -287,9 +294,17 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Perfil</p>
-                                    <p className="font-medium text-slate-800 capitalize">{formData.tipoUsuario}</p>
+                                    <p className="font-medium text-slate-800 capitalize">
+                                        {formData.tipoUsuario === 'concursante_docente' ? 'Docente' : (formData.tipoUsuario === 'auxiliar_docente' ? 'Auxiliar' : 'Estudiante')}
+                                    </p>
                                 </div>
                             </div>
+                            {formData.catedra && (
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Cátedra por la cual concursa</p>
+                                    <p className="font-medium text-slate-800">{formData.catedra}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

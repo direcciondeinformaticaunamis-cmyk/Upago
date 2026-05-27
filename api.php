@@ -440,7 +440,8 @@ try {
         "observaciones" => "text DEFAULT NULL",
         "numero_expediente" => "varchar(50) DEFAULT NULL",
         "tipo_usuario" => "enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'",
-        "password_hash" => "varchar(255) DEFAULT NULL"
+        "password_hash" => "varchar(255) DEFAULT NULL",
+        "catedra" => "varchar(255) DEFAULT NULL"
     ];
     foreach ($cols_mig as $col => $def) { 
         try { 
@@ -1080,6 +1081,7 @@ if ($method === 'POST') {
             $carrera = trim($data['carrera'] ?? '');
             $sede = trim($data['sede'] ?? '');
             $tipo_usuario = trim($data['tipo_usuario'] ?? 'postulante');
+            $catedra = trim($data['catedra'] ?? '');
             $admin_user = $data['admin_user'] ?? 'academico';
 
             if (!$cedula_actual || !$nombre || !$apellido || !$nueva_cedula) {
@@ -1117,8 +1119,8 @@ if ($method === 'POST') {
             $conn->exec("SET FOREIGN_KEY_CHECKS = 0");
 
             // a. Actualizar la tabla postulantes
-            $stmtUpdate = $conn->prepare("UPDATE postulantes SET nombre = ?, apellido = ?, cedula = ?, carrera = ?, sede = ?, tipo_usuario = ? WHERE cedula = ?");
-            $stmtUpdate->execute([$nombre, $apellido, $nueva_cedula, $carrera, $sede, $tipo_usuario, $cedula_actual]);
+            $stmtUpdate = $conn->prepare("UPDATE postulantes SET nombre = ?, apellido = ?, cedula = ?, carrera = ?, sede = ?, tipo_usuario = ?, catedra = ? WHERE cedula = ?");
+            $stmtUpdate->execute([$nombre, $apellido, $nueva_cedula, $carrera, $sede, $tipo_usuario, $catedra, $cedula_actual]);
 
             // b. Propagar cambios a la tabla usuarios si el usuario existe (basado en la cédula)
             $stmtUsers = $conn->prepare("UPDATE usuarios SET nombre = ?, apellido = ?, cedula = ? WHERE cedula = ?");
@@ -1267,7 +1269,7 @@ if ($method === 'POST') {
             exit;
         }
 
-        $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral', 'password_hash'];
+        $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral', 'password_hash', 'catedra'];
         $placeholders = implode(',', array_fill(0, count($fields), '?'));
         $updates = implode(',', array_map(function($f) { 
             if ($f === 'password_hash') return "`$f` = COALESCE(?, `$f`)";
@@ -2180,7 +2182,7 @@ if ($method === 'GET') {
         $stmt = $conn->query("
             SELECT 
                 p.id, p.nombre, p.apellido, p.cedula, p.correo, 
-                p.carrera, p.sede, p.tipo_usuario,
+                p.carrera, p.sede, p.tipo_usuario, p.catedra,
                 p.estado_revision, p.fecha_registro, p.numero_expediente,
                 (SELECT COUNT(*) FROM expedientes e WHERE e.postulante_id = p.cedula) as total_docs
             FROM postulantes p 

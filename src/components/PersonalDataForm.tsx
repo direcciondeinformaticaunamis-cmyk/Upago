@@ -26,6 +26,38 @@ import SectionTitle from './ui/SectionTitle';
 import AppDatePicker from './ui/AppDatePicker';
 import { CATALOGO_UNAMIS, getCarrerasPorSede } from '../constants/catalogoUnamis';
 
+const COMMON_CATEDRAS = [
+    "Anatomía Humana",
+    "Fisiología",
+    "Histología y Embriología",
+    "Farmacología",
+    "Bioquímica",
+    "Patología",
+    "Microbiología e Inmunología",
+    "Semiología Médica",
+    "Pediatría",
+    "Ginecología y Obstetricia",
+    "Cirugía General",
+    "Medicina Interna",
+    "Salud Pública",
+    "Introducción al Derecho",
+    "Derecho Constitucional",
+    "Álgebra y Geometría Analítica",
+    "Cálculo Diferencial e Integral",
+    "Física General",
+    "Química General",
+    "Programación Orientada a Objetos",
+    "Estructura de Datos y Algoritmos",
+    "Ingeniería de Software",
+    "Didáctica Superior Universitaria",
+    "Gerencia de Centrales Hidroeléctricas",
+    "Tecnología de la Producción",
+    "Tecnología de los Alimentos",
+    "Psicología General",
+    "Ciencias Políticas y de Gobierno",
+    "Logística y Transporte"
+];
+
 interface FormData {
     nombre: string;
     apellido: string;
@@ -45,6 +77,7 @@ interface FormData {
     carrera: string;
     sede: string;
     tipoUsuario: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
+    catedra?: string;
 
     // Datos de Salud
     grupoSanguineo?: string;
@@ -88,6 +121,26 @@ interface PersonalDataFormProps {
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false, onSkipToPayment }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
+    const [isOtroSelected, setIsOtroSelected] = useState(false);
+
+    React.useEffect(() => {
+        if (formData.catedra && !COMMON_CATEDRAS.includes(formData.catedra)) {
+            setIsOtroSelected(true);
+        } else if (!formData.catedra) {
+            setIsOtroSelected(false);
+        }
+    }, [formData.catedra]);
+
+    const handleCatedraSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'Otro') {
+            setIsOtroSelected(true);
+            onChange('catedra', '');
+        } else {
+            setIsOtroSelected(false);
+            onChange('catedra', val);
+        }
+    };
 
     const handleOcrSuccess = (ocrData: any) => {
         Object.entries(ocrData).forEach(([key, value]) => {
@@ -359,7 +412,11 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     whileHover={{ y: -2 }}
                                     whileTap={{ scale: 0.99 }}
                                     type="button"
-                                    onClick={() => onChange('tipoUsuario', 'postulante')}
+                                    onClick={() => {
+                                        onChange('tipoUsuario', 'postulante');
+                                        onChange('catedra', '');
+                                        setIsOtroSelected(false);
+                                    }}
                                     className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
                                         formData.tipoUsuario === 'postulante' || !formData.tipoUsuario
                                             ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
@@ -460,6 +517,45 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                 <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
                         </div>
+                        
+                        {(formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') && (
+                            <>
+                                <div className="flex flex-col gap-1.5 w-full relative">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
+                                        Cátedra por la cual concursa
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            value={isOtroSelected ? 'Otro' : (formData.catedra || '')}
+                                            onChange={handleCatedraSelectChange}
+                                            className={`w-full px-5 py-4 bg-white border ${errors.includes('catedra') ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-[var(--primary)]'} rounded-xl text-sm font-bold text-slate-800 outline-none transition-all appearance-none pr-12 focus:ring-4 focus:ring-[var(--primary)]/5`}
+                                        >
+                                            <option value="">Seleccionar cátedra...</option>
+                                            {COMMON_CATEDRAS.map(c => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                            <option value="Otro">Otro (Especificar)</option>
+                                        </select>
+                                        <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                {isOtroSelected && (
+                                    <div className="flex flex-col gap-1.5 w-full relative">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
+                                            Escriba la Cátedra Específica
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.catedra || ''}
+                                            onChange={(e) => onChange('catedra', e.target.value)}
+                                            placeholder="Nombre de la cátedra específica"
+                                            className={`w-full px-5 py-4 bg-white border ${errors.includes('catedra') ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-[var(--primary)]'} rounded-xl text-sm font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-[var(--primary)]/5`}
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </motion.section>
 

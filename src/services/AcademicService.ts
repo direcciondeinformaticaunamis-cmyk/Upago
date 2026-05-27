@@ -10,6 +10,7 @@ export interface Expediente {
     carrera: string;
     tipo: 'postulante' | 'docente';
     tipo_usuario?: string;
+    catedra?: string;
     sede?: string;
     numero_expediente?: string;
     fechaEnvio: string;
@@ -58,6 +59,7 @@ export const AcademicService = {
                 ? 'docente'
                 : 'postulante',
             tipo_usuario: p.tipo_usuario,
+            catedra: p.catedra || '',
             fechaEnvio: p.fecha_registro
                 ? p.fecha_registro.split(' ')[0]
                 : '—',
@@ -182,6 +184,7 @@ export const AcademicService = {
             carrera: string;
             sede: string;
             tipo_usuario: string;
+            catedra?: string;
         },
         adminUser: string = 'academico'
     ) {
@@ -196,6 +199,7 @@ export const AcademicService = {
                 carrera: data.carrera,
                 sede: data.sede,
                 tipo_usuario: data.tipo_usuario,
+                catedra: data.catedra,
                 admin_user: adminUser
             })
         });

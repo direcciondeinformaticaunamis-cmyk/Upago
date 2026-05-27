@@ -73,7 +73,8 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         cedula: '',
         carrera: '',
         sede: '',
-        tipo_usuario: 'postulante'
+        tipo_usuario: 'postulante',
+        catedra: ''
     });
 
     const handleDirectUpload = async (cedula: string, docId: string, asignatura: string | undefined, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -289,7 +290,8 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
             cedula: exp.cedula || '',
             carrera: exp.carrera || '',
             sede: exp.sede || '',
-            tipo_usuario: exp.tipo_usuario || (exp.tipo === 'docente' ? 'concursante_docente' : 'postulante')
+            tipo_usuario: exp.tipo_usuario || (exp.tipo === 'docente' ? 'concursante_docente' : 'postulante'),
+            catedra: exp.catedra || ''
         });
         setIsEditModalOpen(true);
     };
@@ -314,7 +316,8 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     cedula: editForm.cedula,
                     carrera: editForm.carrera,
                     sede: editForm.sede,
-                    tipo_usuario: editForm.tipo_usuario
+                    tipo_usuario: editForm.tipo_usuario,
+                    catedra: editForm.catedra
                 },
                 user.email
             );
@@ -539,6 +542,11 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm text-slate-800">{exp.carrera}</p>
+                                                    {exp.catedra && (
+                                                        <p className="text-xs text-purple-700 font-bold mt-0.5">
+                                                            📚 Cátedra: {exp.catedra}
+                                                        </p>
+                                                    )}
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${exp.tipo === 'docente' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                                             {exp.tipo}
@@ -767,7 +775,14 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                     <td className="px-4 py-3 font-mono text-xs text-slate-600">{exp.numero_expediente || 'PENDIENTE'}</td>
                                                     <td className="px-4 py-3 font-mono text-xs">{exp.cedula}</td>
                                                     <td className="px-4 py-3 font-bold text-slate-800 uppercase text-xs">{exp.nombre}</td>
-                                                    <td className="px-4 py-3 text-xs">{exp.carrera}</td>
+                                                    <td className="px-4 py-3 text-xs">
+                                                         {exp.carrera}
+                                                         {exp.catedra && (
+                                                             <div className="text-[10px] text-purple-600 font-bold mt-0.5">
+                                                                 Cátedra: {exp.catedra}
+                                                             </div>
+                                                         )}
+                                                     </td>
                                                     <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">{exp.tipo}</td>
                                                     <td className="px-4 py-3">
                                                         <span className={`text-[10px] font-black uppercase ${exp.estado === 'aprobado' ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -1200,6 +1215,18 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         <option value="auxiliar_docente">Auxiliar Docente</option>
                                     </select>
                                 </div>
+                                {(editForm.tipo_usuario === 'concursante_docente' || editForm.tipo_usuario === 'auxiliar_docente') && (
+                                     <div>
+                                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Cátedra de Concurso</label>
+                                         <input 
+                                             type="text"
+                                             value={editForm.catedra || ''}
+                                             onChange={(e) => setEditForm({ ...editForm, catedra: e.target.value })}
+                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                             placeholder="Nombre de la cátedra"
+                                         />
+                                     </div>
+                                 )}
                             </div>
                         </div>
                         
