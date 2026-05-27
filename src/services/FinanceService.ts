@@ -29,6 +29,7 @@ export interface Payment {
     cierre_nro?: number | null;
     cierre_fecha?: string | null;
     numero_expediente?: string;
+    transaccion_id?: number | null;
 }
 
 export interface FinanceStats {

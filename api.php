@@ -1442,7 +1442,7 @@ if ($method === 'POST') {
                     SELECT p.id as pago_id, p.concepto, p.num_comprobante, pos.nombre, pos.apellido, pos.cedula, pos.correo 
                     FROM pagos p 
                     JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
-                    WHERE p.estado = 'pendiente' AND p.monto = ?
+                    WHERE (p.estado = 'pendiente' OR (p.estado = 'verificado' AND NOT EXISTS (SELECT 1 FROM conciliaciones WHERE pago_id = p.id))) AND p.monto = ?
                       AND DATE(p.fecha_pago) >= DATE_SUB(DATE(?), INTERVAL 1 DAY) 
                       AND DATE(p.fecha_pago) <= DATE_ADD(DATE(?), INTERVAL 1 DAY)
                 ");
@@ -1951,7 +1951,7 @@ if ($method === 'GET') {
             $registrados_hoy = (int)($stmt->fetchColumn() ?: 0);
 
             // Tendencia: last 6 months
-            $stmt = $conn->query("SELECT DATE_FORMAT(fecha_registro, '%b') as mes, SUM(monto) as total FROM pagos WHERE estado = 'verificado' GROUP BY MONTH(fecha_registro), mes ORDER BY MIN(fecha_registro) ASC LIMIT 6");
+            $stmt = $conn->query("SELECT DATE_FORMAT(fecha_registro, '%b') as mes, SUM(monto) as total FROM pagos WHERE estado = 'verificado' GROUP BY MONTH(fecha_registro), DATE_FORMAT(fecha_registro, '%b') ORDER BY MONTH(fecha_registro) ASC LIMIT 6");
             $db_tendencia = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             $months_map = ['Jan' => 'Ene', 'Feb' => 'Feb', 'Mar' => 'Mar', 'Apr' => 'Abr', 'May' => 'May', 'Jun' => 'Jun', 'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep', 'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'];
@@ -2016,8 +2016,8 @@ if ($method === 'GET') {
                 $best_match = null;
                 $best_score = 0;
 
-                // Solo buscar matches si el pago está pendiente
-                if ($p['estado'] === 'pendiente') {
+                // Buscar matches si el pago está pendiente o verificado pero no conciliado
+                if ($p['estado'] === 'pendiente' || ($p['estado'] === 'verificado' && !$p['transaccion_id'])) {
                     foreach ($transacciones as $tx) {
                         if ($tx['estado'] !== 'pendiente') continue; // Solo matchear con transacciones pendientes
 
@@ -2158,11 +2158,18 @@ if ($method === 'GET') {
         // Run backfill to ensure all postulantes have expediente numbers
         $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
         if ($cedula && $cedula !== 'true') { 
-            $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula WHERE p.postulante_cedula = ?"); 
+            $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
+                                           (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
+                                    FROM pagos p 
+                                    JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
+                                    WHERE p.postulante_cedula = ?"); 
             $stmt->execute([$cedula]); 
         }
         else { 
-            $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente FROM pagos p JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 
+            $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
+                                         (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
+                                  FROM pagos p 
+                                  JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 
         }
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit;
     }

@@ -283,6 +283,10 @@ const BankReconciliation: React.FC = () => {
     const [isSubmittingImport, setIsSubmittingImport] = useState(false);
     const [activeImportTab, setActiveImportTab] = useState<'pdf' | 'text'>('pdf');
 
+    const filteredRecords = systemRecords.filter(r => 
+        activeTab === 'pendientes' ? !r.transaccion_id : !!r.transaccion_id
+    );
+
 
     const loadRecords = async () => {
         setIsLoading(true);
@@ -411,7 +415,7 @@ const BankReconciliation: React.FC = () => {
         
         try {
             const payments = await FinanceService.getPagos();
-            const pending = payments.filter(p => p.estado === 'pendiente');
+            const pending = payments.filter(p => !p.transaccion_id);
             setAllPendingPayments(pending);
         } catch (err) {
             console.error("Error loading pending payments:", err);
@@ -581,7 +585,7 @@ const BankReconciliation: React.FC = () => {
                         <h3 className="font-bold text-[#001738] text-base">{activeTab === 'pendientes' ? 'Registros Pendientes' : 'Historial de Registros'}</h3>
                     </div>
                     <span className="bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).length} Registros Encontrados
+                        {filteredRecords.length} Registros Encontrados
                     </span>
                 </div>
 
@@ -607,7 +611,7 @@ const BankReconciliation: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {systemRecords.filter(r => activeTab === 'pendientes' ? r.estado === 'pendiente' : (r.estado === 'conciliado' || r.estado === 'verificado')).map((row: any) => (
+                                {filteredRecords.map((row: any) => (
                                     <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
                                         <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
                                         <td className="px-3 py-4 text-xs font-bold text-[#001738] whitespace-nowrap">{row.numero_expediente || row.match?.numero_expediente || 'PENDIENTE'}</td>
@@ -636,9 +640,17 @@ const BankReconciliation: React.FC = () => {
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <div className={`w-2 h-2 rounded-full ${row.estado === 'pendiente' ? 'bg-[#a37c58]' : row.estado === 'conciliado' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest ${row.estado === 'pendiente' ? 'text-[#a37c58]' : row.estado === 'conciliado' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                    {row.estado}
+                                                <div className={`w-2 h-2 rounded-full ${
+                                                    row.transaccion_id 
+                                                    ? 'bg-emerald-500' 
+                                                    : (row.estado === 'verificado' ? 'bg-blue-500' : (row.estado === 'pendiente' ? 'bg-[#a37c58]' : 'bg-red-500'))
+                                                }`}></div>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${
+                                                    row.transaccion_id 
+                                                    ? 'text-emerald-600' 
+                                                    : (row.estado === 'verificado' ? 'text-blue-600' : (row.estado === 'pendiente' ? 'text-[#a37c58]' : 'text-red-600'))
+                                                }`}>
+                                                    {row.transaccion_id ? 'conciliado' : row.estado}
                                                 </span>
                                             </div>
                                         </td>
@@ -696,10 +708,10 @@ const BankReconciliation: React.FC = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {systemRecords.length === 0 && !isLoading && (
+                                {filteredRecords.length === 0 && !isLoading && (
                                     <tr>
                                         <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-medium">
-                                            No hay registros pendientes de conciliación.
+                                            No hay registros {activeTab === 'pendientes' ? 'pendientes de conciliación' : 'conciliados en el historial'}.
                                         </td>
                                     </tr>
                                 )}
@@ -710,7 +722,9 @@ const BankReconciliation: React.FC = () => {
 
                 {/* Table Footer / Pagination */}
                 <div className="bg-[#f8fafc] px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-[11px] font-bold text-slate-500">Mostrando 1-{systemRecords.length} de {systemRecords.length} registros</p>
+                    <p className="text-[11px] font-bold text-slate-500">
+                        {filteredRecords.length > 0 ? `Mostrando 1-${filteredRecords.length} de ${filteredRecords.length} registros` : 'Mostrando 0 de 0 registros'}
+                    </p>
                     <div className="flex items-center gap-2">
                         <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-400 hover:bg-slate-50">
                             <ChevronLeft size={16} />
