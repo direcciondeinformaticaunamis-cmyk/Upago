@@ -98,8 +98,9 @@ const FinancialReports: React.FC = () => {
                     <thead>
                         <tr>
                             <th>ID Transacción</th>
+                            <th>Expediente N°</th>
                             <th>Fecha de Pago</th>
-                            <th>Postulante</th>
+                            <th>Nombre y Apellido</th>
                             <th>Concepto</th>
                             <th style="text-align: right;">Monto (Gs.)</th>
                         </tr>
@@ -108,18 +109,18 @@ const FinancialReports: React.FC = () => {
                         ${verifiedPayments.map(p => `
                             <tr>
                                 <td>#${p.id.toString().padStart(6, '0')}</td>
+                                <td style="font-family: monospace; font-weight: bold;">${p.numero_expediente || 'PENDIENTE'}</td>
                                 <td>${p.fecha_pago || '—'}</td>
                                 <td>
                                     <strong>${p.nombre || ''} ${p.apellido || ''}</strong><br>
-                                    <span style="color: #475569; font-size: 10px; font-weight: 500;">CI: ${p.postulante_cedula || 'N/A'}</span><br>
-                                    <span style="color: #0f172a; font-size: 9px; font-family: monospace; font-weight: bold; background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px; display: inline-block; margin-top: 2px;">Exp: ${p.numero_expediente || 'PENDIENTE'}</span>
+                                    <span style="color: #475569; font-size: 10px; font-weight: 500;">CI: ${p.postulante_cedula || 'N/A'}</span>
                                 </td>
                                 <td>${p.concepto}</td>
                                 <td class="amount">${Number(p.monto).toLocaleString('es-PY')}</td>
                             </tr>
                         `).join('')}
                         <tr class="total-row">
-                            <td colspan="4" style="text-align: right; padding-right: 20px;">TOTAL RECAUDADO:</td>
+                            <td colspan="5" style="text-align: right; padding-right: 20px;">TOTAL RECAUDADO:</td>
                             <td class="amount">${total.toLocaleString('es-PY')} Gs.</td>
                         </tr>
                     </tbody>
