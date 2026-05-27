@@ -99,38 +99,70 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             const result = await Tesseract.recognize(selectedFile, 'spa');
             const text = result.data.text.toUpperCase();
             
-            // Monto regex
-            const montoMatch = text.match(/(?:GS\.?|GUARANIES|MONTO)?\s*([1-9]\d{0,2}(?:\.\d{3})+)/);
+            // Monto regex (soporta ₲, Gs., GS, comas o puntos)
+            const montoMatch = text.match(/(?:GS\.?|GUARANIES|MONTO|₲)?\s*([1-9]\d{0,2}(?:[.,]\d{3})+)/);
             if (montoMatch && montoMatch[1]) {
                 const cleanedMonto = montoMatch[1].replace(/[^0-9]/g, '');
                 if (cleanedMonto) set('monto', cleanedMonto);
             } else {
-                // Fallback for amounts without dots but after 'GS'
-                const fallbackMatch = text.match(/(?:GS\.?)\s*(\d{4,10})/);
+                // Fallback for amounts without dots but after 'GS' or '₲'
+                const fallbackMatch = text.match(/(?:GS\.?|₲)\s*(\d{4,10})/);
                 if (fallbackMatch && fallbackMatch[1]) {
                     set('monto', fallbackMatch[1]);
                 }
             }
             
-            // Comprobante regex
-            const compMatch = text.match(/(?:COMPROBANTE|NRO\.?|REF\.?|TRANSACCION|DOCUMENTO|RECIBO)\s*[:\-\s]\s*(\d{6,15})/);
+            // Comprobante regex (muy flexible por el ruido del OCR)
+            const compMatch = text.match(/(?:COMPROBANTE|NRO|N°|Nº|NUMERO|REF|TRANSACCION|DOCUMENTO|RECIBO)[^\d]{0,20}?(\d{6,15})/);
             if (compMatch && compMatch[1]) {
                 set('numComprobante', compMatch[1]);
             }
 
-            // Fecha y Hora regex (supports DD/MM/YYYY HH:MM)
-            const dateTimeMatch = text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+(\d{2}:\d{2})/);
-            if (dateTimeMatch) {
-                const dateParts = dateTimeMatch[1].split(/[\/\-]/);
-                let day = dateParts[0];
-                let month = dateParts[1];
-                let year = dateParts[2];
-                if (year.length === 2) year = "20" + year;
-                if (dateParts[0].length === 4) {
-                    year = dateParts[0]; month = dateParts[1]; day = dateParts[2];
+            // Fecha y Hora regex (soporta multiples formatos)
+            const months: {[key: string]: string} = {
+                'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
+                'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12',
+                'ENE': '01', 'ABR': '04', 'AGO': '08', 'DIC': '12'
+            };
+
+            let fechaEncontrada = false;
+            
+            // 1. Formato YYYY-MM-DD HH:MM:SS (BNF)
+            const bnfMatch = text.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})\s+(\d{2}:\d{2})/);
+            if (bnfMatch) {
+                set('fechaPago', `${bnfMatch[1]}-${bnfMatch[2]}-${bnfMatch[3]}T${bnfMatch[4]}`);
+                fechaEncontrada = true;
+            }
+
+            // 2. Formato DD/MM/YYYY HH:MM (Ueno)
+            if (!fechaEncontrada) {
+                const slashMatch = text.match(/(\d{2})[\/\-](\d{2}|[A-Z]{3,4})[\/\-](\d{2,4})[^\d]*(\d{2}:\d{2})/);
+                if (slashMatch) {
+                    let d = slashMatch[1];
+                    let m = slashMatch[2];
+                    let y = slashMatch[3];
+                    if (y.length === 2) y = "20" + y;
+                    if (isNaN(Number(m))) {
+                        const mStr = m.substring(0,3);
+                        m = months[mStr] || '01';
+                    }
+                    set('fechaPago', `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${slashMatch[4]}`);
+                    fechaEncontrada = true;
                 }
-                const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${dateTimeMatch[2]}`;
-                set('fechaPago', formattedDate);
+            }
+
+            // 3. Formato texto "20 MAY 2026 a las 10:53" (Itaú, Continental, Eko)
+            if (!fechaEncontrada) {
+                const textDateMatch = text.match(/(\d{1,2})\s*[\/\-]?\s*([A-Z]{3,10})\s*[\/\-]?\s*(\d{4})[^\d]*(\d{2}:\d{2})?/);
+                if (textDateMatch) {
+                    let d = textDateMatch[1];
+                    let mStr = textDateMatch[2].substring(0,3);
+                    let m = months[mStr] || '01';
+                    let y = textDateMatch[3];
+                    let time = textDateMatch[4] || "00:00"; // Fallback to 00:00 if no time
+                    set('fechaPago', `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${time}`);
+                    fechaEncontrada = true;
+                }
             }
 
         } catch (error) {
