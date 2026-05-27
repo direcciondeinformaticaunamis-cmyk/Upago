@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { FinanceService } from '../../services/FinanceService';
 import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS } from '../../constants/catalogoUnamis';
+import Tesseract from 'tesseract.js';
 
 interface Arancel {
     id: number;
@@ -57,12 +58,13 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         carrera: postulanteCarrera || (CATALOGO_UNAMIS[postulanteSede || 'Sede San Ignacio Guazú']?.[0] || 'Medicina'), 
         titular: '',
         numComprobante: '', 
-        fechaPago: new Date().toISOString().split('T')[0], 
+        fechaPago: new Date().toISOString().slice(0, 16), 
         monto: '',
         asignatura: ''
     });
     const [searchId, setSearchId] = useState('');
     const [file, setFile] = useState<File | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
@@ -90,6 +92,53 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     }, []);
 
     const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+
+    const handleOcrScan = async (selectedFile: File) => {
+        setIsScanning(true);
+        try {
+            const result = await Tesseract.recognize(selectedFile, 'spa');
+            const text = result.data.text.toUpperCase();
+            
+            // Monto regex
+            const montoMatch = text.match(/(?:GS\.?|GUARANIES|MONTO)?\s*([1-9]\d{0,2}(?:\.\d{3})+)/);
+            if (montoMatch && montoMatch[1]) {
+                const cleanedMonto = montoMatch[1].replace(/[^0-9]/g, '');
+                if (cleanedMonto) set('monto', cleanedMonto);
+            } else {
+                // Fallback for amounts without dots but after 'GS'
+                const fallbackMatch = text.match(/(?:GS\.?)\s*(\d{4,10})/);
+                if (fallbackMatch && fallbackMatch[1]) {
+                    set('monto', fallbackMatch[1]);
+                }
+            }
+            
+            // Comprobante regex
+            const compMatch = text.match(/(?:COMPROBANTE|NRO\.?|REF\.?|TRANSACCION|DOCUMENTO|RECIBO)\s*[:\-\s]\s*(\d{6,15})/);
+            if (compMatch && compMatch[1]) {
+                set('numComprobante', compMatch[1]);
+            }
+
+            // Fecha y Hora regex (supports DD/MM/YYYY HH:MM)
+            const dateTimeMatch = text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+(\d{2}:\d{2})/);
+            if (dateTimeMatch) {
+                const dateParts = dateTimeMatch[1].split(/[\/\-]/);
+                let day = dateParts[0];
+                let month = dateParts[1];
+                let year = dateParts[2];
+                if (year.length === 2) year = "20" + year;
+                if (dateParts[0].length === 4) {
+                    year = dateParts[0]; month = dateParts[1]; day = dateParts[2];
+                }
+                const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${dateTimeMatch[2]}`;
+                set('fechaPago', formattedDate);
+            }
+
+        } catch (error) {
+            console.error("OCR Error:", error);
+        } finally {
+            setIsScanning(false);
+        }
+    };
 
     const validate = () => {
         const e: string[] = [];
@@ -628,15 +677,14 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Fecha de Pago</label>
+                                <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Fecha y Hora de Pago</label>
                                 <div className="relative">
                                     <input 
-                                        type="date" 
+                                        type="datetime-local" 
                                         className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-700 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all ${errors.includes('fechaPago') ? 'border-red-300 bg-red-50' : ''}`}
                                         value={form.fechaPago}
                                         onChange={(e) => set('fechaPago', e.target.value)}
                                     />
-                                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                                 </div>
                             </div>
                             <div className="md:col-span-2">
@@ -686,13 +734,28 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                             <div>
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Comprobante de Pago</label>
                                 <label className={`flex flex-col items-center justify-center p-6 border border-dashed rounded-2xl cursor-pointer transition-all ${errors.includes('file') ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:border-primary/30 hover:bg-slate-50'}`}>
-                                    <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
-                                    <div className="w-10 h-10 bg-[#e6f0ff] rounded-full flex items-center justify-center text-[#0052cc] mb-3">
-                                        <Upload size={18} />
-                                    </div>
-                                    <span className="text-[11px] font-bold text-slate-700">Adjuntar Comprobante</span>
-                                    <span className="text-[9px] text-slate-400 mt-1">Imagen o PDF (Bien legible)</span>
-                                    {file && <span className="text-[10px] font-bold text-emerald-500 mt-2 truncate w-full text-center px-2">{file.name}</span>}
+                                    <input type="file" className="hidden" onChange={e => {
+                                        const f = e.target.files?.[0];
+                                        if (f) {
+                                            setFile(f);
+                                            handleOcrScan(f);
+                                        }
+                                    }} />
+                                    {isScanning ? (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-10 h-10 border-4 border-[#0052cc] border-t-transparent rounded-full animate-spin"></div>
+                                            <span className="text-[11px] font-bold text-[#0052cc] animate-pulse">🤖 IA Analizando imagen...</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="w-10 h-10 bg-[#e6f0ff] rounded-full flex items-center justify-center text-[#0052cc] mb-3">
+                                                <Upload size={18} />
+                                            </div>
+                                            <span className="text-[11px] font-bold text-slate-700">Adjuntar y Escanear (OCR)</span>
+                                            <span className="text-[9px] text-slate-400 mt-1">Imagen o PDF (Bien legible)</span>
+                                            {file && <span className="text-[10px] font-bold text-emerald-500 mt-2 truncate w-full text-center px-2">{file.name}</span>}
+                                        </>
+                                    )}
                                 </label>
                             </div>
                             <div>
