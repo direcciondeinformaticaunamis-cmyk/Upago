@@ -278,6 +278,7 @@ const BankReconciliation: React.FC = () => {
     const [rawTextToParse, setRawTextToParse] = useState('');
     const [isParsing, setIsParsing] = useState(false);
     const [allPendingPayments, setAllPendingPayments] = useState<any[]>([]);
+    const [loadingPendingTx, setLoadingPendingTx] = useState(false);
     const [searchPaymentQuery, setSearchPaymentQuery] = useState('');
     const [filterExactAmount, setFilterExactAmount] = useState(true);
     const [selectedPaymentForTx, setSelectedPaymentForTx] = useState<any | null>(null);
@@ -413,12 +414,15 @@ const BankReconciliation: React.FC = () => {
         setSearchPaymentQuery('');
         setFilterExactAmount(true);
         setIsManualModalOpen(true);
+        setLoadingPendingTx(true);
         
         try {
             const pendingTx = await FinanceService.getPendingBankTransactions();
             setAllPendingPayments(pendingTx);
         } catch (err) {
             console.error("Error loading pending bank transactions:", err);
+        } finally {
+            setLoadingPendingTx(false);
         }
     };
 
@@ -1739,10 +1743,22 @@ const BankReconciliation: React.FC = () => {
 
                                     {/* Bank Transactions List */}
                                     <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                                        {allPendingPayments.length === 0 ? (
+                                        {loadingPendingTx ? (
                                             <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
                                                 <RefreshCw className="animate-spin text-slate-300" size={24} />
                                                 <p className="text-xs font-medium">Cargando movimientos del extracto...</p>
+                                            </div>
+                                        ) : allPendingPayments.length === 0 ? (
+                                            <div className="py-12 text-center border border-dashed border-slate-200 rounded-3xl text-slate-400 p-8 space-y-3">
+                                                <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto text-amber-500">
+                                                    <AlertTriangle size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Extracto Vacío</p>
+                                                    <p className="text-[11px] leading-relaxed text-slate-400 mt-1 max-w-[280px] mx-auto">
+                                                        No hay transacciones bancarias pendientes cargadas. Importa el extracto bancario desde la pantalla principal para realizar la vinculación.
+                                                    </p>
+                                                </div>
                                             </div>
                                         ) : (() => {
                                             const filtered = allPendingPayments.filter(tx => {
