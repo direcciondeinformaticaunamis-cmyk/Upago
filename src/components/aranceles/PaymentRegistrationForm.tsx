@@ -10,6 +10,10 @@ import { FinanceService } from '../../services/FinanceService';
 import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS } from '../../constants/catalogoUnamis';
 import Tesseract from 'tesseract.js';
 
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+
 interface Arancel {
     id: number;
     categoria: string;
@@ -41,6 +45,20 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     mode = 'postulante',
     isDocente = false
 }) => {
+    const loadScript = (src: string): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = (err) => reject(new Error(`Error loading script ${src}`));
+            document.body.appendChild(script);
+        });
+    };
+
     const [concepto, setConcepto] = useState('matricula');
     const [selectedSede, setSelectedSede] = useState(postulanteSede || 'Sede San Ignacio Guazú');
     const [isCustomSede, setIsCustomSede] = useState(false);
@@ -100,8 +118,58 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         setOcrSuccessMsg(null);
         setOcrError(null);
         try {
-            const result = await Tesseract.recognize(selectedFile, 'spa');
-            const text = result.data.text.toUpperCase();
+            let textToParse = '';
+
+            // Si se subió un archivo PDF
+            if (selectedFile.type === 'application/pdf') {
+                if (!(window as any).pdfjsLib) {
+                    await loadScript(PDFJS_CDN);
+                }
+                if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                }
+
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+
+                // Intentar extraer texto digital directamente
+                let digitalText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                    digitalText += pageText + '\n';
+                }
+
+                console.log("Comprobante Directly Extracted Text Length:", digitalText.trim().length);
+
+                if (digitalText.trim().length >= 30) {
+                    textToParse = digitalText;
+                } else {
+                    // Fallback a OCR en canvas si es un PDF escaneado
+                    const page1 = await pdf.getPage(1);
+                    const viewport = page1.getViewport({ scale: 2.0 }); // Resolución alta para mejor precisión
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    if (context) {
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page1.render({ canvasContext: context, viewport }).promise;
+                        
+                        const result = await Tesseract.recognize(canvas, 'spa');
+                        textToParse = result.data.text;
+                    } else {
+                        throw new Error("No se pudo inicializar el contexto de renderizado de la página.");
+                    }
+                }
+            } else {
+                // Si es una imagen
+                const result = await Tesseract.recognize(selectedFile, 'spa');
+                textToParse = result.data.text;
+            }
+
+            const text = textToParse.toUpperCase();
             
             const fieldsFilled: string[] = [];
             
@@ -212,7 +280,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
 
         } catch (error) {
             console.error("OCR Error:", error);
-            setOcrError("No se pudieron extraer datos del comprobante. Intente con otra imagen.");
+            setOcrError("No se pudieron extraer datos del comprobante. Intente de nuevo.");
         } finally {
             setIsScanning(false);
         }
@@ -812,7 +880,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                             <div>
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Comprobante de Pago</label>
                                 <label className={`flex flex-col items-center justify-center p-6 border border-dashed rounded-2xl cursor-pointer transition-all ${errors.includes('file') ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:border-primary/30 hover:bg-slate-50'}`}>
-                                    <input type="file" className="hidden" onChange={e => {
+                                    <input type="file" className="hidden" accept="image/*,application/pdf" onChange={e => {
                                         const f = e.target.files?.[0];
                                         if (f) {
                                             setFile(f);
@@ -822,16 +890,34 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                     {isScanning ? (
                                         <div className="flex flex-col items-center gap-3">
                                             <div className="w-10 h-10 border-4 border-[#0052cc] border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="text-[11px] font-bold text-[#0052cc] animate-pulse">🤖 IA Analizando imagen...</span>
+                                            <span className="text-[11px] font-bold text-[#0052cc] animate-pulse">🤖 IA Analizando documento...</span>
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="w-10 h-10 bg-[#e6f0ff] rounded-full flex items-center justify-center text-[#0052cc] mb-3">
-                                                <Upload size={18} />
-                                            </div>
-                                            <span className="text-[11px] font-bold text-slate-700">Adjuntar y Escanear (OCR)</span>
-                                            <span className="text-[9px] text-slate-400 mt-1">Imagen o PDF (Bien legible)</span>
-                                            {file && <span className="text-[10px] font-bold text-emerald-500 mt-2 truncate w-full text-center px-2">{file.name}</span>}
+                                            {file ? (
+                                                file.type === 'application/pdf' ? (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="w-16 h-20 bg-red-50 border border-red-100 rounded-lg flex flex-col items-center justify-center text-red-655 p-2 shadow-sm">
+                                                            <FileText size={32} className="text-red-500" />
+                                                            <span className="text-[9px] font-black uppercase mt-1 text-red-600">PDF</span>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-slate-700 max-w-[200px] truncate">{file.name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <img src={URL.createObjectURL(file)} alt="Vista previa" className="w-24 h-24 object-cover rounded-lg border border-slate-200 shadow-sm" />
+                                                        <span className="text-[10px] font-bold text-slate-700 max-w-[200px] truncate">{file.name}</span>
+                                                    </div>
+                                                )
+                                            ) : (
+                                                <>
+                                                    <div className="w-10 h-10 bg-[#e6f0ff] rounded-full flex items-center justify-center text-[#0052cc] mb-3">
+                                                        <Upload size={18} />
+                                                    </div>
+                                                    <span className="text-[11px] font-bold text-slate-700">Adjuntar y Escanear (OCR)</span>
+                                                    <span className="text-[9px] text-slate-400 mt-1">Imagen o PDF (Bien legible)</span>
+                                                </>
+                                            )}
                                         </>
                                     )}
                                 </label>

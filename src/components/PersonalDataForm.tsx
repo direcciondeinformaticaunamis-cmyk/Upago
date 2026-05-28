@@ -132,11 +132,14 @@ interface PersonalDataFormProps {
 }
 
 const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false, onSkipToPayment }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
     const [customCatedra, setCustomCatedra] = useState('');
+    const [rawFile, setRawFile] = useState<File | null>(null);
 
     // OCR scanning states for Cédula
     const [isOcrScanning, setIsOcrScanning] = useState(false);
@@ -161,38 +164,105 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
     };
 
     const handleCedulaOcrScan = async () => {
-        if (!photo) return;
+        if (!rawFile && !photo) return;
         
         setIsOcrScanning(true);
         setOcrProgress(10);
-        setOcrStatusText('Cargando motor de reconocimiento óptico (OCR)...');
+        setOcrStatusText('Cargando motor de procesamiento...');
         setOcrError(null);
         setOcrSuccessMsg(null);
 
         try {
-            // Load Tesseract
-            if (!window.Tesseract) {
-                await loadScript(TESSERACT_CDN);
+            let textToParse = '';
+
+            // If a PDF file was uploaded
+            if (rawFile && rawFile.type === 'application/pdf') {
+                setOcrStatusText('Cargando motor de procesamiento de PDF...');
+                setOcrProgress(20);
+                
+                if (!(window as any).pdfjsLib) {
+                    await loadScript(PDFJS_CDN);
+                }
+                if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                }
+
+                setOcrStatusText('Analizando estructura del documento PDF...');
+                setOcrProgress(35);
+
+                const arrayBuffer = await rawFile.arrayBuffer();
+                const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+
+                // Try to extract digital text first
+                let digitalText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                    digitalText += pageText + '\n';
+                }
+
+                console.log("Cédula Directly Extracted Text Length:", digitalText.trim().length);
+
+                if (digitalText.trim().length >= 30) {
+                    textToParse = digitalText;
+                    setOcrProgress(75);
+                } else {
+                    // Fallback to OCR if scanned PDF
+                    setOcrStatusText('El PDF parece estar escaneado. Renderizando y procesando OCR...');
+                    setOcrProgress(50);
+                    
+                    const page1 = await pdf.getPage(1);
+                    const viewport = page1.getViewport({ scale: 2.0 }); // High resolution for better accuracy
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    if (context) {
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        setOcrStatusText('Renderizando PDF escaneado a imagen de alta resolución...');
+                        await page1.render({ canvasContext: context, viewport }).promise;
+                        
+                        if (!(window as any).Tesseract) {
+                            await loadScript(TESSERACT_CDN);
+                        }
+                        setOcrStatusText('Analizando texto de la página con OCR...');
+                        setOcrProgress(65);
+                        
+                        const worker = await (window as any).Tesseract.createWorker('spa');
+                        const result = await worker.recognize(canvas);
+                        await worker.terminate();
+                        textToParse = result.data.text;
+                    } else {
+                        throw new Error("No se pudo inicializar el contexto de renderizado de la página.");
+                    }
+                }
+            } else {
+                // If it is an image
+                if (!(window as any).Tesseract) {
+                    await loadScript(TESSERACT_CDN);
+                }
+                
+                setOcrProgress(30);
+                setOcrStatusText('Inicializando lector en español...');
+                
+                const worker = await (window as any).Tesseract.createWorker('spa');
+                
+                setOcrProgress(50);
+                setOcrStatusText('Analizando imagen de la cédula...');
+                
+                const source = photo || rawFile;
+                if (!source) throw new Error("No hay origen de imagen válido para analizar.");
+                const result = await worker.recognize(source);
+                await worker.terminate();
+                textToParse = result.data.text;
             }
-            
-            setOcrProgress(30);
-            setOcrStatusText('Inicializando lector en español...');
-            
-            // Create worker
-            const worker = await window.Tesseract.createWorker('spa');
-            
-            setOcrProgress(50);
-            setOcrStatusText('Analizando imagen de la cédula...');
-            
-            // Recognize text
-            const result = await worker.recognize(photo);
-            await worker.terminate();
-            
+
             setOcrProgress(80);
             setOcrStatusText('Procesando datos extraídos...');
             
             // Parse text
-            const parsed = parseCedula(result.data.text);
+            const parsed = parseCedula(textToParse);
             console.log("Datos extraídos de la cédula:", parsed);
             
             let filledCount = 0;
@@ -208,7 +278,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
             if (filledCount > 0) {
                 setOcrSuccessMsg(`¡Escaneo exitoso! Se autocompletaron ${filledCount} campos del formulario.`);
             } else {
-                setOcrError('No se pudieron extraer datos del escaneo. Asegúrese de que la imagen sea nítida y tenga buena luz.');
+                setOcrError('No se pudieron extraer datos del escaneo. Asegúrese de que el documento sea nítido y legible.');
             }
         } catch (err: any) {
             console.error("Cédula OCR failed:", err);
@@ -217,6 +287,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
             setIsOcrScanning(false);
         }
     };
+
 
     const selectedCatedras = formData.catedra
         ? formData.catedra.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '')
@@ -254,6 +325,9 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setRawFile(file);
+            setOcrSuccessMsg(null);
+            setOcrError(null);
             const reader = new FileReader();
             reader.onloadend = () => setPhoto(reader.result as string);
             reader.readAsDataURL(file);
@@ -277,7 +351,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                 type="file"
                 ref={fileInputRef}
                 onChange={handlePhotoChange}
-                accept="image/*"
+                accept="image/*,application/pdf"
                 className="hidden"
             />
 
@@ -337,7 +411,14 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                         ${photo ? 'bg-white border-[var(--primary)]/10' : 'bg-slate-50 border-slate-100 text-slate-300 group-hover:text-[var(--primary)]'}
                                     `}>
                                         {photo ? (
-                                            <img src={photo} alt="Vista previa de la Cédula" className="w-full h-full object-cover rounded-xl" />
+                                            photo.startsWith('data:application/pdf') ? (
+                                                <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-550 p-2">
+                                                    <FileText size={28} />
+                                                    <span className="text-[9px] font-black uppercase mt-1">PDF</span>
+                                                </div>
+                                            ) : (
+                                                <img src={photo} alt="Vista previa de la Cédula" className="w-full h-full object-cover rounded-xl" />
+                                            )
                                         ) : (
                                             <CreditCard size={36} strokeWidth={1} />
                                         )}
@@ -367,12 +448,12 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                         ) : (
                                             <>
                                                 <h4 className="text-base font-black text-slate-800 mb-1 tracking-tight">
-                                                    {photo ? 'Cédula cargada correctamente' : 'Cédula de Identidad Civil'}
+                                                    {photo ? (photo.startsWith('data:application/pdf') ? 'Cédula (PDF) cargada' : 'Cédula cargada correctamente') : 'Cédula de Identidad Civil'}
                                                 </h4>
                                                 <p className="text-xs text-slate-500 mb-4 max-w-md font-medium leading-relaxed">
                                                     {photo 
-                                                        ? 'Su cédula está lista para ser analizada por el lector OCR para rellenar los datos automáticamente.' 
-                                                        : 'Suba una foto o escaneo nítido del frente de su cédula de identidad civil paraguaya para autocompletar el formulario.'}
+                                                        ? 'Su documento está listo para ser analizado por el lector OCR para rellenar los datos automáticamente.' 
+                                                        : 'Suba una foto o escaneo nítido (Imagen o PDF) de su cédula de identidad civil paraguaya para autocompletar el formulario.'}
                                                 </p>
                                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                                     <AppButton
@@ -381,9 +462,9 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                                         icon={UploadCloud}
                                                         onClick={(e) => { e.stopPropagation(); handlePhotoClick(); }}
                                                     >
-                                                        {photo ? 'Cambiar Imagen' : 'Subir Cédula'}
+                                                        {photo ? 'Cambiar Documento' : 'Subir Cédula (PDF/Imagen)'}
                                                     </AppButton>
-                                                    {photo && (
+                                                    {(photo || rawFile) && (
                                                         <AppButton
                                                             variant="primary"
                                                             size="sm"
