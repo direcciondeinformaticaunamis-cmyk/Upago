@@ -70,6 +70,8 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     const [errors, setErrors] = useState<string[]>([]);
     const [dynamicAranceles, setDynamicAranceles] = useState<Arancel[]>([]);
     const [loadingAranceles, setLoadingAranceles] = useState(true);
+    const [ocrSuccessMsg, setOcrSuccessMsg] = useState<string | null>(null);
+    const [ocrError, setOcrError] = useState<string | null>(null);
 
     React.useEffect(() => {
         const fetchAranceles = async () => {
@@ -95,20 +97,28 @@ const PaymentRegistrationForm: React.FC<Props> = ({
 
     const handleOcrScan = async (selectedFile: File) => {
         setIsScanning(true);
+        setOcrSuccessMsg(null);
+        setOcrError(null);
         try {
             const result = await Tesseract.recognize(selectedFile, 'spa');
             const text = result.data.text.toUpperCase();
+            
+            const fieldsFilled: string[] = [];
             
             // Monto regex (soporta ₲, Gs., GS, comas o puntos)
             const montoMatch = text.match(/(?:GS\.?|GUARANIES|MONTO|₲)?\s*([1-9]\d{0,2}(?:[.,]\d{3})+)/);
             if (montoMatch && montoMatch[1]) {
                 const cleanedMonto = montoMatch[1].replace(/[^0-9]/g, '');
-                if (cleanedMonto) set('monto', cleanedMonto);
+                if (cleanedMonto) {
+                    set('monto', cleanedMonto);
+                    fieldsFilled.push("Monto");
+                }
             } else {
                 // Fallback for amounts without dots but after 'GS' or '₲'
                 const fallbackMatch = text.match(/(?:GS\.?|₲)\s*(\d{4,10})/);
                 if (fallbackMatch && fallbackMatch[1]) {
                     set('monto', fallbackMatch[1]);
+                    fieldsFilled.push("Monto");
                 }
             }
             
@@ -116,6 +126,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             const compMatch = text.match(/(?:COMPROBANTE|NRO|N°|Nº|NUMERO|REF|TRANSACCION|DOCUMENTO|RECIBO)[^\d]{0,20}?(\d{6,15})/);
             if (compMatch && compMatch[1]) {
                 set('numComprobante', compMatch[1]);
+                fieldsFilled.push("Nº Comprobante");
             }
 
             // Fecha y Hora regex (soporta multiples formatos)
@@ -132,6 +143,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             if (bnfMatch) {
                 set('fechaPago', `${bnfMatch[1]}-${bnfMatch[2]}-${bnfMatch[3]}T${bnfMatch[4]}`);
                 fechaEncontrada = true;
+                fieldsFilled.push("Fecha");
             }
 
             // 2. Formato DD/MM/YYYY HH:MM (Ueno)
@@ -148,6 +160,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     }
                     set('fechaPago', `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${slashMatch[4]}`);
                     fechaEncontrada = true;
+                    fieldsFilled.push("Fecha");
                 }
             }
 
@@ -162,11 +175,44 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     let time = textDateMatch[4] || "00:00"; // Fallback to 00:00 if no time
                     set('fechaPago', `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${time}`);
                     fechaEncontrada = true;
+                    fieldsFilled.push("Fecha");
                 }
+            }
+
+            // 4. Titular de la cuenta bancaria regex (Nombre de la cuenta de origen)
+            const titularRegexes = [
+                /(?:TITULAR\s*DE\s*LA\s*CUENTA|TITULAR\s*ORIGEN|TITULAR|ORDENANTE|REMITENTE|CLIENTE|NOMBRE\s*ORIGEN|TRANSFERIDO\s*POR|CTA\.?\s*ORIGEN|DE|DESDE)[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]{3,}(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]{3,})+)/i,
+                /(?:NOMBRE|BENEFICIARIO|DESTINATARIO)[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]{3,}(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]{3,})+)/i
+            ];
+
+            let titularEncontrado = '';
+            for (const regex of titularRegexes) {
+                const match = text.match(regex);
+                if (match && match[1]) {
+                    const candidate = match[1].trim();
+                    // Ignorar si coincide con la institución (UNAMIS, etc.)
+                    const isInstitution = /UNAMIS|UNIVERSIDAD|FACULTAD|CAJA|ARANCEL|TESORERIA/i.test(candidate);
+                    if (!isInstitution) {
+                        titularEncontrado = candidate;
+                        break;
+                    }
+                }
+            }
+            if (titularEncontrado) {
+                const capitalized = titularEncontrado.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                set('titular', capitalized);
+                fieldsFilled.push("Titular de cuenta");
+            }
+
+            if (fieldsFilled.length > 0) {
+                setOcrSuccessMsg(`¡Escaneo exitoso! Se autocompletaron los campos: ${fieldsFilled.join(', ')}.`);
+            } else {
+                setOcrSuccessMsg("Escaneo completado. Por favor, verifique y complete los campos manualmente.");
             }
 
         } catch (error) {
             console.error("OCR Error:", error);
+            setOcrError("No se pudieron extraer datos del comprobante. Intente con otra imagen.");
         } finally {
             setIsScanning(false);
         }
@@ -789,6 +835,25 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                         </>
                                     )}
                                 </label>
+                                
+                                {ocrSuccessMsg && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-3 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2.5 rounded-2xl flex items-center gap-2"
+                                    >
+                                        <CheckCircle2 size={14} className="text-emerald-600" /> {ocrSuccessMsg}
+                                    </motion.div>
+                                )}
+                                {ocrError && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-3 text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-4 py-2.5 rounded-2xl flex items-center gap-2"
+                                    >
+                                        <AlertCircle size={14} className="text-red-500" /> {ocrError}
+                                    </motion.div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Otros / Memorandum (Opcional)</label>
