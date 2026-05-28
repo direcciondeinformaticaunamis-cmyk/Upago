@@ -10,6 +10,21 @@ interface AppInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>(
     ({ label, error, icon: Icon, containerClassName = '', className = '', ...props }, ref) => {
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (props.onChange) {
+                const isEmail = props.type === 'email' || props.name === 'correo' || props.name === 'email';
+                const isPassword = props.type === 'password' || props.name === 'password';
+                const isSearch = props.name === 'search' || className.includes('search-input') || className.includes('no-uppercase');
+
+                if (isEmail) {
+                    e.target.value = e.target.value.toLowerCase();
+                } else if (!isPassword && !isSearch) {
+                    e.target.value = e.target.value.toUpperCase();
+                }
+                props.onChange(e);
+            }
+        };
+
         return (
             <div className={`flex flex-col gap-1.5 w-full ${containerClassName}`}>
                 {label && (
@@ -28,6 +43,7 @@ const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>(
               ${className}
             `}
                         {...props}
+                        onChange={props.onChange ? handleChange : undefined}
                     />
                     {Icon && (
                         <div className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${error ? 'text-danger' : 'text-slate-300 group-focus-within:text-primary'}`}>

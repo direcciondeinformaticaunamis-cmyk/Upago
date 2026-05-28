@@ -601,6 +601,52 @@ try {
     // Backfill empty or null case file numbers (numero_expediente)
     $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
 
+    // Migración de Mayúsculas (Excepto correo)
+    try {
+        $conn->exec("UPDATE `postulantes` SET 
+            `nombre` = UPPER(TRIM(`nombre`)), 
+            `apellido` = UPPER(TRIM(`apellido`)), 
+            `ruc` = UPPER(TRIM(`ruc`)),
+            `lugar_nacimiento_ciudad` = UPPER(TRIM(`lugar_nacimiento_ciudad`)),
+            `lugar_nacimiento_depto` = UPPER(TRIM(`lugar_nacimiento_depto`)),
+            `nacionalidad` = UPPER(TRIM(`nacionalidad`)),
+            `pais_origen` = UPPER(TRIM(`pais_origen`)),
+            `genero` = UPPER(TRIM(`genero`)),
+            `estado_civil` = UPPER(TRIM(`estado_civil`)),
+            `direccion` = UPPER(TRIM(`direccion`)),
+            `barrio` = UPPER(TRIM(`barrio`)),
+            `carrera` = UPPER(TRIM(`carrera`)),
+            `sede` = UPPER(TRIM(`sede`)),
+            `discapacidad` = UPPER(TRIM(`discapacidad`)),
+            `discapacidad_detalle` = UPPER(TRIM(`discapacidad_detalle`)),
+            `adecuacion_detalle` = UPPER(TRIM(`adecuacion_detalle`)),
+            `enfermedad_cronica` = UPPER(TRIM(`enfermedad_cronica`)),
+            `colegio_nombre` = UPPER(TRIM(`colegio_nombre`)),
+            `colegio_ciudad` = UPPER(TRIM(`colegio_ciudad`)),
+            `colegio_distrito` = UPPER(TRIM(`colegio_distrito`)),
+            `colegio_depto` = UPPER(TRIM(`colegio_depto`)),
+            `colegio_tipo` = UPPER(TRIM(`colegio_tipo`)),
+            `bachiller_tipo` = UPPER(TRIM(`bachiller_tipo`)),
+            `empresa_nombre` = UPPER(TRIM(`empresa_nombre`)),
+            `cargo` = UPPER(TRIM(`cargo`)),
+            `horario_laboral` = UPPER(TRIM(`horario_laboral`)),
+            `catedra` = UPPER(TRIM(`catedra`)),
+            `correo` = LOWER(TRIM(`correo`))");
+            
+        $conn->exec("UPDATE `pagos` SET 
+            `concepto` = UPPER(TRIM(`concepto`)), 
+            `num_comprobante` = UPPER(TRIM(`num_comprobante`)), 
+            `asignatura` = UPPER(TRIM(`asignatura`)), 
+            `observaciones` = UPPER(TRIM(`observaciones`))");
+            
+        $conn->exec("UPDATE `expedientes` SET 
+            `archivo_nombre` = UPPER(TRIM(`archivo_nombre`)), 
+            `asignatura` = UPPER(TRIM(`asignatura`)), 
+            `observaciones` = UPPER(TRIM(`observaciones`))");
+    } catch (Exception $e) {
+        // Silencioso por si falla alguna columna
+    }
+
 } catch(PDOException $exception) {
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => $exception->getMessage()]);
@@ -907,12 +953,12 @@ if ($method === 'POST') {
         }
         try {
             $id = (int)($data['id'] ?? 0);
-            $concepto = $data['concepto'] ?? '';
+            $concepto = mb_strtoupper(trim($data['concepto'] ?? ''), 'UTF-8');
             $monto = (float)($data['monto'] ?? 0);
-            $num_comprobante = $data['num_comprobante'] ?? '';
-            $asignatura = $data['asignatura'] ?? null;
-            $estado = $data['estado'] ?? 'pendiente';
-            $observaciones = $data['observaciones'] ?? '';
+            $num_comprobante = mb_strtoupper(trim($data['num_comprobante'] ?? ''), 'UTF-8');
+            $asignatura = isset($data['asignatura']) ? mb_strtoupper(trim($data['asignatura']), 'UTF-8') : null;
+            $estado = mb_strtoupper(trim($data['estado'] ?? 'pendiente'), 'UTF-8');
+            $observaciones = mb_strtoupper(trim($data['observaciones'] ?? ''), 'UTF-8');
 
             if ($id <= 0) {
                 throw new Exception("ID de pago inválido.");
@@ -1175,14 +1221,14 @@ if ($method === 'POST') {
     if (isset($data['action']) && $data['action'] === 'update_external_user') {
         require_admin('academico'); // Seguridad: Coordinadores y administradores
         try {
-            $cedula_actual = trim($data['cedula_actual'] ?? '');
-            $nombre = trim($data['nombre'] ?? '');
-            $apellido = trim($data['apellido'] ?? '');
-            $nueva_cedula = trim($data['cedula'] ?? '');
-            $carrera = trim($data['carrera'] ?? '');
-            $sede = trim($data['sede'] ?? '');
+            $cedula_actual = mb_strtoupper(trim($data['cedula_actual'] ?? ''), 'UTF-8');
+            $nombre = mb_strtoupper(trim($data['nombre'] ?? ''), 'UTF-8');
+            $apellido = mb_strtoupper(trim($data['apellido'] ?? ''), 'UTF-8');
+            $nueva_cedula = mb_strtoupper(trim($data['cedula'] ?? ''), 'UTF-8');
+            $carrera = mb_strtoupper(trim($data['carrera'] ?? ''), 'UTF-8');
+            $sede = mb_strtoupper(trim($data['sede'] ?? ''), 'UTF-8');
             $tipo_usuario = trim($data['tipo_usuario'] ?? 'postulante');
-            $catedra = trim($data['catedra'] ?? '');
+            $catedra = mb_strtoupper(trim($data['catedra'] ?? ''), 'UTF-8');
             $admin_user = $data['admin_user'] ?? 'academico';
 
             if (!$cedula_actual || !$nombre || !$apellido || !$nueva_cedula) {
@@ -1302,11 +1348,11 @@ if ($method === 'POST') {
     if (isset($_GET['registrar_pago'])) {
         require_admin(); // Seguridad: Solo usuarios válidos
         try {
-            $cedula = $_POST['postulante_cedula'] ?? ''; 
-            $concepto = $_POST['concepto'] ?? ''; 
+            $cedula = mb_strtoupper(trim($_POST['postulante_cedula'] ?? ''), 'UTF-8'); 
+            $concepto = mb_strtoupper(trim($_POST['concepto'] ?? ''), 'UTF-8'); 
             $monto = $_POST['monto'] ?? 0;
-            $num_comprobante = $_POST['num_comprobante'] ?? '';
-            $asignatura = $_POST['asignatura'] ?? null;
+            $num_comprobante = mb_strtoupper(trim($_POST['num_comprobante'] ?? ''), 'UTF-8');
+            $asignatura = isset($_POST['asignatura']) ? mb_strtoupper(trim($_POST['asignatura']), 'UTF-8') : null;
             
             $comprobante_url = null;
             $comprobante_nombre = null;
@@ -1338,8 +1384,8 @@ if ($method === 'POST') {
                 error_log("[UPAGO] Error de subida comprobante, código: " . $_FILES['comprobante']['error']);
             }
             
-            $estado = $_POST['estado'] ?? 'pendiente';
-            $observaciones = $_POST['observaciones'] ?? '';
+            $estado = mb_strtoupper(trim($_POST['estado'] ?? 'pendiente'), 'UTF-8');
+            $observaciones = mb_strtoupper(trim($_POST['observaciones'] ?? ''), 'UTF-8');
             
             $stmt = $conn->prepare("INSERT INTO pagos (postulante_cedula, concepto, monto, num_comprobante, comprobante_url, comprobante_nombre, asignatura, fecha_pago, estado, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?)");
             $stmt->execute([$cedula, $concepto, $monto, $num_comprobante, $comprobante_url, $comprobante_nombre, $asignatura, $estado, $observaciones]);
@@ -1404,6 +1450,14 @@ if ($method === 'POST') {
             if ($val === "" && !in_array($f, ['nombre', 'apellido', 'cedula', 'correo'])) {
                 $val = null;
             }
+
+            // Normalización a MAYÚSCULAS (Excepto correo y password_hash)
+            if (is_string($val) && $f !== 'correo' && $f !== 'password_hash') {
+                $val = mb_strtoupper(trim($val), 'UTF-8');
+            } elseif ($f === 'correo' && is_string($val)) {
+                $val = mb_strtolower(trim($val), 'UTF-8');
+            }
+
             $values[] = $val;
         }
         
@@ -1641,8 +1695,8 @@ if ($method === 'POST') {
         require_admin();
         try {
             $id = $data['id'] ?? null;
-            $estado = $data['estado'] ?? 'pendiente';
-            $observaciones = $data['observaciones'] ?? '';
+            $estado = mb_strtoupper(trim($data['estado'] ?? 'pendiente'), 'UTF-8');
+            $observaciones = mb_strtoupper(trim($data['observaciones'] ?? ''), 'UTF-8');
 
             if ($id) {
                 $stmt = $conn->prepare("UPDATE pagos SET estado = ?, observaciones = ? WHERE id = ?");

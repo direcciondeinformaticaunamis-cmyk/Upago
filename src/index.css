@@ -166,3 +166,36 @@
   table { border: 1px solid #000 !important; }
   th, td { border: 1px solid #000 !important; padding: 5px !important; }
 }
+
+/* Force uppercase across text display in dashboards/panels */
+.dashboard-container,
+.academic-panel,
+.financial-panel,
+.postulante-panel,
+.student-panel,
+.admin-panel,
+.table-container,
+table,
+.card,
+.stat-card,
+.modal-content,
+.personal-data-form,
+input:not([type="email"]):not([type="password"]):not([name="correo"]):not([name="email"]):not([name="password"]):not([name="search"]):not(.search-input):not(.no-uppercase),
+textarea,
+select:not(.no-uppercase) {
+  text-transform: uppercase;
+}
+
+/* Exclude emails, passwords, and mono-spaced fonts from uppercase transformation */
+.email-text,
+.email-display,
+.lowercase,
+[data-lowercase="true"],
+.font-mono,
+input[type="email"],
+input[name="correo"],
+input[name="email"],
+input[type="password"],
+input[name="password"] {
+  text-transform: none !important;
+}
