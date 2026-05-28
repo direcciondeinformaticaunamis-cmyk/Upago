@@ -868,7 +868,12 @@ if ($method === 'POST') {
     }
 
     if (isset($data['action']) && $data['action'] === 'delete_pago') {
-        require_admin('finance'); // Seguridad: Solo administradores y finanzas
+        $user = get_authorized_user();
+        if (!$user || ($user['rol'] !== 'admin' && $user['rol'] !== 'academico')) {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "No tiene permisos para realizar esta acción."]);
+            exit;
+        }
         try {
             $pago_id = (int)($data['id'] ?? 0);
             if ($pago_id <= 0) {
@@ -881,12 +886,44 @@ if ($method === 'POST') {
             $conn->prepare("DELETE FROM pagos WHERE id = ?")->execute([$pago_id]);
             $conn->commit();
             
-            write_system_log("DELETE_PAYMENT", $data['admin_user'] ?? 'Admin', "Eliminó pago ID: $pago_id");
+            write_system_log("DELETE_PAYMENT", $user['correo'] ?? 'Admin/Academic', "Eliminó pago ID: $pago_id");
             echo json_encode(["status" => "success", "message" => "Pago de arancel eliminado con éxito."]);
         } catch (Exception $e) {
             if ($conn->inTransaction()) {
                 $conn->rollBack();
             }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($data['action']) && $data['action'] === 'update_pago') {
+        $user = get_authorized_user();
+        if (!$user || ($user['rol'] !== 'admin' && $user['rol'] !== 'academico')) {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "No tiene permisos para realizar esta acción."]);
+            exit;
+        }
+        try {
+            $id = (int)($data['id'] ?? 0);
+            $concepto = $data['concepto'] ?? '';
+            $monto = (float)($data['monto'] ?? 0);
+            $num_comprobante = $data['num_comprobante'] ?? '';
+            $asignatura = $data['asignatura'] ?? null;
+            $estado = $data['estado'] ?? 'pendiente';
+            $observaciones = $data['observaciones'] ?? '';
+
+            if ($id <= 0) {
+                throw new Exception("ID de pago inválido.");
+            }
+
+            $stmt = $conn->prepare("UPDATE pagos SET concepto = ?, monto = ?, num_comprobante = ?, asignatura = ?, estado = ?, observaciones = ? WHERE id = ?");
+            $stmt->execute([$concepto, $monto, $num_comprobante, $asignatura, $estado, $observaciones, $id]);
+
+            write_system_log("UPDATE_PAYMENT", $user['correo'] ?? 'Admin/Academic', "Actualizó pago ID: $id (Monto: $monto, Concepto: $concepto)");
+            echo json_encode(["status" => "success", "message" => "Pago actualizado correctamente"]);
+        } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
@@ -1069,9 +1106,11 @@ if ($method === 'POST') {
 
             if (!$user_data) throw new Exception("Usuario no encontrado con CI: " . $cedula);
 
-            // Asegurarse de que sea externo
-            if (!empty($user_data['correo']) && str_ends_with(strtolower($user_data['correo']), '@unamis.edu.py')) {
-                throw new Exception("No se puede eliminar un usuario institucional.");
+            // Asegurarse de que no sea un usuario de rol institucional real (administrador o coordinador)
+            $stmtCheckRole = $conn->prepare("SELECT COUNT(*) FROM roles_institucionales WHERE correo = ?");
+            $stmtCheckRole->execute([$user_data['correo']]);
+            if ($stmtCheckRole->fetchColumn() > 0) {
+                throw new Exception("No se puede eliminar un usuario con rol institucional activo.");
             }
 
             $conn->beginTransaction();
@@ -1081,16 +1120,31 @@ if ($method === 'POST') {
             $stmtDelExp = $conn->prepare("DELETE FROM expedientes WHERE TRIM(postulante_id) = ?");
             $stmtDelExp->execute([$cedula]);
 
-            // b. Eliminar usuario asociado de la tabla usuarios y sus dependencias si existe
+            // b. Eliminar usuario asociado de la tabla usuarios y sus dependencias si existe (control robusto por si no existen las tablas)
             $stmtGetUsr = $conn->prepare("SELECT id FROM usuarios WHERE TRIM(cedula) = ?");
-            $stmtGetUsr->execute([$cedula]);
-            $usr = $stmtGetUsr->fetch(PDO::FETCH_ASSOC);
-            if ($usr) {
-                $usr_id = $usr['id'];
-                $conn->prepare("DELETE FROM pagos_examen WHERE usuario_id = ?")->execute([$usr_id]);
-                $conn->prepare("DELETE FROM datos_academicos WHERE usuario_id = ?")->execute([$usr_id]);
-                $conn->prepare("DELETE FROM documentos WHERE usuario_id = ?")->execute([$usr_id]);
-                $conn->prepare("DELETE FROM usuarios WHERE id = ?")->execute([$usr_id]);
+            try {
+                $stmtGetUsr->execute([$cedula]);
+                $usr = $stmtGetUsr->fetch(PDO::FETCH_ASSOC);
+                if ($usr) {
+                    $usr_id = $usr['id'];
+                    
+                    $tables_to_clean = [
+                        'pagos_examen' => "DELETE FROM pagos_examen WHERE usuario_id = ?",
+                        'datos_academicos' => "DELETE FROM datos_academicos WHERE usuario_id = ?",
+                        'documentos' => "DELETE FROM documentos WHERE usuario_id = ?",
+                        'usuarios' => "DELETE FROM usuarios WHERE id = ?"
+                    ];
+                    
+                    foreach ($tables_to_clean as $tbl => $query) {
+                        try {
+                            $conn->prepare($query)->execute([$usr_id]);
+                        } catch (PDOException $ex) {
+                            // Ignorar error si la tabla no existe en el esquema local
+                        }
+                    }
+                }
+            } catch (PDOException $e) {
+                // Si la tabla 'usuarios' no existe, simplemente continuamos
             }
 
             // c. Eliminar pagos del portal

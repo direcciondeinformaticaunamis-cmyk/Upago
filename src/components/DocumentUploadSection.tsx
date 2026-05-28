@@ -55,6 +55,7 @@ interface PostulanteData {
     sede: string;
     tipoUsuario?: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
     numero_expediente?: string;
+    catedra?: string;
 }
 
 interface DocumentUploadSectionProps {
@@ -113,20 +114,33 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
 
     useEffect(() => {
         const fetchSubjects = async () => {
+            let subjects: string[] = [];
+            
+            // 1. Extraer de las cátedras seleccionadas al registrarse
+            if (postulanteData.catedra) {
+                subjects = postulanteData.catedra
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => s !== '' && s.toLowerCase() !== 'otro');
+            }
+            
+            // 2. Fusionar con asignaturas pagadas para retrocompatibilidad
             try {
                 const data = await FinanceService.getPagos(postulanteData.cedula);
                 if (Array.isArray(data)) {
-                    const subjects = Array.from(new Set(data.map((p: any) => p.asignatura).filter(Boolean))) as string[];
-                    setDocSubjects(subjects);
+                    const paidSubjects = data.map((p: any) => p.asignatura).filter(Boolean) as string[];
+                    subjects = [...subjects, ...paidSubjects];
                 }
             } catch (err) {
                 console.error("Error fetching subjects:", err);
             }
+            
+            setDocSubjects(Array.from(new Set(subjects)));
         };
         if (postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') {
             fetchSubjects();
         }
-    }, [postulanteData.cedula, postulanteData.tipoUsuario]);
+    }, [postulanteData.cedula, postulanteData.tipoUsuario, postulanteData.catedra]);
 
     useEffect(() => {
         const fetchDocumentStatuses = async () => {

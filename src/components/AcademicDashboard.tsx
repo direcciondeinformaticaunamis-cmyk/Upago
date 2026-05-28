@@ -50,12 +50,113 @@ interface AcademicDashboardProps {
 }
 
 const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout }) => {
-    const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion' | 'reportes' | 'registro_pago'>('admision');
+    const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion' | 'reportes' | 'registro_pago' | 'historial_pagos'>('admision');
     const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewTitle, setPreviewTitle] = useState<string>('');
     const [expedientes, setExpedientes] = useState<Expediente[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Estados para Historial de Pagos
+    const [payments, setPayments] = useState<any[]>([]);
+    const [isPaymentsLoading, setIsPaymentsLoading] = useState(false);
+    const [editingPayment, setEditingPayment] = useState<any | null>(null);
+    const [paymentSearch, setPaymentSearch] = useState('');
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState('todos');
+    const [paymentEditForm, setPaymentEditForm] = useState({
+        concepto: '',
+        monto: 0,
+        num_comprobante: '',
+        asignatura: '',
+        estado: 'pendiente',
+        observaciones: ''
+    });
+
+    const loadPayments = async () => {
+        setIsPaymentsLoading(true);
+        try {
+            const data = await fetchApi('pagos=true');
+            if (Array.isArray(data)) {
+                setPayments(data);
+            }
+        } catch (err: any) {
+            console.error("Error loading payments:", err);
+            notificationService.send('Error', 'No se pudo cargar el historial de pagos.', 'error');
+        } finally {
+            setIsPaymentsLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        if (activeSection === 'historial_pagos') {
+            loadPayments();
+        }
+    }, [activeSection]);
+
+    const handleOpenEditPayment = (payment: any) => {
+        setEditingPayment(payment);
+        setPaymentEditForm({
+            concepto: payment.concepto || '',
+            monto: Number(payment.monto) || 0,
+            num_comprobante: payment.num_comprobante || '',
+            asignatura: payment.asignatura || '',
+            estado: payment.estado || 'pendiente',
+            observaciones: payment.observaciones || ''
+        });
+    };
+
+    const handleSavePaymentEdit = async () => {
+        if (!editingPayment) return;
+        notificationService.send('Guardando...', 'Actualizando registro de pago...', 'info');
+        try {
+            const response = await fetchApi('', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_pago',
+                    id: editingPayment.id,
+                    ...paymentEditForm
+                })
+            });
+            if (response.status === 'success') {
+                notificationService.send('Éxito', 'Pago actualizado con éxito.', 'success');
+                setEditingPayment(null);
+                loadPayments();
+            } else {
+                throw new Error(response.message || 'Error al actualizar el pago.');
+            }
+        } catch (err: any) {
+            console.error("Error saving payment edit:", err);
+            notificationService.send('Error', err.message || 'No se pudo guardar la edición.', 'error');
+        }
+    };
+
+    const handleDeletePayment = async (pagoId: number) => {
+        if (!window.confirm("¿Está seguro de que desea eliminar permanentemente este pago?\nEsta acción es irreversible y deshará cualquier conciliación asociada.")) {
+            return;
+        }
+        notificationService.send('Eliminando...', 'Eliminando registro de pago...', 'info');
+        try {
+            const response = await fetchApi('', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete_pago',
+                    id: pagoId
+                })
+            });
+            if (response.status === 'success') {
+                notificationService.send('Éxito', 'Pago eliminado con éxito.', 'success');
+                loadPayments();
+            } else {
+                throw new Error(response.message || 'Error al eliminar el pago.');
+            }
+        } catch (err: any) {
+            console.error("Error deleting payment:", err);
+            notificationService.send('Error', err.message || 'No se pudo eliminar el pago.', 'error');
+        }
+    };
+
     const [ventanillaPayment, setVentanillaPayment] = useState<{
         cedula: string;
         nombre: string;
@@ -438,6 +539,10 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                     <button onClick={() => setActiveSection('registro_pago')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'registro_pago' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                         <Payments style={{fontSize: 20}} />
                         <span className="text-sm font-medium">Registrar Pago Manual</span>
+                    </button>
+                    <button onClick={() => setActiveSection('historial_pagos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'historial_pagos' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                        <History style={{fontSize: 20}} />
+                        <span className="text-sm font-medium">Historial de Pagos</span>
                     </button>
                     <button onClick={() => setActiveSection('reportes')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 hover:translate-x-1 ${activeSection === 'reportes' ? 'bg-slate-800 shadow-sm text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                         <Assessment style={{fontSize: 20}} />
@@ -843,6 +948,171 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                             />
                         </div>
                     )}
+                    {activeSection === 'historial_pagos' && (
+                        <div className="space-y-6">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Historial de Carga de Pagos</h2>
+                                        <p className="text-slate-500 text-sm">Visualice y gestione los pagos registrados manualmente o recibidos por ventanilla académica.</p>
+                                    </div>
+                                    <button 
+                                        onClick={loadPayments}
+                                        className="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-700 transition-all flex items-center gap-1.5 shadow-sm"
+                                    >
+                                        Actualizar Lista
+                                    </button>
+                                </div>
+
+                                {/* Tarjetas de Resumen */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl shadow-sm">
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Transacciones</p>
+                                        <p className="text-3xl font-black text-slate-800 mt-2">{payments.length}</p>
+                                    </div>
+                                    <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl shadow-sm">
+                                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Pagos Verificados</p>
+                                        <p className="text-3xl font-black text-emerald-700 mt-2">{payments.filter(p => p.estado === 'verificado').length}</p>
+                                    </div>
+                                    <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl shadow-sm">
+                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Pendientes / Rechazados</p>
+                                        <p className="text-3xl font-black text-amber-700 mt-2">{payments.filter(p => p.estado !== 'verificado').length}</p>
+                                    </div>
+                                </div>
+
+                                {/* Barra de búsqueda y filtrado */}
+                                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                                    <div className="relative flex-1">
+                                        <input
+                                            type="text"
+                                            value={paymentSearch}
+                                            onChange={(e) => setPaymentSearch(e.target.value)}
+                                            placeholder="Buscar por postulante, CI o comprobante..."
+                                            className="w-full pl-11 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#002f6c] transition-all"
+                                        />
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    </div>
+                                    <select
+                                        value={paymentStatusFilter}
+                                        onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                                        className="px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-[#002f6c] transition-all cursor-pointer min-w-[180px]"
+                                    >
+                                        <option value="todos">Todos los Estados</option>
+                                        <option value="pendiente">Pendientes</option>
+                                        <option value="verificado">Verificados</option>
+                                        <option value="rechazado">Rechazados</option>
+                                    </select>
+                                </div>
+
+                                {/* Listado Tabla */}
+                                {isPaymentsLoading ? (
+                                    <div className="text-center py-12">
+                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-[#002f6c] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+                                        <p className="mt-4 text-sm font-bold text-slate-500">Cargando transacciones de pago...</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
+                                        <table className="w-full border-collapse text-left text-sm">
+                                            <thead className="bg-slate-50 text-slate-650 border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Postulante</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Concepto</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Monto</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Comprobante</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Fecha</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Estado</th>
+                                                    <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-right">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {payments.filter((p: any) => {
+                                                    const matchesSearch = 
+                                                        (p.nombre || '').toLowerCase().includes(paymentSearch.toLowerCase()) ||
+                                                        (p.apellido || '').toLowerCase().includes(paymentSearch.toLowerCase()) ||
+                                                        (p.postulante_cedula || '').toLowerCase().includes(paymentSearch.toLowerCase()) ||
+                                                        (p.num_comprobante || '').toLowerCase().includes(paymentSearch.toLowerCase());
+                                                    const matchesStatus = 
+                                                        paymentStatusFilter === 'todos' || 
+                                                        p.estado === paymentStatusFilter;
+                                                    return matchesSearch && matchesStatus;
+                                                }).map((payment: any) => (
+                                                    <tr key={payment.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <p className="font-bold text-slate-850">{payment.nombre} {payment.apellido}</p>
+                                                            <p className="text-xs text-slate-450 font-bold">CI: {payment.postulante_cedula}</p>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <p className="font-bold text-slate-700">{payment.concepto}</p>
+                                                            {payment.asignatura && (
+                                                                <p className="text-xs text-slate-450 italic mt-0.5 font-semibold">Cátedra(s): {payment.asignatura}</p>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="font-black text-slate-900">Gs. {Number(payment.monto).toLocaleString('es-PY')}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <p className="font-bold text-slate-700">{payment.num_comprobante || 'S/N'}</p>
+                                                            {payment.comprobante_url ? (
+                                                                <a 
+                                                                    href={payment.comprobante_url.startsWith('http') ? payment.comprobante_url : `/${payment.comprobante_url}`} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1 mt-0.5"
+                                                                >
+                                                                    Ver Archivo
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-[10px] text-slate-400 font-semibold italic">Sin comprobante digital</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-500 font-semibold">
+                                                            {payment.fecha_pago || payment.fecha_registro?.split(' ')[0] || '-'}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                                                                payment.estado === 'verificado' 
+                                                                    ? 'bg-emerald-50 text-emerald-700' 
+                                                                    : payment.estado === 'rechazado' 
+                                                                        ? 'bg-rose-50 text-rose-700' 
+                                                                        : 'bg-amber-50 text-amber-700'
+                                                            }`}>
+                                                                {payment.estado}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <button
+                                                                    onClick={() => handleOpenEditPayment(payment)}
+                                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                    title="Editar Pago"
+                                                                >
+                                                                    <Edit style={{fontSize: 18}} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeletePayment(payment.id)}
+                                                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                                    title="Eliminar Pago"
+                                                                >
+                                                                    <Delete style={{fontSize: 18}} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {payments.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={7} className="px-6 py-10 text-center text-slate-400 font-bold italic">
+                                                            No se encontraron cargas de pago registradas.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
 
@@ -1118,6 +1388,108 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                 url={previewUrl || ''} 
                 title={previewTitle} 
             />
+
+            {/* Modal de Edición de Pago */}
+            {editingPayment && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-800">Editar Registro de Pago</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Modifique los datos cargados para el postulante CI: {editingPayment.postulante_cedula}</p>
+                            </div>
+                            <button 
+                                onClick={() => setEditingPayment(null)}
+                                className="p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 rounded-full transition-colors"
+                            >
+                                <X style={{fontSize: 20}} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto de Pago</label>
+                                <input
+                                    type="text"
+                                    value={paymentEditForm.concepto}
+                                    onChange={(e) => setPaymentEditForm({...paymentEditForm, concepto: e.target.value})}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all"
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto (Gs.)</label>
+                                    <input
+                                        type="number"
+                                        value={paymentEditForm.monto}
+                                        onChange={(e) => setPaymentEditForm({...paymentEditForm, monto: Number(e.target.value)})}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">N° Comprobante</label>
+                                    <input
+                                        type="text"
+                                        value={paymentEditForm.num_comprobante}
+                                        onChange={(e) => setPaymentEditForm({...paymentEditForm, num_comprobante: e.target.value})}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cátedra(s) / Asignatura(s) (Separadas por comas)</label>
+                                <input
+                                    type="text"
+                                    value={paymentEditForm.asignatura}
+                                    onChange={(e) => setPaymentEditForm({...paymentEditForm, asignatura: e.target.value})}
+                                    placeholder="Ej: Anatomía Humana, Fisiología"
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all"
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado del Pago</label>
+                                <select
+                                    value={paymentEditForm.estado}
+                                    onChange={(e) => setPaymentEditForm({...paymentEditForm, estado: e.target.value})}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-[#002f6c] transition-all cursor-pointer"
+                                >
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="verificado">Verificado</option>
+                                    <option value="rechazado">Rechazado</option>
+                                </select>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Observaciones</label>
+                                <textarea
+                                    value={paymentEditForm.observaciones}
+                                    onChange={(e) => setPaymentEditForm({...paymentEditForm, observaciones: e.target.value})}
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all resize-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                            <button
+                                onClick={() => setEditingPayment(null)}
+                                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSavePaymentEdit}
+                                className="px-5 py-2.5 bg-[#002f6c] hover:bg-[#001738] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors shadow-md"
+                            >
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal de Pago en Ventanilla */}
             {ventanillaPayment && (

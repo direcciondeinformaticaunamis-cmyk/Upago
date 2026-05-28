@@ -17,7 +17,10 @@ import {
     Activity,
     Heart,
     HeartPulse,
-    Eye
+    Eye,
+    Plus,
+    X,
+    BookOpen
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AppInput from './ui/AppInput';
@@ -121,24 +124,28 @@ interface PersonalDataFormProps {
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false, onSkipToPayment }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
-    const [isOtroSelected, setIsOtroSelected] = useState(false);
+    const [customCatedra, setCustomCatedra] = useState('');
 
-    React.useEffect(() => {
-        if (formData.catedra && !COMMON_CATEDRAS.includes(formData.catedra)) {
-            setIsOtroSelected(true);
-        } else if (!formData.catedra) {
-            setIsOtroSelected(false);
-        }
-    }, [formData.catedra]);
+    const selectedCatedras = formData.catedra
+        ? formData.catedra.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '')
+        : [];
 
-    const handleCatedraSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const val = e.target.value;
-        if (val === 'Otro') {
-            setIsOtroSelected(true);
-            onChange('catedra', '');
+    const handleToggleCatedra = (catedraName: string) => {
+        let newList;
+        if (selectedCatedras.includes(catedraName)) {
+            newList = selectedCatedras.filter((x: string) => x !== catedraName);
         } else {
-            setIsOtroSelected(false);
-            onChange('catedra', val);
+            newList = [...selectedCatedras, catedraName];
+        }
+        onChange('catedra', newList.join(', '));
+    };
+
+    const handleAddCustomCatedra = () => {
+        const clean = customCatedra.trim();
+        if (clean && !selectedCatedras.includes(clean)) {
+            const newList = [...selectedCatedras, clean];
+            onChange('catedra', newList.join(', '));
+            setCustomCatedra('');
         }
     };
 
@@ -415,7 +422,6 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     onClick={() => {
                                         onChange('tipoUsuario', 'postulante');
                                         onChange('catedra', '');
-                                        setIsOtroSelected(false);
                                     }}
                                     className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
                                         formData.tipoUsuario === 'postulante' || !formData.tipoUsuario
@@ -519,42 +525,84 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                         </div>
                         
                         {(formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') && (
-                            <>
-                                <div className="flex flex-col gap-1.5 w-full relative">
+                            <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
+                                <div className="flex flex-col gap-1.5 w-full">
                                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
-                                        Cátedra por la cual concursa
+                                        Cátedras por las cuales concursa (Seleccione una o más)
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            value={isOtroSelected ? 'Otro' : (formData.catedra || '')}
-                                            onChange={handleCatedraSelectChange}
-                                            className={`w-full px-5 py-4 bg-white border ${errors.includes('catedra') ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-[var(--primary)]'} rounded-xl text-sm font-bold text-slate-800 outline-none transition-all appearance-none pr-12 focus:ring-4 focus:ring-[var(--primary)]/5`}
-                                        >
-                                            <option value="">Seleccionar cátedra...</option>
-                                            {COMMON_CATEDRAS.map(c => (
-                                                <option key={c} value={c}>{c}</option>
+                                    
+                                    {selectedCatedras.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                            {selectedCatedras.map((c) => (
+                                                <span key={c} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#002f6c] text-white text-xs font-bold rounded-lg shadow-sm transition-all">
+                                                    {c}
+                                                    <button type="button" onClick={() => handleToggleCatedra(c)} className="hover:bg-white/20 p-0.5 rounded-full transition-colors">
+                                                        <X size={12} />
+                                                    </button>
+                                                </span>
                                             ))}
-                                            <option value="Otro">Otro (Especificar)</option>
-                                        </select>
-                                        <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 font-medium italic p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                            Ninguna cátedra seleccionada aún. Marque las opciones en la lista o agregue una personalizada abajo.
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 w-full">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
+                                        Agregar Cátedra Personalizada (Otro)
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={customCatedra}
+                                            onChange={(e) => setCustomCatedra(e.target.value)}
+                                            placeholder="Escriba el nombre de otra cátedra..."
+                                            className="flex-1 px-5 py-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-[#002f6c] focus:ring-4 focus:ring-[#002f6c]/5 transition-all"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddCustomCatedra();
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddCustomCatedra}
+                                            className="px-6 bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-700 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                        >
+                                            <Plus size={16} />
+                                            Agregar
+                                        </button>
                                     </div>
                                 </div>
 
-                                {isOtroSelected && (
-                                    <div className="flex flex-col gap-1.5 w-full relative">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
-                                            Escriba la Cátedra Específica
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.catedra || ''}
-                                            onChange={(e) => onChange('catedra', e.target.value)}
-                                            placeholder="Nombre de la cátedra específica"
-                                            className={`w-full px-5 py-4 bg-white border ${errors.includes('catedra') ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-[var(--primary)]'} rounded-xl text-sm font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-[var(--primary)]/5`}
-                                        />
+                                <div className="flex flex-col gap-1.5 w-full">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">
+                                        Listado de Cátedras Disponibles
+                                    </label>
+                                    <div className="max-h-[220px] overflow-y-auto border border-slate-200 rounded-2xl p-4 bg-white grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {COMMON_CATEDRAS.map(c => {
+                                            const isSelected = selectedCatedras.includes(c);
+                                            return (
+                                                <label
+                                                    key={c}
+                                                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${isSelected ? 'border-[#002f6c] bg-[#002f6c]/5 text-[#002f6c] shadow-sm' : 'border-slate-100 hover:border-slate-200 bg-white text-slate-650'}`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleToggleCatedra(c)}
+                                                        className="w-4 h-4 rounded text-[#002f6c] border-slate-350 focus:ring-[#002f6c]"
+                                                    />
+                                                    <span className="text-xs font-bold">{c}</span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
-                                )}
-                            </>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </motion.section>
