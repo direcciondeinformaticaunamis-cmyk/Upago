@@ -1008,7 +1008,7 @@ const BankReconciliation: React.FC = () => {
                                             <td className="px-3 py-4">
                                                 <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md text-xs font-medium text-slate-600">
                                                     <FileText size={14} className="text-slate-400" />
-                                                    {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.pago_id}` : 'SIN REF')}
+                                                    {row.is_pago ? `PAGO-${row.id}` : (row.match ? `PAGO-${row.match.transaccion_id}` : 'SIN REF')}
                                                 </div>
                                             </td>
                                             <td className="px-3 py-4 text-right font-bold text-[#001738] text-[14px] whitespace-nowrap">
@@ -1051,7 +1051,7 @@ const BankReconciliation: React.FC = () => {
                                                     <button 
                                                         onClick={() => {
                                                             if (row.match) {
-                                                                handleSingleReconcile(row.id, row.match.pago_id);
+                                                                handleSingleReconcile(row.id, row.match.transaccion_id);
                                                             } else if (row.estado === 'pendiente') {
                                                                 if (window.confirm('¿Desea aprobar y verificar este pago manualmente sin extracto bancario?')) {
                                                                     FinanceService.updatePagoEstado(row.id, 'verificado', 'Aprobado manualmente').then(() => loadRecords());

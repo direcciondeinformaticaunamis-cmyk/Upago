@@ -2124,7 +2124,7 @@ if ($method === 'GET') {
                     $match_data = [
                         "postulante" => "Match Bancario IA",
                         "concepto" => $best_match['descripcion'],
-                        "pago_id" => (int)$best_match['id'], // usamos esto para transaccion_id en la UI
+                        "transaccion_id" => (int)$best_match['id'], // ID de la transacción del extracto bancario
                         "comprobante_url" => $p['comprobante_url'],
                         "puntaje" => $best_score,
                         "monto" => (float)$best_match['monto'],
