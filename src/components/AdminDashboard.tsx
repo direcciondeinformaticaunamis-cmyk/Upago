@@ -200,7 +200,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onViewDetail,
                                                             {postulante.tipo_usuario === 'concursante_docente' ? (
                                                                 <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[8px] font-black uppercase rounded border border-purple-100">Docente Encargado</span>
                                                             ) : postulante.tipo_usuario === 'auxiliar_docente' ? (
-                                                                <span className="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-600 text-[8px] font-black uppercase rounded border border-fuchsia-100">Docente Auxiliar</span>
+                                                                <span className="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-600 text-[8px] font-black uppercase rounded border border-fuchsia-100">Auxiliar de Enseñanza</span>
                                                             ) : (
                                                                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded border border-emerald-100">Postulante</span>
                                                             )}

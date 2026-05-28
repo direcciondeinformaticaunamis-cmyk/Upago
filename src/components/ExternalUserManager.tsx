@@ -214,7 +214,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
                                                 <span>CI: {user.cedula}</span>
                                                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                                                 <span className={(user.tipo === 'concursante_docente' || user.tipo === 'auxiliar_docente') ? 'text-purple-600' : 'text-[var(--primary)]'}>
-                                                     {user.tipo === 'concursante_docente' ? 'Docente Encargado' : (user.tipo === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante')}
+                                                     {user.tipo === 'concursante_docente' ? 'Docente Encargado' : (user.tipo === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante')}
                                                  </span>
                                             </div>
                                         </div>

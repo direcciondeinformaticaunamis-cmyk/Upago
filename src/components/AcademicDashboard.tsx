@@ -658,7 +658,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                 ? 'bg-purple-100 text-purple-700' 
                                                                 : (exp.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
                                                         }`}>
-                                                            {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante a Examen de Admisión')}
+                                                            {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
                                                         </span>
                                                         {(exp.totalDocs ?? 0) > 0 ? (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
@@ -893,7 +893,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                          )}
                                                      </td>
                                                      <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                                                          {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Docente Auxiliar' : 'Postulante a Examen de Admisión')}
+                                                          {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
                                                      </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`text-[10px] font-black uppercase ${exp.estado === 'aprobado' ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -1597,7 +1597,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     >
                                         <option value="postulante">Postulante a Examen de Admisión</option>
                                         <option value="concursante_docente">Docente Encargado</option>
-                                        <option value="auxiliar_docente">Docente Auxiliar</option>
+                                        <option value="auxiliar_docente">Auxiliar de Enseñanza</option>
                                     </select>
                                 </div>
                                 {(editForm.tipo_usuario === 'concursante_docente' || editForm.tipo_usuario === 'auxiliar_docente') && (
