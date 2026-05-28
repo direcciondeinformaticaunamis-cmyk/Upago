@@ -319,110 +319,283 @@ export function parseAdmissionForm(text: string): Partial<ParsedFormData> {
 
 /**
  * Parses raw OCR text from a Paraguayan Cédula de Identidad (ID Card)
+ * supporting both front-side text parsing and back-side MRZ (Machine Readable Zone) parsing.
  */
 export function parseCedula(text: string): Partial<ParsedFormData> {
     const data: Partial<ParsedFormData> = {};
-    // Replace newlines with spaces and clean up extra spacing
+    
+    // Clean text for front-side fallback parsing
     const cleanTextVal = text.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
+    console.log("Parsing Cédula OCR text (Front fallback context):", cleanTextVal);
 
-    console.log("Parsing Cédula OCR text:", cleanTextVal);
+    // --- MRZ (Machine Readable Zone) Parsing ---
+    const rawLines = text.split(/\r?\n/);
+    let mrzLine1 = '';
+    let mrzLine2 = '';
+    let mrzLine3 = '';
+    
+    let line1Idx = -1;
+    let line2Idx = -1;
+    
+    const cleanedLines = rawLines.map(line => {
+        let cleaned = line.toUpperCase().trim();
+        // Replace typical OCR errors for '<'
+        cleaned = cleaned.replace(/[\(\)\[\]\{\}\\\/\«\»\‹\›\*\+]/g, '<');
+        // Remove spaces (MRZ has no spaces)
+        cleaned = cleaned.replace(/\s+/g, '');
+        // Standardize multiple '<'
+        cleaned = cleaned.replace(/<+<+/g, '<<');
+        return cleaned;
+    });
 
-    // 1. Cédula Number
-    // Looks for patterns like "N° 1.234.567", "Nº 1.234.567", "NUMERO 1234567", etc.
+    // 1. Search for Line 1 (starts with IDPRY / INPRY / IPPRY / I.PRY or close OCR approximations)
+    for (let i = 0; i < cleanedLines.length; i++) {
+        const line = cleanedLines[i];
+        const match = line.match(/[I1|][A-Z0-9]PR[YV]/);
+        if (match && match.index !== undefined) {
+            const startIdx = match.index;
+            const candidate = line.slice(startIdx);
+            if (candidate.length >= 22) { // Allow slightly shorter if OCR truncated trailing <<
+                mrzLine1 = candidate.slice(0, 30);
+                line1Idx = i;
+                break;
+            }
+        }
+    }
+
+    // 2. Search for Line 2 (contains DOB, Expiry, Nationality, etc.)
+    // Standard format: YYMMDD[CheckDigit][M/F]YYMMDD[CheckDigit]PRY...
+    for (let i = 0; i < cleanedLines.length; i++) {
+        if (i === line1Idx) continue;
+        const line = cleanedLines[i];
+        // Match DOB (6 digits) + check (1 digit/char) + M/F/Check (1 char) + Expiry (6 digits) + check (1 digit/char) + PRY (3 chars)
+        const match = line.match(/\d{6}[A-Z0-9][MF<]\d{6}[A-Z0-9][A-Z0-9]{3}/);
+        if (match && match.index !== undefined) {
+            const startIdx = match.index;
+            const candidate = line.slice(startIdx);
+            if (candidate.length >= 22) {
+                mrzLine2 = candidate.slice(0, 30);
+                line2Idx = i;
+                break;
+            }
+        }
+    }
+
+    // 3. Search for Line 3 (Name line containing '<<')
+    // Check lines close to Line 2 first
+    if (line2Idx !== -1) {
+        const nextIndices = [line2Idx + 1, line2Idx + 2, line2Idx - 1].filter(
+            idx => idx >= 0 && idx < cleanedLines.length && idx !== line1Idx && idx !== line2Idx
+        );
+        for (const idx of nextIndices) {
+            const line = cleanedLines[idx];
+            if (line.includes('<<') && line.length >= 15) {
+                mrzLine3 = line.slice(0, 30);
+                break;
+            }
+        }
+    }
+
+    // Fallback search for Line 3 anywhere in the text
+    if (!mrzLine3) {
+        for (let i = 0; i < cleanedLines.length; i++) {
+            if (i === line1Idx || i === line2Idx) continue;
+            const line = cleanedLines[i];
+            if (line.includes('<<') && line.length >= 15) {
+                mrzLine3 = line.slice(0, 30);
+                break;
+            }
+        }
+    }
+
+    // If we have MRZ lines, parse them!
+    const mrzData: Partial<ParsedFormData> = {};
+    
+    if (mrzLine1) {
+        console.log("Found MRZ Line 1:", mrzLine1);
+        // Positions 5-13 (0-based) represents the Document Number field (9 chars)
+        const docNumField = mrzLine1.slice(5, 14).replace(/</g, '');
+        // Positions 15-29 represent the Optional Data field (15 chars)
+        const optionalField = mrzLine1.slice(15, 30).replace(/</g, '');
+        
+        // Pick the field containing the Cédula (typically 6-8 digits)
+        const optionalDigits = optionalField.replace(/[^\d]/g, '');
+        const docNumDigits = docNumField.replace(/[^\d]/g, '');
+        
+        if (optionalDigits.length >= 6 && optionalDigits.length <= 8) {
+            mrzData.cedula = optionalDigits;
+        } else if (docNumDigits.length >= 6 && docNumDigits.length <= 8) {
+            mrzData.cedula = docNumDigits;
+        }
+    }
+
+    if (mrzLine2) {
+        console.log("Found MRZ Line 2:", mrzLine2);
+        // DOB: first 6 chars (YYMMDD)
+        const dobStr = mrzLine2.slice(0, 6);
+        if (/^\d{6}$/.test(dobStr)) {
+            const yy = dobStr.slice(0, 2);
+            const mm = dobStr.slice(2, 4);
+            const dd = dobStr.slice(4, 6);
+            
+            const yyInt = parseInt(yy, 10);
+            const currentYearLastTwo = new Date().getFullYear() % 100;
+            const fullYear = yyInt > currentYearLastTwo ? 1900 + yyInt : 2000 + yyInt;
+            
+            // Format as YYYY-MM-DD
+            mrzData.fechaNacimiento = `${fullYear}-${mm}-${dd}`;
+        }
+        
+        // Sex: at position 7
+        const sexChar = mrzLine2.charAt(7);
+        if (sexChar === 'M') {
+            mrzData.genero = 'M';
+        } else if (sexChar === 'F') {
+            mrzData.genero = 'F';
+        }
+        
+        // Nationality: positions 15-17
+        const natStr = mrzLine2.slice(15, 18);
+        if (natStr === 'PRY') {
+            mrzData.nacionalidad = 'Paraguaya';
+            mrzData.paisOrigen = 'Paraguay';
+        }
+    }
+
+    if (mrzLine3) {
+        console.log("Found MRZ Line 3:", mrzLine3);
+        const parts = mrzLine3.split('<<');
+        const surnamesPart = parts[0] || '';
+        const givenNamesPart = parts[1] || '';
+        
+        const surnames = surnamesPart.replace(/</g, ' ').replace(/\s+/g, ' ').trim();
+        const givenNames = givenNamesPart.replace(/</g, ' ').replace(/\s+/g, ' ').trim();
+        
+        const toTitleCase = (str: string): string => {
+            return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        };
+        
+        if (surnames) {
+            mrzData.apellido = toTitleCase(surnames);
+        }
+        if (givenNames) {
+            mrzData.nombre = toTitleCase(givenNames);
+        }
+    }
+
+    console.log("Extracted MRZ Data:", mrzData);
+
+    // --- Front Side / Standard Regex Parser Fallback ---
+    // 1. Cédula Number Fallback
     const cedulaRegexes = [
         /(?:N[°ºo]|NUMERO|DOCUMENTO|REGISTRO)[:\s]*(\d[\d\.\s-]{5,9}\d)/i,
         /(\b\d{1,3}(?:\.\d{3}){2}\b)/,
         /(\b\d{6,8}\b)/
     ];
 
+    let frontCedula = '';
     for (const regex of cedulaRegexes) {
         const match = cleanTextVal.match(regex);
         if (match) {
             const val = match[1].replace(/[^\d]/g, '');
             if (val.length >= 6 && val.length <= 8) {
-                data.cedula = val;
+                frontCedula = val;
                 break;
             }
         }
     }
 
-    // 2. Apellidos
-    // Looks for APELLIDOS / SURNAME: ROJAS BENITEZ or similar
+    // 2. Apellidos Fallback
+    let frontApellido = '';
     const surnameMatch = cleanTextVal.match(/APELLIDO[S]?\s*(?:\/\s*SURNAME[S]?)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]+)*)/i);
     if (surnameMatch) {
-        data.apellido = surnameMatch[1].trim();
+        frontApellido = surnameMatch[1].trim();
     }
 
-    // 3. Nombres
-    // Looks for NOMBRES / GIVEN NAMES: MARIO ALBERTO or similar
+    // 3. Nombres Fallback
+    let frontNombre = '';
     const nameMatch = cleanTextVal.match(/NOMBRE[S]?\s*(?:\/\s*GIVEN\s*NAME[S]?)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]+)*)/i);
     if (nameMatch) {
-        data.nombre = nameMatch[1].trim();
+        frontNombre = nameMatch[1].trim();
     }
 
-    // 4. Nacionalidad
+    // 4. Nacionalidad Fallback
+    let frontNacionalidad = '';
+    let frontPaisOrigen = '';
     const nationalityMatch = cleanTextVal.match(/NACIONALIDAD\s*(?:\/\s*NATIONALITY)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+)/i);
     if (nationalityMatch) {
         const nac = nationalityMatch[1].trim().toLowerCase();
         if (nac.includes('paraguay')) {
-            data.nacionalidad = 'Paraguaya';
-            data.paisOrigen = 'Paraguay';
+            frontNacionalidad = 'Paraguaya';
+            frontPaisOrigen = 'Paraguay';
         } else {
-            data.nacionalidad = nac.charAt(0).toUpperCase() + nac.slice(1);
+            frontNacionalidad = nac.charAt(0).toUpperCase() + nac.slice(1);
         }
     }
 
-    // 5. Sexo / Género
+    // 5. Sexo Fallback
+    let frontGenero = '';
     const sexoMatch = cleanTextVal.match(/SEXO\s*(?:\/\s*SEX)?\s*[:\-]?\s*([M|F|Masculino|Femenino])/i);
     if (sexoMatch) {
         const val = sexoMatch[1].trim().toUpperCase();
-        if (val.startsWith('M')) data.genero = 'M';
-        else if (val.startsWith('F')) data.genero = 'F';
+        if (val.startsWith('M')) frontGenero = 'M';
+        else if (val.startsWith('F')) frontGenero = 'F';
     } else {
-        // Fallback checks for standalone letters or words near SEXO/SEX
         const sexoIndex = cleanTextVal.toLowerCase().indexOf('sexo');
         if (sexoIndex !== -1) {
             const context = cleanTextVal.slice(sexoIndex, sexoIndex + 40);
             if (/\b(MASCULINO|M)\b/i.test(context)) {
-                data.genero = 'M';
+                frontGenero = 'M';
             } else if (/\b(FEMENINO|F)\b/i.test(context)) {
-                data.genero = 'F';
+                frontGenero = 'F';
             }
         }
     }
 
-    // 6. Estado Civil
+    // 6. Estado Civil Fallback
+    let frontEstadoCivil = '';
     const civilMatch = cleanTextVal.match(/ESTADO\s*CIVIL\s*(?:\/\s*MARITAL\s*STATUS)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ\/]+)/i);
     if (civilMatch) {
         const val = civilMatch[1].trim().toUpperCase();
-        if (val.startsWith('SOLT')) data.estadoCivil = 'Soltero';
-        else if (val.startsWith('CAS')) data.estadoCivil = 'Casado';
-        else if (val.startsWith('DIV')) data.estadoCivil = 'Divorciado';
-        else if (val.startsWith('VIU')) data.estadoCivil = 'Otro';
+        if (val.startsWith('SOLT')) frontEstadoCivil = 'Soltero';
+        else if (val.startsWith('CAS')) frontEstadoCivil = 'Casado';
+        else if (val.startsWith('DIV')) frontEstadoCivil = 'Divorciado';
+        else if (val.startsWith('VIU')) frontEstadoCivil = 'Otro';
     }
 
-    // 7. Fecha de Nacimiento
+    // 7. Fecha de Nacimiento Fallback
+    let frontFechaNacimiento = '';
     const dobMatch = cleanTextVal.match(/FECHA\s*DE\s*NACIMIENTO\s*(?:\/\s*DATE\s*OF\s*BIRTH)?\s*[:\-]?\s*([\d\/\.\s-a-zA-Záéíóú]+)/i);
     if (dobMatch) {
         const rawDate = dobMatch[1].trim();
         const dmy = rawDate.match(/(\d{1,2})[\/\s\.-](\d{1,2}|[a-zA-Záéíóú]+)[\/\s\.-](\d{2,4})/i);
         if (dmy) {
-            data.fechaNacimiento = normalizeDate(dmy[1], dmy[2], dmy[3]);
+            frontFechaNacimiento = normalizeDate(dmy[1], dmy[2], dmy[3]);
         }
     }
 
-    // Fallback date search
-    if (!data.fechaNacimiento) {
+    if (!frontFechaNacimiento) {
         const allDates = cleanTextVal.matchAll(/(\d{1,2})[\/\s\.-](\d{1,2}|[a-zA-Z]{3,10})[\/\s\.-](\d{4})/gi);
         for (const m of allDates) {
             const normalized = normalizeDate(m[1], m[2], m[3]);
             if (normalized) {
-                data.fechaNacimiento = normalized;
+                frontFechaNacimiento = normalized;
                 break;
             }
         }
     }
 
+    // --- Merge Results (MRZ takes priority, front side serves as fallback) ---
+    data.cedula = mrzData.cedula || frontCedula;
+    data.apellido = mrzData.apellido || frontApellido;
+    data.nombre = mrzData.nombre || frontNombre;
+    data.fechaNacimiento = mrzData.fechaNacimiento || frontFechaNacimiento;
+    data.genero = mrzData.genero || frontGenero;
+    data.nacionalidad = mrzData.nacionalidad || frontNacionalidad;
+    data.paisOrigen = mrzData.paisOrigen || frontPaisOrigen;
+    data.estadoCivil = mrzData.estadoCivil || frontEstadoCivil;
+
+    console.log("Parsed final Cédula result:", data);
     return data;
 }
 
