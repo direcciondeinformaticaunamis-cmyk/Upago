@@ -30,6 +30,13 @@ import AppDatePicker from './ui/AppDatePicker';
 import { CATALOGO_UNAMIS, getCarrerasPorSede } from '../constants/catalogoUnamis';
 
 const COMMON_CATEDRAS = [
+    "Anatomía Descriptiva y Topográfica I",
+    "Biología y Genética",
+    "Histología I",
+    "Embriología I",
+    "Biofísica",
+    "Antropología",
+    "Comunicación Castellano-Guaraní",
     "Anatomía Humana",
     "Fisiología",
     "Histología y Embriología",
