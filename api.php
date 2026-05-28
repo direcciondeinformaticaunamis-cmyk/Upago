@@ -838,6 +838,9 @@ if ($method === 'POST') {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'delete_cierre') {
         require_admin('finance'); // Seguridad
         try {
