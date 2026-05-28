@@ -802,6 +802,66 @@ if (isset($_FILES['file']) && isset($_POST['type'])) {
     exit;
 }
 
+// --- ENVIAR BOLETA ---
+if (isset($_FILES['invoice_file']) && isset($_POST['to_email']) && isset($_POST['action']) && $_POST['action'] === 'send_invoice') {
+    $current_user = get_authorized_user();
+    if (!$current_user || !in_array($current_user['rol'] ?? '', ['admin', 'superadmin', 'finance'])) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "No tiene permisos para realizar esta acción."]);
+        exit;
+    }
+
+    $to_email = trim($_POST['to_email']);
+    $subject = trim($_POST['subject'] ?? 'Boleta de Pago - UNAMIS');
+    $message = trim($_POST['message'] ?? 'Adjunto encontrará su boleta de pago correspondiente del Portal de Admisión y Concursos.');
+
+    if (empty($to_email)) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "El correo electrónico del destinatario es obligatorio."]);
+        exit;
+    }
+
+    if ($_FILES['invoice_file']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Error al subir el archivo de la boleta."]);
+        exit;
+    }
+
+    $file_ext = strtolower(pathinfo($_FILES['invoice_file']['name'], PATHINFO_EXTENSION));
+    if (!in_array($file_ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Formato de archivo no permitido. Solo PDF o imágenes (JPG, PNG)."]);
+        exit;
+    }
+
+    // Guardar temporalmente en un directorio seguro
+    $temp_dir = $upload_base . 'temporal/';
+    if (!file_exists($temp_dir)) @mkdir($temp_dir, 0755, true);
+
+    $temp_name = "boleta_" . time() . "_" . preg_replace('/[^a-zA-Z0-9]/', '', $to_email) . "." . $file_ext;
+    $target_file = $temp_dir . $temp_name;
+
+    if (move_uploaded_file($_FILES['invoice_file']['tmp_name'], $target_file)) {
+        // Enviar por correo
+        $mail_sent = send_email_with_attachment($to_email, $subject, $message, $target_file, $_FILES['invoice_file']['name']);
+        
+        // Eliminar archivo temporal después de enviar
+        @unlink($target_file);
+
+        if ($mail_sent) {
+            echo json_encode(["status" => "success", "message" => "Boleta enviada exitosamente a $to_email"]);
+            write_system_log("SEND_INVOICE", $current_user['email'] ?? 'Admin', "Envió boleta a $to_email");
+        } else {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Error al enviar el correo electrónico. Verifique la configuración del servidor de correo."]);
+        }
+    } else {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "Error al guardar el archivo temporal en el servidor."]);
+    }
+    exit;
+}
+
 // --- ACCIONES POST ---
 if ($method === 'POST') {
     $raw = file_get_contents("php://input");
@@ -2280,7 +2340,7 @@ if ($method === 'GET') {
             
             // Obtenemos los pagos pendientes y los ya verificados/conciliados con detalles de la transaccion
             $stmt = $conn->query("
-                SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula, pos.numero_expediente,
+                SELECT p.id, p.monto, p.fecha_pago, p.fecha_registro, p.concepto, p.estado, p.num_comprobante, p.banco, p.comprobante_url, pos.nombre, pos.apellido, pos.cedula, pos.correo, pos.numero_expediente,
                        c.transaccion_bancaria_id as transaccion_id,
                        tx.banco as tx_banco,
                        tx.referencia as tx_referencia,
@@ -2373,6 +2433,7 @@ if ($method === 'GET') {
                     "estado" => $p['estado'],
                     "match" => $match_data,
                     "postulante_nombre" => strtoupper($p['nombre'] . ' ' . $p['apellido']),
+                    "correo" => $p['correo'] ?? '',
                     "numero_expediente" => $p['numero_expediente'],
                     "comprobante_url" => $p['comprobante_url'],
                     "transaccion_id" => $p['transaccion_id'] ? (int)$p['transaccion_id'] : null,

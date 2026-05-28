@@ -273,6 +273,49 @@ const BankReconciliation: React.FC = () => {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
     const [selectedTx, setSelectedTx] = useState<ReconciliationItem | null>(null);
+
+    // Estados para envío de boleta
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [invoiceRecipient, setInvoiceRecipient] = useState('');
+    const [invoiceSubject, setInvoiceSubject] = useState('Boleta de Pago - UNAMIS');
+    const [invoiceMessage, setInvoiceMessage] = useState('Adjunto encontrará su boleta de pago correspondiente del Portal de Admisión y Concursos.');
+    const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+    const [isSendingInvoice, setIsSendingInvoice] = useState(false);
+    const [invoiceAlert, setInvoiceAlert] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const handleSendInvoice = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!invoiceRecipient) {
+            setInvoiceAlert({ type: 'error', text: 'El correo electrónico del destinatario es obligatorio.' });
+            return;
+        }
+        if (!invoiceFile) {
+            setInvoiceAlert({ type: 'error', text: 'Debe adjuntar una boleta (PDF o Imagen).' });
+            return;
+        }
+
+        setIsSendingInvoice(true);
+        setInvoiceAlert(null);
+        try {
+            const result = await FinanceService.sendInvoice(invoiceRecipient, invoiceFile, invoiceSubject, invoiceMessage);
+            if (result.status === 'success') {
+                setInvoiceAlert({ type: 'success', text: result.message || 'Boleta enviada exitosamente.' });
+                setInvoiceFile(null);
+                setTimeout(() => {
+                    setIsInvoiceModalOpen(false);
+                    setInvoiceAlert(null);
+                }, 2000);
+            } else {
+                setInvoiceAlert({ type: 'error', text: result.message || 'Error al enviar la boleta.' });
+            }
+        } catch (err: any) {
+            console.error('Error sending invoice:', err);
+            setInvoiceAlert({ type: 'error', text: err.message || 'Error de conexión con el servidor.' });
+        } finally {
+            setIsSendingInvoice(false);
+        }
+    };
+
     const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
     const [importedTxQueue, setImportedTxQueue] = useState<any[]>([]);
     const [rawTextToParse, setRawTextToParse] = useState('');
@@ -1087,6 +1130,20 @@ const BankReconciliation: React.FC = () => {
                                                         </button>
                                                     )}
                                                     <button 
+                                                        onClick={() => {
+                                                            setInvoiceRecipient(row.correo || '');
+                                                            setInvoiceSubject(`Boleta de Pago - ${row.detalle || 'Admisión'}`);
+                                                            setInvoiceMessage(`Estimado/a ${row.postulante_nombre || 'postulante'},\n\nAdjunto a este correo electrónico encontrará la boleta correspondiente a su pago registrado de Gs. ${new Intl.NumberFormat('es-PY').format(row.monto)} para el Portal de Admisión y Concursos.\n\nSaludos cordiales,\nSecretaría de Tecnologías - UNAMIS`);
+                                                            setInvoiceFile(null);
+                                                            setInvoiceAlert(null);
+                                                            setIsInvoiceModalOpen(true);
+                                                        }}
+                                                        className="text-[#a31e32] hover:text-[#7d1222] hover:scale-110 transition-all"
+                                                        title="Enviar Boleta por Correo"
+                                                    >
+                                                        <Send size={18} />
+                                                    </button>
+                                                    <button 
                                                         onClick={() => handleDeleteTransaction(row)}
                                                         className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
                                                         title={row.estado === 'conciliado' ? "Deshacer Conciliación" : "Eliminar Pago permanentemente"}
@@ -1878,6 +1935,149 @@ const BankReconciliation: React.FC = () => {
                 url={previewUrl || ''} 
                 title={previewTitle} 
             />
+
+            {/* Modal para Enviar Boleta */}
+            <AnimatePresence>
+                {isInvoiceModalOpen && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            className="bg-white rounded-3xl w-full max-w-lg shadow-premium overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]"
+                        >
+                            {/* Header */}
+                            <div className="p-6 bg-gradient-to-r from-[#a31e32] to-[#801424] text-white flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                        <Send size={20} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black uppercase tracking-wider">Enviar Boleta de Pago</h3>
+                                        <p className="text-[10px] text-white/70 font-medium">Envía facturas/comprobantes adjuntos vía correo electrónico</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setIsInvoiceModalOpen(false)}
+                                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <form onSubmit={handleSendInvoice} className="p-6 space-y-4 overflow-y-auto flex-1">
+                                {invoiceAlert && (
+                                    <div className={`p-4 rounded-xl flex items-center gap-3 text-xs font-semibold ${
+                                        invoiceAlert.type === 'success' 
+                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' 
+                                        : 'bg-red-50 text-red-800 border border-red-100'
+                                    }`}>
+                                        <AlertTriangle size={16} />
+                                        <span>{invoiceAlert.text}</span>
+                                    </div>
+                                )}
+
+                                {/* Recipient */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Destinatario (Email)</label>
+                                    <input 
+                                        type="email"
+                                        value={invoiceRecipient}
+                                        onChange={(e) => setInvoiceRecipient(e.target.value)}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#a31e32]/30 focus:ring-4 focus:ring-[#a31e32]/5 transition-all outline-none text-xs text-slate-800 font-medium placeholder:text-slate-400"
+                                        placeholder="correo@ejemplo.com"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Subject */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Asunto</label>
+                                    <input 
+                                        type="text"
+                                        value={invoiceSubject}
+                                        onChange={(e) => setInvoiceSubject(e.target.value)}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#a31e32]/30 focus:ring-4 focus:ring-[#a31e32]/5 transition-all outline-none text-xs text-slate-800 font-medium placeholder:text-slate-400"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Message */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Mensaje</label>
+                                    <textarea 
+                                        value={invoiceMessage}
+                                        onChange={(e) => setInvoiceMessage(e.target.value)}
+                                        rows={4}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#a31e32]/30 focus:ring-4 focus:ring-[#a31e32]/5 transition-all outline-none text-xs text-slate-800 font-medium placeholder:text-slate-400 resize-none leading-relaxed"
+                                        required
+                                    />
+                                </div>
+
+                                {/* File Attachment */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Archivo Adjunto (PDF o Imagen)</label>
+                                    <div className="relative border-2 border-dashed border-slate-200 hover:border-[#a31e32]/40 rounded-2xl p-6 transition-all bg-slate-50/50 hover:bg-slate-50 flex flex-col items-center justify-center text-center cursor-pointer group">
+                                        <input 
+                                            type="file"
+                                            accept=".pdf,image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) setInvoiceFile(file);
+                                            }}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
+                                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-[#a31e32] group-hover:scale-105 transition-all mb-3">
+                                            <Upload size={20} />
+                                        </div>
+                                        {invoiceFile ? (
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-bold text-slate-800 truncate max-w-[320px]">{invoiceFile.name}</p>
+                                                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{(invoiceFile.size / 1024).toFixed(1)} KB | Modificar archivo</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-bold text-slate-700">Haz clic o arrastra un archivo aquí</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">PDF, JPG o PNG (Max 5MB)</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsInvoiceModalOpen(false)}
+                                        className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                                        disabled={isSendingInvoice}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSendingInvoice || !invoiceRecipient || !invoiceFile}
+                                        className="flex items-center gap-2 px-6 py-3 bg-[#a31e32] hover:bg-[#801424] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-950/10 disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0"
+                                    >
+                                        {isSendingInvoice ? (
+                                            <>
+                                                <RefreshCw size={14} className="animate-spin" />
+                                                <span>Enviando boleta...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={14} />
+                                                <span>Enviar Correo</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

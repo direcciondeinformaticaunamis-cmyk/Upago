@@ -19,8 +19,6 @@ copy /Y api.php dist\api.php
 copy /Y api-banco.php dist\api-banco.php
 copy /Y security.php dist\security.php
 copy /Y config.php dist\config.php
-copy /Y diagnostico.php dist\diagnostico.php
-copy /Y test-conexion.php dist\test-conexion.php
 copy /Y verificar_build.php dist\verificar_build.php
 copy /Y sw.js dist\sw.js
 copy /Y .htaccess dist\.htaccess

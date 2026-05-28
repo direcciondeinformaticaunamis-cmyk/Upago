@@ -48,6 +48,7 @@ export interface ReconciliationItem {
     estado: 'pendiente' | 'conciliado' | 'verificado' | 'discrepancy' | string;
     transaccion_id?: number | null;
     postulante_nombre?: string;
+    correo?: string;
     numero_expediente?: string;
     comprobante_url?: string;
     is_pago?: boolean;
@@ -171,6 +172,20 @@ export const FinanceService = {
         return fetchApi('', {
             method: 'POST',
             body: JSON.stringify({ action: 'update_pago_estado', id, estado, observaciones })
+        });
+    },
+
+    sendInvoice: async (toEmail: string, file: File, subject?: string, message?: string): Promise<{ status: string, message: string }> => {
+        const formData = new FormData();
+        formData.append('action', 'send_invoice');
+        formData.append('to_email', toEmail);
+        formData.append('invoice_file', file);
+        if (subject) formData.append('subject', subject);
+        if (message) formData.append('message', message);
+
+        return fetchApi('', {
+            method: 'POST',
+            body: formData
         });
     },
 
