@@ -354,6 +354,94 @@ function send_institutional_email($to, $subject, $message) {
     @mail($to, $subject, $html_message, $headers);
 }
 
+function send_email_with_attachment($to, $subject, $message_html, $attachment_path, $attachment_name) {
+    // 1. Guardar en Log de Auditoría (Respaldo)
+    $log_dir = __DIR__ . '/logs/';
+    if (!file_exists($log_dir)) @mkdir($log_dir, 0755, true);
+    $log_file = $log_dir . 'emails.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $content = "\n--- [$timestamp] ---\nPARA: $to\nASUNTO: $subject\nMENSAJE:\n" . strip_tags($message_html) . "\nADJUNTO: $attachment_name ($attachment_path)\n---------------------\n";
+    @file_put_contents($log_file, $content, FILE_APPEND);
+
+    // Plantilla HTML Premium Institucional
+    $html_message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 40px; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e6e8ea; }
+            .header { background: #a31e32; padding: 30px; text-align: center; color: white; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+            .content { padding: 40px; color: #43474f; line-height: 1.6; }
+            .footer { background: #f2f4f6; padding: 20px; text-align: center; font-size: 12px; color: #737780; border-top: 1px solid #e6e8ea; }
+            .btn { display: inline-block; background: #a31e32; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+            .highlight { background: #fdf2f4; padding: 15px; border-left: 4px solid #a31e32; border-radius: 4px; margin: 20px 0; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>UNAMIS</h1>
+                <p style='margin-top: 5px; opacity: 0.8; font-size: 14px;'>Portal Digital Institucional</p>
+            </div>
+            <div class='content'>
+                $message_html
+            </div>
+            <div class='footer'>
+                &copy; " . date('Y') . " Universidad Nacional de Misiones. Todos los derechos reservados.<br>
+                Este es un mensaje automático, por favor no responda a este correo.
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+
+    $file = $attachment_path;
+    if (file_exists($file)) {
+        $file_size = filesize($file);
+        $handle = fopen($file, "r");
+        $content = fread($handle, $file_size);
+        fclose($handle);
+        $content = chunk_split(base64_encode($content));
+        
+        $uid = md5(uniqid(time()));
+        $from_name = "Secretaria de Tecnologias UNAMIS";
+        $from_mail = "informatica@unamis.edu.py";
+        $replyto = "informatica@unamis.edu.py";
+
+        // Headers
+        $header = "From: " . $from_name . " <" . $from_mail . ">\r\n";
+        $header .= "Reply-To: " . $replyto . "\r\n";
+        $header .= "MIME-Version: 1.0\r\n";
+        $header .= "Content-Type: multipart/mixed; boundary=\"" . $uid . "\"\r\n\r\n";
+
+        // Message body
+        $body = "--" . $uid . "\r\n";
+        $body .= "Content-type:text/html; charset=utf-8\r\n";
+        $body .= "Content-Transfer-Encoding: 7bit\r\n\r\n";
+        $body .= $html_message . "\r\n\r\n";
+
+        // Attachment
+        $body .= "--" . $uid . "\r\n";
+        $body .= "Content-Type: application/octet-stream; name=\"" . $attachment_name . "\"\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n";
+        $body .= "Content-Disposition: attachment; filename=\"" . $attachment_name . "\"\r\n\r\n";
+        $body .= $content . "\r\n\r\n";
+        $body .= "--" . $uid . "--";
+
+        return @mail($to, $subject, "", $header . $body);
+    } else {
+        // Enviar sin adjunto si el archivo no existe
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: Secretaria de Tecnologias UNAMIS <informatica@unamis.edu.py>\r\n";
+        $headers .= "Reply-To: informatica@unamis.edu.py\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+        return @mail($to, $subject, $html_message, $headers);
+    }
+}
+
+
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password, [
@@ -1420,6 +1508,35 @@ if ($method === 'POST') {
             echo json_encode(["status" => "error", "message" => "No se permite el registro manual con dominios institucionales (@unamis.edu.py). Utilice el acceso Microsoft SSO."]);
             exit;
         }
+
+        $is_admin = $current_user && in_array($current_user['rol'] ?? '', ['admin', 'superadmin', 'academico', 'finance']);
+
+        // Validar si la cédula ya existe en la base de datos
+        $stmt_check_cedula = $conn->prepare("SELECT id, correo, cedula FROM postulantes WHERE cedula = ?");
+        $stmt_check_cedula->execute([$data['cedula']]);
+        $existing_postulante = $stmt_check_cedula->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing_postulante) {
+            // Es una actualización. Debe ser el propio usuario o un admin.
+            if (!$is_updating_own_profile && !$is_admin) {
+                http_response_code(409);
+                echo json_encode(["status" => "error", "message" => "Esta cédula de identidad ya se encuentra registrada en el sistema. Si es su cuenta, por favor inicie sesión o contacte a soporte."]);
+                exit;
+            }
+        }
+
+        // Validar si el correo ya existe asociado a otra cédula
+        if (!empty($correo_registro)) {
+            $stmt_check_correo = $conn->prepare("SELECT id, cedula FROM postulantes WHERE correo = ?");
+            $stmt_check_correo->execute([$correo_registro]);
+            $existing_correo = $stmt_check_correo->fetch(PDO::FETCH_ASSOC);
+            if ($existing_correo && $existing_correo['cedula'] !== $data['cedula']) {
+                http_response_code(409);
+                echo json_encode(["status" => "error", "message" => "El correo electrónico ingresado ya se encuentra asociado a otra cédula de identidad registrada."]);
+                exit;
+            }
+        }
+
 
         $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral', 'password_hash', 'catedra'];
         $placeholders = implode(',', array_fill(0, count($fields), '?'));
