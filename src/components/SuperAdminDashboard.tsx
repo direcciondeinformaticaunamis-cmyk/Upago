@@ -47,7 +47,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
         setIsLoadingLogs(true);
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const response = await fetch(`${baseUrl}/api.php?system_logs=true`);
+            const response = await fetch(`${baseUrl}/api.php?system_logs=true&_cb=${Date.now()}`);
             const result = await response.json();
             if (result.status === 'success') {
                 setLogs(result.data || []);

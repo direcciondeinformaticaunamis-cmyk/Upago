@@ -52,7 +52,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
             // Un endpoint dedicado sería mejor, pero reusamos lógica o traemos de api.php
             // Simularemos la carga mientras no tengamos un GET exclusivo de externos,
             // pero lo dejamos preparado para la API.
-            const response = await fetch(`${baseUrl}/api.php?get_external_users=true`);
+            const response = await fetch(`${baseUrl}/api.php?get_external_users=true&_cb=${Date.now()}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data && Array.isArray(data)) {
@@ -88,7 +88,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
         setLoading(true);
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const response = await fetch(`${baseUrl}/api.php`, {
+            const response = await fetch(`${baseUrl}/api.php?_cb=${Date.now()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -132,7 +132,7 @@ const ExternalUserManager: React.FC<ExternalUserManagerProps> = ({ onBack }) => 
         setDeleteLoading(true);
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const response = await fetch(`${baseUrl}/api.php`, {
+            const response = await fetch(`${baseUrl}/api.php?_cb=${Date.now()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

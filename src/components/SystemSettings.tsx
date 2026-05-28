@@ -20,7 +20,7 @@ const SystemSettings: React.FC = () => {
     const loadRoles = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('api.php?get_institutional_roles=true');
+            const response = await fetch('api.php?get_institutional_roles=true&_cb=' + Date.now());
             const data = await response.json();
             setRoles(data);
         } catch (error) {
@@ -39,7 +39,7 @@ const SystemSettings: React.FC = () => {
         if (!newEmail) return;
 
         try {
-            const response = await fetch('api.php?save_institutional_role=true', {
+            const response = await fetch('api.php?save_institutional_role=true&_cb=' + Date.now(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ correo: newEmail, rol: newRole, nombre_referencia: newName })
@@ -60,7 +60,7 @@ const SystemSettings: React.FC = () => {
     const handleDeleteRole = async (id: number) => {
         if (!confirm('¿Seguro que deseas eliminar este permiso administrativo?')) return;
         try {
-            await fetch(`api.php?delete_institutional_role=${id}`, { method: 'POST' });
+            await fetch(`api.php?delete_institutional_role=${id}&_cb=` + Date.now(), { method: 'POST' });
             loadRoles();
         } catch (error) {
             alert('Error al eliminar');

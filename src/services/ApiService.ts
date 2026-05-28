@@ -61,7 +61,8 @@ export function extractJson(text: string): string {
 }
 
 export const fetchApi = async (params: string = '', options: RequestInit = {}) => {
-    const url = params ? `${API_URL}?${params}` : API_URL;
+    const cb = `_cb=${Date.now()}`;
+    const url = params ? `${API_URL}?${params}&${cb}` : `${API_URL}?${cb}`;
     const headers: Record<string, string> = { ...options.headers as any };
     
     // Get token

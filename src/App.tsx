@@ -59,7 +59,7 @@ const App: React.FC = () => {
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
             // Intentar Login Administrativo primero
-            const adminResponse = await fetch(`${baseUrl}/api.php`, {
+            const adminResponse = await fetch(`${baseUrl}/api.php?_cb=${Date.now()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -84,7 +84,7 @@ const App: React.FC = () => {
             }
 
             // Si falla el login admin, probamos como postulante con contraseña
-            const response = await fetch(`${baseUrl}/api.php`, {
+            const response = await fetch(`${baseUrl}/api.php?_cb=${Date.now()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'student_login', email, password })
@@ -140,7 +140,7 @@ const App: React.FC = () => {
         setError(undefined);
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const response = await fetch(`${baseUrl}/api.php`, {
+            const response = await fetch(`${baseUrl}/api.php?_cb=${Date.now()}`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ const App: React.FC = () => {
         setError(undefined);
         try {
             const baseUrl = import.meta.env.DEV ? 'http://localhost:8001' : window.location.origin;
-            const response = await fetch(`${baseUrl}/api.php?perfil_by_email=${encodeURIComponent(email)}`);
+            const response = await fetch(`${baseUrl}/api.php?perfil_by_email=${encodeURIComponent(email)}&_cb=${Date.now()}`);
             const text = await response.text();
             let data;
             try {
