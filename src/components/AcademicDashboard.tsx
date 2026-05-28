@@ -63,6 +63,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
     const [editingPayment, setEditingPayment] = useState<any | null>(null);
     const [paymentSearch, setPaymentSearch] = useState('');
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('todos');
+    const [arancelesList, setArancelesList] = useState<any[]>([]);
     const [paymentEditForm, setPaymentEditForm] = useState({
         concepto: '',
         monto: 0,
@@ -71,6 +72,21 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         estado: 'pendiente',
         observaciones: ''
     });
+
+    // Cargar aranceles dinámicos para el selector de concepto
+    React.useEffect(() => {
+        const loadAranceles = async () => {
+            try {
+                const data = await fetchApi('aranceles=1');
+                if (Array.isArray(data)) {
+                    setArancelesList(data.filter((a: any) => a.activo === 1));
+                }
+            } catch (err) {
+                console.error('Error loading aranceles:', err);
+            }
+        };
+        loadAranceles();
+    }, []);
 
     const loadPayments = async () => {
         setIsPaymentsLoading(true);
@@ -1409,12 +1425,31 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                         <div className="p-6 space-y-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto de Pago</label>
-                                <input
-                                    type="text"
-                                    value={paymentEditForm.concepto}
-                                    onChange={(e) => setPaymentEditForm({...paymentEditForm, concepto: e.target.value})}
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all"
-                                />
+                                <select
+                                    value={arancelesList.some(a => a.concepto === paymentEditForm.concepto) ? paymentEditForm.concepto : '__custom__'}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '__custom__') return;
+                                        const arancel = arancelesList.find(a => a.concepto === val);
+                                        setPaymentEditForm({
+                                            ...paymentEditForm,
+                                            concepto: val,
+                                            monto: arancel && arancel.monto > 0 ? arancel.monto : paymentEditForm.monto
+                                        });
+                                    }}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-[#002f6c] transition-all cursor-pointer"
+                                >
+                                    {arancelesList.map((a: any) => (
+                                        <option key={a.id} value={a.concepto}>
+                                            {a.concepto} (Gs. {new Intl.NumberFormat('es-PY').format(a.monto)})
+                                        </option>
+                                    ))}
+                                    {!arancelesList.some(a => a.concepto === paymentEditForm.concepto) && paymentEditForm.concepto && (
+                                        <option value="__custom__">
+                                            {paymentEditForm.concepto} (valor actual)
+                                        </option>
+                                    )}
+                                </select>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
@@ -1495,6 +1530,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
             {ventanillaPayment && (
                 <VentanillaPaymentModal 
                     data={ventanillaPayment} 
+                    aranceles={arancelesList}
                     onClose={() => setVentanillaPayment(null)} 
                     onSubmit={handleUploadVentanillaPayment} 
                 />
@@ -1652,13 +1688,24 @@ interface VentanillaPaymentModalProps {
         asignatura?: string;
         concepto: string;
     };
+    aranceles: any[];
     onClose: () => void;
     onSubmit: (cedula: string, concepto: string, monto: number, numComprobante: string, file: File | null, asignatura?: string) => Promise<void>;
 }
 
-const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, onClose, onSubmit }) => {
-    const [concepto, setConcepto] = React.useState(data.concepto);
-    const [monto, setMonto] = React.useState(data.carrera?.includes('Medicina') ? 1000000 : 350000);
+const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, aranceles, onClose, onSubmit }) => {
+    // Attempt to match the provided concept to an active arancel item
+    const matchedArancel = aranceles.find(a => 
+        a.concepto.toLowerCase().trim() === data.concepto.toLowerCase().trim() ||
+        a.concepto.toLowerCase().includes(data.concepto.toLowerCase()) ||
+        data.concepto.toLowerCase().includes(a.concepto.toLowerCase())
+    );
+
+    const initialConcepto = matchedArancel ? matchedArancel.concepto : (aranceles[0]?.concepto || data.concepto);
+    const initialMonto = matchedArancel ? matchedArancel.monto : (aranceles[0]?.monto || (data.carrera?.includes('Medicina') ? 1000000 : 350000));
+
+    const [concepto, setConcepto] = React.useState(initialConcepto);
+    const [monto, setMonto] = React.useState(initialMonto);
     const [numComprobante, setNumComprobante] = React.useState('');
     const [file, setFile] = React.useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -1725,20 +1772,24 @@ const VentanillaPaymentModal: React.FC<VentanillaPaymentModalProps> = ({ data, o
                             onChange={(e) => {
                                 const val = e.target.value;
                                 setConcepto(val);
-                                if (val.includes('Medicina')) {
-                                    setMonto(1000000);
-                                } else {
-                                    setMonto(350000);
+                                const arancel = aranceles.find(a => a.concepto === val);
+                                if (arancel && arancel.monto > 0) {
+                                    setMonto(arancel.monto);
                                 }
                             }}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#002f6c] transition-shadow"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#002f6c] transition-shadow cursor-pointer"
                         >
-                            <option value="Examen de Admisión - Medicina (San Ignacio)">Examen de Admisión - Medicina (San Ignacio) - Gs. 1.000.000</option>
-                            <option value="Inscripción General - Grado">Inscripción General - Grado - Gs. 350.000</option>
-                            <option value="Derecho a Matrícula Anual">Derecho a Matrícula Anual - Gs. 500.000</option>
-                            <option value="Pago Extraordinario / Otro">Pago Extraordinario / Otro</option>
+                            {aranceles.map((a: any) => (
+                                <option key={a.id} value={a.concepto}>
+                                    {a.concepto} — Gs. {new Intl.NumberFormat('es-PY').format(a.monto)}
+                                </option>
+                            ))}
+                            {!aranceles.some(a => a.concepto === concepto) && concepto && (
+                                <option value={concepto}>{concepto}</option>
+                            )}
                         </select>
                     </div>
+
 
                     <div className="space-y-1.5 text-left">
                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto Recaudado (Gs.)</label>
