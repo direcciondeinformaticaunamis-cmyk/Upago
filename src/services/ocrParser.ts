@@ -316,3 +316,113 @@ export function parseAdmissionForm(text: string): Partial<ParsedFormData> {
 
     return data;
 }
+
+/**
+ * Parses raw OCR text from a Paraguayan Cédula de Identidad (ID Card)
+ */
+export function parseCedula(text: string): Partial<ParsedFormData> {
+    const data: Partial<ParsedFormData> = {};
+    // Replace newlines with spaces and clean up extra spacing
+    const cleanTextVal = text.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
+
+    console.log("Parsing Cédula OCR text:", cleanTextVal);
+
+    // 1. Cédula Number
+    // Looks for patterns like "N° 1.234.567", "Nº 1.234.567", "NUMERO 1234567", etc.
+    const cedulaRegexes = [
+        /(?:N[°ºo]|NUMERO|DOCUMENTO|REGISTRO)[:\s]*(\d[\d\.\s-]{5,9}\d)/i,
+        /(\b\d{1,3}(?:\.\d{3}){2}\b)/,
+        /(\b\d{6,8}\b)/
+    ];
+
+    for (const regex of cedulaRegexes) {
+        const match = cleanTextVal.match(regex);
+        if (match) {
+            const val = match[1].replace(/[^\d]/g, '');
+            if (val.length >= 6 && val.length <= 8) {
+                data.cedula = val;
+                break;
+            }
+        }
+    }
+
+    // 2. Apellidos
+    // Looks for APELLIDOS / SURNAME: ROJAS BENITEZ or similar
+    const surnameMatch = cleanTextVal.match(/APELLIDO[S]?\s*(?:\/\s*SURNAME[S]?)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]+)*)/i);
+    if (surnameMatch) {
+        data.apellido = surnameMatch[1].trim();
+    }
+
+    // 3. Nombres
+    // Looks for NOMBRES / GIVEN NAMES: MARIO ALBERTO or similar
+    const nameMatch = cleanTextVal.match(/NOMBRE[S]?\s*(?:\/\s*GIVEN\s*NAME[S]?)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]+)*)/i);
+    if (nameMatch) {
+        data.nombre = nameMatch[1].trim();
+    }
+
+    // 4. Nacionalidad
+    const nationalityMatch = cleanTextVal.match(/NACIONALIDAD\s*(?:\/\s*NATIONALITY)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]+)/i);
+    if (nationalityMatch) {
+        const nac = nationalityMatch[1].trim().toLowerCase();
+        if (nac.includes('paraguay')) {
+            data.nacionalidad = 'Paraguaya';
+            data.paisOrigen = 'Paraguay';
+        } else {
+            data.nacionalidad = nac.charAt(0).toUpperCase() + nac.slice(1);
+        }
+    }
+
+    // 5. Sexo / Género
+    const sexoMatch = cleanTextVal.match(/SEXO\s*(?:\/\s*SEX)?\s*[:\-]?\s*([M|F|Masculino|Femenino])/i);
+    if (sexoMatch) {
+        const val = sexoMatch[1].trim().toUpperCase();
+        if (val.startsWith('M')) data.genero = 'M';
+        else if (val.startsWith('F')) data.genero = 'F';
+    } else {
+        // Fallback checks for standalone letters or words near SEXO/SEX
+        const sexoIndex = cleanTextVal.toLowerCase().indexOf('sexo');
+        if (sexoIndex !== -1) {
+            const context = cleanTextVal.slice(sexoIndex, sexoIndex + 40);
+            if (/\b(MASCULINO|M)\b/i.test(context)) {
+                data.genero = 'M';
+            } else if (/\b(FEMENINO|F)\b/i.test(context)) {
+                data.genero = 'F';
+            }
+        }
+    }
+
+    // 6. Estado Civil
+    const civilMatch = cleanTextVal.match(/ESTADO\s*CIVIL\s*(?:\/\s*MARITAL\s*STATUS)?\s*[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ\/]+)/i);
+    if (civilMatch) {
+        const val = civilMatch[1].trim().toUpperCase();
+        if (val.startsWith('SOLT')) data.estadoCivil = 'Soltero';
+        else if (val.startsWith('CAS')) data.estadoCivil = 'Casado';
+        else if (val.startsWith('DIV')) data.estadoCivil = 'Divorciado';
+        else if (val.startsWith('VIU')) data.estadoCivil = 'Otro';
+    }
+
+    // 7. Fecha de Nacimiento
+    const dobMatch = cleanTextVal.match(/FECHA\s*DE\s*NACIMIENTO\s*(?:\/\s*DATE\s*OF\s*BIRTH)?\s*[:\-]?\s*([\d\/\.\s-a-zA-Záéíóú]+)/i);
+    if (dobMatch) {
+        const rawDate = dobMatch[1].trim();
+        const dmy = rawDate.match(/(\d{1,2})[\/\s\.-](\d{1,2}|[a-zA-Záéíóú]+)[\/\s\.-](\d{2,4})/i);
+        if (dmy) {
+            data.fechaNacimiento = normalizeDate(dmy[1], dmy[2], dmy[3]);
+        }
+    }
+
+    // Fallback date search
+    if (!data.fechaNacimiento) {
+        const allDates = cleanTextVal.matchAll(/(\d{1,2})[\/\s\.-](\d{1,2}|[a-zA-Z]{3,10})[\/\s\.-](\d{4})/gi);
+        for (const m of allDates) {
+            const normalized = normalizeDate(m[1], m[2], m[3]);
+            if (normalized) {
+                data.fechaNacimiento = normalized;
+                break;
+            }
+        }
+    }
+
+    return data;
+}
+

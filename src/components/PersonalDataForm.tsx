@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { OcrUploadModal } from './OcrUploadModal';
+import { parseCedula } from '../services/ocrParser';
 import {
     User,
     Mail,
@@ -20,7 +21,9 @@ import {
     Eye,
     Plus,
     X,
-    BookOpen
+    BookOpen,
+    Loader2,
+    AlertTriangle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AppInput from './ui/AppInput';
@@ -128,10 +131,92 @@ interface PersonalDataFormProps {
     onSkipToPayment?: () => void;
 }
 
+const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
+
 const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, setPhoto, errors, onChange, onContinue, isLoading = false, isAcademic = false, onSkipToPayment }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
     const [customCatedra, setCustomCatedra] = useState('');
+
+    // OCR scanning states for Cédula
+    const [isOcrScanning, setIsOcrScanning] = useState(false);
+    const [ocrProgress, setOcrProgress] = useState(0);
+    const [ocrStatusText, setOcrStatusText] = useState('');
+    const [ocrError, setOcrError] = useState<string | null>(null);
+    const [ocrSuccessMsg, setOcrSuccessMsg] = useState<string | null>(null);
+
+    // Dynamic library loader helper
+    const loadScript = (src: string): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = (err) => reject(new Error(`Error loading script ${src}`));
+            document.body.appendChild(script);
+        });
+    };
+
+    const handleCedulaOcrScan = async () => {
+        if (!photo) return;
+        
+        setIsOcrScanning(true);
+        setOcrProgress(10);
+        setOcrStatusText('Cargando motor de reconocimiento óptico (OCR)...');
+        setOcrError(null);
+        setOcrSuccessMsg(null);
+
+        try {
+            // Load Tesseract
+            if (!window.Tesseract) {
+                await loadScript(TESSERACT_CDN);
+            }
+            
+            setOcrProgress(30);
+            setOcrStatusText('Inicializando lector en español...');
+            
+            // Create worker
+            const worker = await window.Tesseract.createWorker('spa');
+            
+            setOcrProgress(50);
+            setOcrStatusText('Analizando imagen de la cédula...');
+            
+            // Recognize text
+            const result = await worker.recognize(photo);
+            await worker.terminate();
+            
+            setOcrProgress(80);
+            setOcrStatusText('Procesando datos extraídos...');
+            
+            // Parse text
+            const parsed = parseCedula(result.data.text);
+            console.log("Datos extraídos de la cédula:", parsed);
+            
+            let filledCount = 0;
+            // Autofill the form
+            Object.entries(parsed).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    onChange(key, value);
+                    filledCount++;
+                }
+            });
+            
+            setOcrProgress(100);
+            if (filledCount > 0) {
+                setOcrSuccessMsg(`¡Escaneo exitoso! Se autocompletaron ${filledCount} campos del formulario.`);
+            } else {
+                setOcrError('No se pudieron extraer datos del escaneo. Asegúrese de que la imagen sea nítida y tenga buena luz.');
+            }
+        } catch (err: any) {
+            console.error("Cédula OCR failed:", err);
+            setOcrError(err.message || 'Error durante la lectura del documento. Intente de nuevo.');
+        } finally {
+            setIsOcrScanning(false);
+        }
+    };
 
     const selectedCatedras = formData.catedra
         ? formData.catedra.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '')
@@ -234,52 +319,127 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                     />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mt-6">
-                        {/* Photo Upload Card */}
+                        {/* Cédula de Identidad Upload and OCR Scan Card */}
                         <div className="md:col-span-2">
                             <motion.div
-                                whileHover={{ y: -2 }}
-                                onClick={handlePhotoClick}
+                                whileHover={isOcrScanning ? {} : { y: -2 }}
+                                onClick={isOcrScanning ? undefined : handlePhotoClick}
                                 className={`
-                                    relative group cursor-pointer overflow-hidden rounded-[2rem] border-2 border-dashed transition-all duration-500
-                                    ${photo ? 'border-[var(--primary)]/30 bg-[var(--primary-50)]' : 'border-slate-200 bg-white hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/50'}
+                                    relative group overflow-hidden rounded-[2rem] border-2 border-dashed transition-all duration-500
+                                    ${photo ? 'border-[var(--primary)]/30 bg-[var(--primary-50)]/30' : 'border-slate-200 bg-white hover:border-[var(--primary)]/40 hover:bg-[var(--primary-50)]/30'}
+                                    ${isOcrScanning ? 'cursor-wait border-amber-300 bg-amber-50/10' : 'cursor-pointer'}
                                 `}
                             >
                                 <div className="p-8 flex flex-col md:flex-row items-center gap-8">
+                                    {/* Thumbnail Preview or CreditCard Icon */}
                                     <div className={`
-                                        w-24 h-32 rounded-2xl flex items-center justify-center transition-all duration-500 border shadow-md flex-shrink-0 relative overflow-hidden
+                                        w-32 h-20 rounded-2xl flex items-center justify-center transition-all duration-500 border shadow-md flex-shrink-0 relative overflow-hidden
                                         ${photo ? 'bg-white border-[var(--primary)]/10' : 'bg-slate-50 border-slate-100 text-slate-300 group-hover:text-[var(--primary)]'}
                                     `}>
                                         {photo ? (
-                                            <img src={photo} alt="Preview" className="w-full h-full object-cover rounded-xl" />
+                                            <img src={photo} alt="Vista previa de la Cédula" className="w-full h-full object-cover rounded-xl" />
                                         ) : (
-                                            <Camera size={32} strokeWidth={1} />
+                                            <CreditCard size={36} strokeWidth={1} />
                                         )}
                                     </div>
 
-                                    <div className="flex-1 text-center md:text-left">
-                                        <h4 className="text-base font-black text-slate-800 mb-1 tracking-tight">
-                                            {photo ? 'Fotografía cargada correctamente' : 'Fotografía Digital Oficial'}
-                                        </h4>
-                                        <p className="text-xs text-slate-500 mb-4 max-w-sm font-medium leading-relaxed">
-                                            Suba una foto tipo carnet (de frente, fondo claro y buena iluminación) para su identificación académica oficial.
-                                        </p>
-                                        <AppButton
-                                            variant={photo ? 'secondary' : 'primary'}
-                                            size="sm"
-                                            icon={UploadCloud}
-                                            onClick={(e) => { e.stopPropagation(); handlePhotoClick(); }}
-                                        >
-                                            {photo ? 'Cambiar Imagen' : 'Subir Foto'}
-                                        </AppButton>
+                                    {/* Text content & Status Loader */}
+                                    <div className="flex-1 text-center md:text-left min-w-0">
+                                        {isOcrScanning ? (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2.5 justify-center md:justify-start">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                                                    <h4 className="text-sm font-black text-slate-800 tracking-tight uppercase">
+                                                        Lector OCR Activo
+                                                    </h4>
+                                                </div>
+                                                <p className="text-xs font-bold text-amber-600 animate-pulse">
+                                                    {ocrStatusText}
+                                                </p>
+                                                {/* Progress bar */}
+                                                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden max-w-sm mt-2 border border-slate-100">
+                                                    <div 
+                                                        className="bg-gradient-to-r from-amber-400 to-amber-650 h-full transition-all duration-300"
+                                                        style={{ width: `${ocrProgress}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h4 className="text-base font-black text-slate-800 mb-1 tracking-tight">
+                                                    {photo ? 'Cédula cargada correctamente' : 'Cédula de Identidad Civil'}
+                                                </h4>
+                                                <p className="text-xs text-slate-500 mb-4 max-w-md font-medium leading-relaxed">
+                                                    {photo 
+                                                        ? 'Su cédula está lista para ser analizada por el lector OCR para rellenar los datos automáticamente.' 
+                                                        : 'Suba una foto o escaneo nítido del frente de su cédula de identidad civil paraguaya para autocompletar el formulario.'}
+                                                </p>
+                                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                                    <AppButton
+                                                        variant={photo ? 'secondary' : 'primary'}
+                                                        size="sm"
+                                                        icon={UploadCloud}
+                                                        onClick={(e) => { e.stopPropagation(); handlePhotoClick(); }}
+                                                    >
+                                                        {photo ? 'Cambiar Imagen' : 'Subir Cédula'}
+                                                    </AppButton>
+                                                    {photo && (
+                                                        <AppButton
+                                                            variant="primary"
+                                                            size="sm"
+                                                            className="bg-amber-600 hover:bg-amber-700 text-white border-amber-600 shadow-md shadow-amber-600/10"
+                                                            onClick={(e) => { e.stopPropagation(); handleCedulaOcrScan(); }}
+                                                        >
+                                                            ✨ Escanear Datos Personales (OCR)
+                                                        </AppButton>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
 
-                                    {photo && (
-                                        <div className="hidden md:flex items-center gap-2 text-[var(--success)] font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
-                                            <CheckCircle2 size={16} /> Listo
+                                    {/* Success checkmark or error alert */}
+                                    {!isOcrScanning && (
+                                        <div className="shrink-0 flex items-center justify-center">
+                                            {ocrSuccessMsg && (
+                                                <div className="flex items-center gap-2 text-[var(--success)] font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
+                                                    <CheckCircle2 size={16} /> ¡Listo!
+                                                </div>
+                                            )}
+                                            {ocrError && (
+                                                <div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl border border-red-100" title={ocrError}>
+                                                    <AlertTriangle size={16} /> Error en escaneo
+                                                </div>
+                                            )}
+                                            {photo && !ocrSuccessMsg && !ocrError && (
+                                                <div className="flex items-center gap-2 text-[var(--primary)] font-black text-[10px] uppercase tracking-widest bg-[var(--primary-50)] px-4 py-2 rounded-xl border border-[var(--primary-100)]">
+                                                    Paso 1 de 2
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             </motion.div>
+                            
+                            {/* Detailed OCR Feedback Messages */}
+                            {ocrSuccessMsg && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-3 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2.5 rounded-2xl flex items-center gap-2"
+                                >
+                                    <CheckCircle2 size={14} className="text-[var(--success)]" /> {ocrSuccessMsg}
+                                </motion.div>
+                            )}
+                            {ocrError && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-3 text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-4 py-2.5 rounded-2xl flex items-center gap-2"
+                                >
+                                    <AlertTriangle size={14} className="text-red-500" /> {ocrError}
+                                </motion.div>
+                            )}
                         </div>
 
                         <AppInput
