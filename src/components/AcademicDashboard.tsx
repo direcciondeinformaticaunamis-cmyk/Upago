@@ -41,7 +41,7 @@ import { AcademicService, Expediente } from '../services/AcademicService';
 import DocumentPreviewModal from './DocumentPreviewModal';
 import PaymentRegistrationForm from './aranceles/PaymentRegistrationForm';
 import { fetchApi } from '../services/ApiService';
-import { CATALOGO_UNAMIS, TODAS_LAS_SEDES } from '../constants/catalogoUnamis';
+import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS, TODAS_LAS_SEDES } from '../constants/catalogoUnamis';
 
 
 interface AcademicDashboardProps {
@@ -52,6 +52,7 @@ interface AcademicDashboardProps {
 const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout }) => {
     const [activeSection, setActiveSection] = useState<'admision' | 'dashboard' | 'nueva_inscripcion' | 'reportes' | 'registro_pago' | 'historial_pagos'>('admision');
     const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>(null);
+    const [activeRevisionTab, setActiveRevisionTab] = useState<string>('General');
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewTitle, setPreviewTitle] = useState<string>('');
     const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -330,6 +331,19 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
     }, []);
 
     React.useEffect(() => {
+        if (user.rol !== 'superadmin') {
+            const email = user.email.toLowerCase();
+            if (email.includes('medicina')) {
+                setFilterCarrera('Medicina');
+                setFilterSede('Sede San Ignacio Guazú');
+            } else if (email.includes('informatica')) {
+                setFilterCarrera('Ingeniería Informática');
+                setFilterSede('Sede Villa Florida');
+            }
+        }
+    }, [user]);
+
+    React.useEffect(() => {
         if (selectedExpediente && selectedExpediente.cedula) {
             const loadDocs = async () => {
                 try {
@@ -460,6 +474,30 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
             );
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleMarcarEnCurriculum = async (cedula: string, docId: string, asignatura?: string) => {
+        try {
+            const res = await fetchApi('expedientes', {
+                method: 'POST',
+                body: { action: 'mark_in_cv', cedula, doc_id: docId, asignatura }
+            });
+            if (res.status === 'success') {
+                notificationService.send('Éxito', 'Documento marcado como incluido en CV.', 'success');
+                // Refresh the docs
+                const docsRes = await fetchApi(`expedientes?action=get_user_docs&cedula=${cedula}`);
+                if (docsRes.status === 'success') {
+                    const docs = docsRes.data;
+                    setSelectedExpediente(prev => prev ? { ...prev, documentos: docs } : null);
+                    setAllPostulantes(prev => prev.map(p => p.cedula === cedula ? { ...p, documentos: docs } : p));
+                }
+            } else {
+                notificationService.send('Error', res.message || 'Error al procesar', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            notificationService.send('Error', 'Error de red', 'error');
         }
     };
 
@@ -612,26 +650,30 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-emerald-500" 
                                         />
                                     </div>
-                                    <select 
-                                        value={filterCarrera}
-                                        onChange={(e) => setFilterCarrera(e.target.value)}
-                                        className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-600 outline-none focus:border-emerald-500"
-                                    >
-                                        <option value="">Todas las Carreras</option>
-                                        <option value="Medicina">Medicina</option>
-                                        <option value="Derecho">Derecho</option>
-                                        <option value="Ingeniería">Ingeniería</option>
-                                    </select>
-                                    <select 
-                                        value={filterSede}
-                                        onChange={(e) => setFilterSede(e.target.value)}
-                                        className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-600 outline-none focus:border-emerald-500"
-                                    >
-                                        <option value="">Todas las Sedes</option>
-                                        <option value="Santa Rosa">Santa Rosa</option>
-                                        <option value="San Ignacio">San Ignacio</option>
-                                        <option value="Ayolas">Ayolas</option>
-                                    </select>
+                                    {user.rol === 'superadmin' && (
+                                        <>
+                                            <select 
+                                                value={filterCarrera}
+                                                onChange={(e) => setFilterCarrera(e.target.value)}
+                                                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-600 outline-none focus:border-emerald-500 max-w-[200px] truncate"
+                                            >
+                                                <option value="">Todas las Carreras</option>
+                                                {TODAS_LAS_CARRERAS.map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </select>
+                                            <select 
+                                                value={filterSede}
+                                                onChange={(e) => setFilterSede(e.target.value)}
+                                                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-600 outline-none focus:border-emerald-500 max-w-[200px] truncate"
+                                            >
+                                                <option value="">Todas las Sedes</option>
+                                                {TODAS_LAS_SEDES.map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )}
                                 </div>
                                 <table className="w-full text-left border-collapse">
                                     <thead>
@@ -701,7 +743,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button onClick={() => setSelectedExpediente(exp)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
+                                                        <button onClick={() => { setSelectedExpediente(exp); setActiveRevisionTab('General'); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
                                                             <Visibility style={{fontSize: 16}} /> Ver Expediente
                                                         </button>
                                                         <button 
@@ -871,7 +913,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         <div className="w-16 h-16 bg-[#002f6c] rounded-lg flex items-center justify-center text-white text-3xl font-black">U</div>
                                         <div className="text-left">
                                             <h1 className="text-xl font-black uppercase leading-tight">Universidad Nacional de Misiones</h1>
-                                            <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Rectorado - Secretaría General</p>
+                                            <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Medicina Sede San Ignacio</p>
                                         </div>
                                     </div>
                                     <div className="space-y-1">
@@ -920,6 +962,31 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Resumen Estadístico (Solo impresión) */}
+                                <div className="hidden print:block mt-8 p-4 border border-slate-300 rounded-xl bg-slate-50">
+                                    <h3 className="text-sm font-black uppercase border-b border-slate-300 pb-2 mb-3">Resumen de Inscripciones</h3>
+                                    <div className="grid grid-cols-3 gap-4 text-xs font-medium">
+                                        <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
+                                            <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Examen de Admisión</span>
+                                            <span className="text-lg font-black text-[#002f6c]">
+                                                {expedientes.filter(e => e.tipo_usuario !== 'concursante_docente' && e.tipo_usuario !== 'auxiliar_docente').length}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
+                                            <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Docente Encargado de Cátedra</span>
+                                            <span className="text-lg font-black text-[#002f6c]">
+                                                {expedientes.filter(e => e.tipo_usuario === 'concursante_docente').length}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
+                                            <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Docente Auxiliar de Enseñanza</span>
+                                            <span className="text-lg font-black text-[#002f6c]">
+                                                {expedientes.filter(e => e.tipo_usuario === 'auxiliar_docente').length}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Pie de Reporte para Firma (Solo impresión) */}
@@ -1159,9 +1226,47 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                         </div>
                         
                         <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50/50 space-y-6">
-                            <h4 className="font-black text-slate-700 uppercase tracking-widest text-[11px] flex items-center gap-2 mb-2">
-                                <Description style={{fontSize: 18}} className="text-[#002f6c]" /> Documentos Adjuntos Requeridos
-                            </h4>
+                            {(() => {
+                                const exp = selectedExpediente;
+                                if (!exp) return null;
+                                
+                                let isDocente = exp.tipo === 'docente' || exp.tipo_usuario === 'concursante_docente' || exp.tipo_usuario === 'auxiliar_docente';
+                                let carpetas = ['General'];
+                                
+                                if (isDocente) {
+                                    const fromCatedra = exp.catedra ? exp.catedra.split(',').map(s => s.trim()).filter(Boolean) : [];
+                                    const fromDocs = (exp.documentos || []).map(d => d.asignatura).filter(Boolean) as string[];
+                                    const uniqueCarpetas = Array.from(new Set([...fromCatedra, ...fromDocs]));
+                                    if (uniqueCarpetas.length > 0) {
+                                        carpetas = ['General', ...uniqueCarpetas];
+                                    }
+                                }
+                                
+                                return (
+                                    <>
+                                        {isDocente && carpetas.length > 1 && (
+                                            <div className="flex flex-col gap-2 mb-4">
+                                                <h4 className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Carpetas de Postulación</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {carpetas.map(carpeta => (
+                                                        <button
+                                                            key={carpeta}
+                                                            onClick={() => setActiveRevisionTab(carpeta)}
+                                                            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${activeRevisionTab === carpeta ? 'bg-[#002f6c] text-white border-[#002f6c] shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'}`}
+                                                        >
+                                                            {carpeta === 'General' ? '📁 Documentos Generales' : `📚 ${carpeta}`}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <h4 className="font-black text-slate-700 uppercase tracking-widest text-[11px] flex items-center gap-2 mb-2">
+                                            <Description style={{fontSize: 18}} className="text-[#002f6c]" /> Documentos Adjuntos Requeridos
+                                        </h4>
+                                    </>
+                                );
+                            })()}
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {(() => {
@@ -1207,16 +1312,49 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     const flatDocs: any[] = [];
                                     required.forEach((req) => {
                                         const actualDocs = exp.documentos?.filter(d => d.id === req.id) || [];
+                                        
                                         if (actualDocs.length === 0) {
-                                            flatDocs.push({ req, actual: undefined });
+                                            flatDocs.push({ req, actual: undefined, isGeneralReq: true });
+                                        } else {
+                                            actualDocs.forEach(d => { 
+                                                flatDocs.push({ req, actual: d, isGeneralReq: false }); 
+                                            });
                                         }
-                                        actualDocs.forEach(d => { flatDocs.push({ req, actual: d }); });
                                     });
 
-                                    return flatDocs.map(({ req, actual }) => {
-                                        const uniqueKey = actual ? `${req.id}-${actual.asignatura || 'general'}` : req.id;
+                                    // Filtrar por la pestaña activa
+                                    const filteredDocs = flatDocs.filter(({ req, actual, isGeneralReq }) => {
+                                        let isDocente = exp.tipo === 'docente' || exp.tipo_usuario === 'concursante_docente' || exp.tipo_usuario === 'auxiliar_docente';
+                                        if (!isDocente) return true; // Si no es docente, mostrar todo
+                                        
+                                        if (activeRevisionTab === 'General') {
+                                            // En general mostramos los que no tienen asignatura o los genéricos pendientes
+                                            return !actual?.asignatura || actual.asignatura === '' || actual.asignatura === 'General';
+                                        } else {
+                                            // En una pestaña específica, mostramos los documentos que tienen esa asignatura.
+                                            // Pero si es un requisito que no tiene ningún documento subido aún y el usuario está viendo
+                                            // una asignatura, tal vez deberíamos mostrarle que falta? 
+                                            // Para evitar confusión, los requisitos pendientes generales se muestran en la pestaña "General".
+                                            // Si es un requisito como "comprobante_pago" que es por asignatura, lo mostramos acá si no está.
+                                            if (!actual) {
+                                                return req.id === 'comprobante_pago'; // Solo mostramos los pendientes específicos de carpeta
+                                            }
+                                            return actual.asignatura === activeRevisionTab;
+                                        }
+                                    });
+
+                                    if (filteredDocs.length === 0) {
+                                        return (
+                                            <div className="col-span-full py-8 text-center text-slate-400 font-bold italic">
+                                                No hay documentos en esta carpeta.
+                                            </div>
+                                        );
+                                    }
+
+                                    return filteredDocs.map(({ req, actual }) => {
+                                        const uniqueKey = actual ? `${req.id}-${actual.asignatura || 'general'}-${actual.id || Math.random()}` : req.id;
                                         const isValidated = actual && actual.estado === 'aprobado';
-                                        const isIncludedInCv = actual && actual.observaciones === 'Incluido en Currículum';
+                                        const isIncludedInCv = actual && (actual.observaciones === 'Incluido en Currículum' || actual.archivo_nombre === 'Incluido en Currículum' || actual.archivo_url === 'INCLUIDO_EN_CV');
                                         
                                         // Estilo dinámico según estado del archivo
                                         let cardBg = "bg-white";
@@ -1299,7 +1437,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </div>
 
                                                 {/* Checkbox para indicar que está "Incluido en CV" */}
-                                                {exp.tipo === 'docente' && req.id !== 'cv' && cvUrl && (
+                                                {isDocente && req.id !== 'cv' && req.id !== 'curriculum' && (
                                                     <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between">
                                                         <label className="flex items-center gap-2 cursor-pointer select-none group w-full">
                                                             <input 
@@ -1309,14 +1447,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                 onChange={async (e) => {
                                                                     const isChecked = e.target.checked;
                                                                     if (isChecked) {
-                                                                        try {
-                                                                            await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl, actual?.asignatura);
-                                                                            notificationService.send('Criterio Aprobado', `Se marcó '${req.nombre}' como incluido en Currículum.`, 'success');
-                                                                            const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
-                                                                            setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
-                                                                        } catch (error) {
-                                                                            console.error('Error marking as included in CV:', error);
-                                                                        }
+                                                                        handleMarcarEnCurriculum(exp.cedula, req.id, actual?.asignatura);
                                                                     } else {
                                                                         if (actual) {
                                                                             try {
@@ -1418,15 +1549,17 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                     <span>Registrar Pago Ventanilla</span>
                                                                 </button>
                                                             ) : (
-                                                                <label className="text-[10px] font-black text-slate-700 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
-                                                                    <UploadFile style={{ fontSize: 15 }} />
-                                                                    <span>Subir escaneado (Ventanilla)</span>
-                                                                    <input 
-                                                                        type="file" 
-                                                                        className="hidden" 
-                                                                        onChange={(e) => handleDirectUpload(exp.cedula, req.id, undefined, e)} 
-                                                                    />
-                                                                </label>
+                                                                <div className="flex items-center gap-2">
+                                                                    <label className="text-[10px] font-black text-slate-700 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
+                                                                        <UploadFile style={{ fontSize: 15 }} />
+                                                                        <span>Subir escaneado (Ventanilla)</span>
+                                                                        <input 
+                                                                            type="file" 
+                                                                            className="hidden" 
+                                                                            onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
+                                                                        />
+                                                                    </label>
+                                                                </div>
                                                             )}
                                                         </>
                                                     )}

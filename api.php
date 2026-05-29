@@ -1318,6 +1318,43 @@ if ($method === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'mark_in_cv') {
+        require_admin('academico');
+        try {
+            $cedula = $data['cedula'] ?? '';
+            $doc_id = $data['doc_id'] ?? '';
+            $asignatura = $data['asignatura'] ?? null;
+            
+            if (!empty($asignatura)) {
+                $stmt_check = $conn->prepare("SELECT id FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                $stmt_check->execute([$cedula, $doc_id, $asignatura]);
+            } else {
+                $stmt_check = $conn->prepare("SELECT id FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                $stmt_check->execute([$cedula, $doc_id]);
+            }
+            
+            if ($stmt_check->rowCount() > 0) {
+                if (!empty($asignatura)) {
+                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'aprobado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                    $stmt->execute([$cedula, $doc_id, $asignatura]);
+                } else {
+                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'aprobado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                    $stmt->execute([$cedula, $doc_id]);
+                }
+            } else {
+                $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura, estado) VALUES (?, ?, ?, ?, ?, 'aprobado')");
+                $stmt->execute([$cedula, $doc_id, 'Incluido en Currículum', 'INCLUIDO_EN_CV', $asignatura]);
+            }
+            
+            write_system_log("MARK_IN_CV", "Admin", "Marcó documento $doc_id de CI: $cedula como Incluido en CV");
+            echo json_encode(["status" => "success", "message" => "Marcado como incluido en Currículum."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if (isset($data['action']) && $data['action'] === 'validate_doc') {
         require_admin('academico'); // Seguridad: Solo coordinadores y administradores
         try {
@@ -1670,7 +1707,23 @@ if ($method === 'POST') {
             
             $stmt = $conn->prepare("INSERT INTO pagos (postulante_cedula, concepto, monto, num_comprobante, comprobante_url, comprobante_nombre, asignatura, fecha_pago, estado, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?)");
             $stmt->execute([$cedula, $concepto, $monto, $num_comprobante, $comprobante_url, $comprobante_nombre, $asignatura, $estado, $observaciones]);
-            echo json_encode(["status" => "success", "id" => $conn->lastInsertId()]);
+            $pago_id = $conn->lastInsertId();
+            
+            // Auto-cargar en expedientes
+            if (!empty($comprobante_url)) {
+                if (empty($asignatura)) {
+                    $stmtDel = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ? AND tipo_documento = 'comprobante_pago' AND (asignatura IS NULL OR asignatura = '')");
+                    $stmtDel->execute([$cedula]);
+                } else {
+                    $stmtDel = $conn->prepare("DELETE FROM expedientes WHERE postulante_id = ? AND tipo_documento = 'comprobante_pago' AND asignatura = ?");
+                    $stmtDel->execute([$cedula, $asignatura]);
+                }
+
+                $stmtExp = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura, estado) VALUES (?, 'comprobante_pago', ?, ?, ?, 'aprobado')");
+                $stmtExp->execute([$cedula, $comprobante_nombre, $comprobante_url, $asignatura]);
+            }
+            
+            echo json_encode(["status" => "success", "id" => $pago_id]);
         } catch (PDOException $e) { 
             http_response_code(500); 
             echo json_encode(["status" => "error", "message" => $e->getMessage()]); 

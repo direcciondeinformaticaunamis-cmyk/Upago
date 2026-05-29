@@ -1027,7 +1027,9 @@ const BankReconciliation: React.FC = () => {
                                 {filteredRecords.map((row: any) => (
                                     <React.Fragment key={row.id}>
                                         <tr className={`hover:bg-slate-50 transition-colors ${row.match ? 'bg-emerald-50/30' : ''}`}>
-                                            <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">{row.fecha}</td>
+                                            <td className="px-3 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">
+                                                <span className="bg-yellow-200 text-yellow-900 border border-yellow-300 px-2 py-1 rounded shadow-sm font-bold">{row.fecha}</span>
+                                            </td>
                                             <td className="px-3 py-4 text-xs font-bold text-[#001738] whitespace-nowrap">{row.numero_expediente || row.match?.numero_expediente || 'PENDIENTE'}</td>
                                             <td className="px-3 py-4">
                                                 <div className="space-y-1">
@@ -1567,7 +1569,9 @@ const BankReconciliation: React.FC = () => {
                                                 <tbody className="divide-y divide-slate-100">
                                                     {importedTxQueue.map((tx, idx) => (
                                                         <tr key={idx} className="hover:bg-slate-50/50">
-                                                            <td className="px-5 py-3 text-slate-600 font-medium whitespace-nowrap">{tx.fecha_transaccion}</td>
+                                                            <td className="px-5 py-3 text-slate-600 font-medium whitespace-nowrap">
+                                                                <span className="bg-yellow-200 text-yellow-900 border border-yellow-300 px-2 py-1 rounded shadow-sm font-bold">{tx.fecha_transaccion}</span>
+                                                            </td>
                                                             <td className="px-5 py-3 text-slate-600 font-mono">{tx.referencia}</td>
                                                             <td className="px-5 py-3 text-slate-700 font-medium truncate max-w-[200px]" title={tx.descripcion}>{tx.descripcion}</td>
                                                             <td className="px-5 py-3 text-right font-bold text-slate-900 whitespace-nowrap">
@@ -1862,7 +1866,7 @@ const BankReconciliation: React.FC = () => {
                                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 font-medium">
                                                                 <span>Ref: <strong className="text-slate-700 font-mono">{tx.referencia || 'Sin Referencia'}</strong></span>
                                                                 <span>•</span>
-                                                                <span>Fecha: {tx.fecha_transaccion}</span>
+                                                                <span>Fecha: <strong className="bg-yellow-200 text-yellow-900 border border-yellow-300 px-2 py-0.5 rounded shadow-sm whitespace-nowrap">{tx.fecha_transaccion}</strong></span>
                                                                 <span>•</span>
                                                                 <span>Banco: <strong>{tx.banco || 'Banco Continental'}</strong></span>
                                                             </div>
