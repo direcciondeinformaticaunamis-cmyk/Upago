@@ -224,7 +224,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                         body: JSON.stringify({
                             action: 'gemini_ocr',
                             image: base64Image,
-                            doc_type: 'cedula'
+                            doc_type: 'cedula_or_cv'
                         })
                     });
                     if (response && response.status === 'success' && response.data) {
@@ -460,7 +460,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                                             className="bg-amber-600 hover:bg-amber-700 text-white border-amber-600 shadow-md shadow-amber-600/10"
                                                             onClick={(e) => { e.stopPropagation(); handleCedulaOcrScan(); }}
                                                         >
-                                                            ✨ Escanear Datos Personales (OCR)
+                                                            ✨ Escanear Documento (IA Autofill)
                                                         </AppButton>
                                                     )}
                                                 </div>

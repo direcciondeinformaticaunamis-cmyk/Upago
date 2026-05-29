@@ -975,14 +975,14 @@ if ($method === 'POST') {
         if ($doc_type === 'formulario' || $doc_type === 'auto') {
             $schema .= "nombre, apellido, cedula, ruc, correo, telefono, fechaNacimiento (en formato YYYY-MM-DD), lugarNacimientoCiudad, lugarNacimientoDepto, nacionalidad, paisOrigen, genero (M o F), estadoCivil (Soltero, Casado, Divorciado, Otro), direccion, barrio, carrera, sede, grupoSanguineo, alergico, seguroMedico (Público, Privado o Ninguno), esZurdo (boolean), discapacidad (Ninguna, Visual, Motriz, Auditiva u Otras), discapacidadDetalle, necesitaAdecuacion (boolean), adecuacionDetalle, enfermedadCronica, colegioNombre, colegioCiudad, colegioDistrito, colegioDepto, colegioTipo (Público, Privado o Privado Subvencionado), egresoAnio (integer), egresoPromedio (float), trabaja (boolean), empresaNombre, cargo, horarioLaboral.";
         }
-        if ($doc_type === 'cedula' || $doc_type === 'auto') {
-            $schema .= " (Para Cédula: cedula (número limpio sin puntos ni guiones), apellido, nombre, fechaNacimiento (YYYY-MM-DD), genero (M o F), nacionalidad, paisOrigen, estadoCivil)";
+        if ($doc_type === 'cedula' || $doc_type === 'cedula_or_cv' || $doc_type === 'auto') {
+            $schema .= " (Para Cédula o Currículum: cedula (número limpio sin puntos ni guiones), apellido, nombre, fechaNacimiento (YYYY-MM-DD), genero (M o F), nacionalidad, paisOrigen, estadoCivil, correo, telefono, direccion, lugarNacimientoCiudad)";
         }
         if ($doc_type === 'comprobante' || $doc_type === 'auto') {
             $schema .= " (Para Comprobante Bancario: num_comprobante (string), monto (integer sin puntos ni comas), fecha_pago (YYYY-MM-DD), banco (string), concepto (string))";
         }
 
-        $prompt = "Analiza la imagen de este documento (puede ser una Cédula de Identidad de Paraguay, un Formulario de Admisión de Medicina de la UNAMIS, o un Comprobante/Boleta de depósito/transferencia bancaria). " .
+        $prompt = "Analiza la imagen de este documento (puede ser una Cédula de Identidad de Paraguay, un Currículum Vitae, un Formulario de Admisión de Medicina, o un Comprobante bancario). " .
                   "Identifica el tipo de documento y extrae todos los campos posibles en un único objeto JSON plano. " .
                   "No inventes datos. Si un campo no está presente o no es legible, pon null. " .
                   "Usa estrictamente las siguientes claves según corresponda: " . $schema . " " .
