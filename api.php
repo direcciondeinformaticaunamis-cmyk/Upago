@@ -930,6 +930,117 @@ if ($method === 'POST') {
         http_response_code(401); echo json_encode(["status" => "error", "message" => "Credenciales inválidas o no registrado"]); exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'gemini_ocr') {
+        $user = get_authorized_user();
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(["status" => "error", "message" => "No autorizado. Inicie sesión nuevamente."]);
+            exit;
+        }
+
+        if (!defined('GEMINI_API_KEY') || empty(GEMINI_API_KEY)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "La clave de la API de Gemini no está configurada en el servidor."]);
+            exit;
+        }
+
+        $image_base64 = $data['image'] ?? '';
+        $doc_type = $data['doc_type'] ?? 'auto';
+
+        if (empty($image_base64)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "No se recibió la imagen del documento."]);
+            exit;
+        }
+
+        if (preg_match('/^data:image\/(\w+);base64,/', $image_base64, $type_matches)) {
+            $image_base64 = substr($image_base64, strpos($image_base64, ',') + 1);
+            $mime_type = 'image/' . $type_matches[1];
+        } else {
+            $mime_type = 'image/jpeg';
+        }
+
+        $schema = '';
+        if ($doc_type === 'formulario' || $doc_type === 'auto') {
+            $schema .= "nombre, apellido, cedula, ruc, correo, telefono, fechaNacimiento (en formato YYYY-MM-DD), lugarNacimientoCiudad, lugarNacimientoDepto, nacionalidad, paisOrigen, genero (M o F), estadoCivil (Soltero, Casado, Divorciado, Otro), direccion, barrio, carrera, sede, grupoSanguineo, alergico, seguroMedico (Público, Privado o Ninguno), esZurdo (boolean), discapacidad (Ninguna, Visual, Motriz, Auditiva u Otras), discapacidadDetalle, necesitaAdecuacion (boolean), adecuacionDetalle, enfermedadCronica, colegioNombre, colegioCiudad, colegioDistrito, colegioDepto, colegioTipo (Público, Privado o Privado Subvencionado), egresoAnio (integer), egresoPromedio (float), trabaja (boolean), empresaNombre, cargo, horarioLaboral.";
+        }
+        if ($doc_type === 'cedula' || $doc_type === 'auto') {
+            $schema .= " (Para Cédula: cedula (número limpio sin puntos ni guiones), apellido, nombre, fechaNacimiento (YYYY-MM-DD), genero (M o F), nacionalidad, paisOrigen, estadoCivil)";
+        }
+        if ($doc_type === 'comprobante' || $doc_type === 'auto') {
+            $schema .= " (Para Comprobante Bancario: num_comprobante (string), monto (integer sin puntos ni comas), fecha_pago (YYYY-MM-DD), banco (string), concepto (string))";
+        }
+
+        $prompt = "Analiza la imagen de este documento (puede ser una Cédula de Identidad de Paraguay, un Formulario de Admisión de Medicina de la UNAMIS, o un Comprobante/Boleta de depósito/transferencia bancaria). " .
+                  "Identifica el tipo de documento y extrae todos los campos posibles en un único objeto JSON plano. " .
+                  "No inventes datos. Si un campo no está presente o no es legible, pon null. " .
+                  "Usa estrictamente las siguientes claves según corresponda: " . $schema . " " .
+                  "La respuesta debe ser ÚNICAMENTE un objeto JSON limpio y válido. No añadas introducciones, explicaciones, ni bloques de código de markdown como ```json. Solo texto JSON crudo.";
+
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . GEMINI_API_KEY;
+
+        $payload = [
+            "contents" => [
+                [
+                    "parts" => [
+                        ["text" => $prompt],
+                        [
+                            "inlineData" => [
+                                "mimeType" => $mime_type,
+                                "data" => $image_base64
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "generationConfig" => [
+                "responseMimeType" => "application/json"
+            ]
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 35);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_code !== 200) {
+            http_response_code($http_code ?: 500);
+            echo json_encode(["status" => "error", "message" => "Error de API Gemini (HTTP $http_code): " . ($response ?: 'Sin respuesta')]);
+            exit;
+        }
+
+        $res_data = json_decode($response, true);
+        $candidate_json = $res_data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+        if (empty($candidate_json)) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Gemini retornó un resultado vacío."]);
+            exit;
+        }
+
+        $extracted_object = json_decode($candidate_json, true);
+        if ($extracted_object === null) {
+            $clean_json = preg_replace('/^```json\s*|```$/m', '', $candidate_json);
+            $extracted_object = json_decode(trim($clean_json), true);
+        }
+
+        if ($extracted_object) {
+            echo json_encode(["status" => "success", "data" => $extracted_object]);
+            write_system_log("GEMINI_OCR", $user['email'] ?? 'Usuario', "Procesado tipo $doc_type con éxito");
+        } else {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "No se pudo deserializar el JSON de la IA.", "raw" => $candidate_json]);
+        }
+        exit;
+    }
+
+
     if (isset($data['action']) && $data['action'] === 'import_bank_transactions') {
         require_admin('finance'); // Seguridad: Solo administradores y finanzas
         try {

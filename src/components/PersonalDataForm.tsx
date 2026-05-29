@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { OcrUploadModal } from './OcrUploadModal';
 import { parseCedula } from '../services/ocrParser';
+import { fetchApi } from '../services/ApiService';
 import {
     User,
     Mail,
@@ -173,100 +174,132 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
         setOcrSuccessMsg(null);
 
         try {
-            let textToParse = '';
+            let base64Image = '';
 
-            // If a PDF file was uploaded
+            // Convert rawFile or photo to base64
             if (rawFile && rawFile.type === 'application/pdf') {
-                setOcrStatusText('Cargando motor de procesamiento de PDF...');
-                setOcrProgress(20);
-                
+                setOcrStatusText('Procesando PDF para escaneo inteligente...');
+                setOcrProgress(25);
                 if (!(window as any).pdfjsLib) {
                     await loadScript(PDFJS_CDN);
                 }
                 if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
                     (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
                 }
-
-                setOcrStatusText('Analizando estructura del documento PDF...');
-                setOcrProgress(35);
-
                 const arrayBuffer = await rawFile.arrayBuffer();
                 const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
-
-                // Try to extract digital text first
-                let digitalText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-                    digitalText += pageText + '\n';
+                const page1 = await pdf.getPage(1);
+                const viewport = page1.getViewport({ scale: 2.0 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                if (context) {
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page1.render({ canvasContext: context, viewport }).promise;
+                    base64Image = canvas.toDataURL('image/jpeg', 0.9);
                 }
+            } else if (photo) {
+                base64Image = photo;
+            } else if (rawFile) {
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.readAsDataURL(rawFile);
+                });
+                base64Image = await base64Promise;
+            }
 
-                console.log("Cédula Directly Extracted Text Length:", digitalText.trim().length);
+            let parsed: any = null;
+            let ocrEngineUsed = 'gemini';
 
-                if (digitalText.trim().length >= 30) {
-                    textToParse = digitalText;
-                    setOcrProgress(75);
-                } else {
-                    // Fallback to OCR if scanned PDF
-                    setOcrStatusText('El PDF parece estar escaneado. Renderizando y procesando OCR...');
-                    setOcrProgress(50);
-                    
-                    const page1 = await pdf.getPage(1);
-                    const viewport = page1.getViewport({ scale: 2.0 }); // High resolution for better accuracy
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    if (context) {
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        setOcrStatusText('Renderizando PDF escaneado a imagen de alta resolución...');
-                        await page1.render({ canvasContext: context, viewport }).promise;
-                        
-                        if (!(window as any).Tesseract) {
-                            await loadScript(TESSERACT_CDN);
-                        }
-                        setOcrStatusText('Analizando texto de la página con OCR...');
-                        setOcrProgress(65);
-                        
-                        const worker = await (window as any).Tesseract.createWorker('spa');
-                        const result = await worker.recognize(canvas);
-                        await worker.terminate();
-                        textToParse = result.data.text;
-                    } else {
-                        throw new Error("No se pudo inicializar el contexto de renderizado de la página.");
+            // Intentar Gemini OCR
+            if (base64Image) {
+                try {
+                    setOcrStatusText('Enviando documento a IA Avanzada (Gemini)...');
+                    setOcrProgress(60);
+                    const response = await fetchApi('', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'gemini_ocr',
+                            image: base64Image,
+                            doc_type: 'cedula'
+                        })
+                    });
+                    if (response && response.status === 'success' && response.data) {
+                        parsed = response.data;
                     }
+                } catch (geminiErr) {
+                    console.warn("Gemini Cédula OCR failed, falling back to local Tesseract:", geminiErr);
                 }
-            } else {
-                // If it is an image
-                if (!(window as any).Tesseract) {
-                    await loadScript(TESSERACT_CDN);
+            }
+
+            // Fallback a Tesseract local si Gemini falló
+            if (!parsed) {
+                ocrEngineUsed = 'tesseract';
+                setOcrStatusText('IA no disponible. Ejecutando motor local Tesseract...');
+                setOcrProgress(40);
+                let textToParse = '';
+
+                if (rawFile && rawFile.type === 'application/pdf') {
+                    if (!(window as any).pdfjsLib) {
+                        await loadScript(PDFJS_CDN);
+                    }
+                    if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                        (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                    }
+                    const arrayBuffer = await rawFile.arrayBuffer();
+                    const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
+                    const pdf = await loadingTask.promise;
+                    
+                    let digitalText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                        digitalText += pageText + '\n';
+                    }
+
+                    if (digitalText.trim().length >= 30) {
+                        textToParse = digitalText;
+                    } else {
+                        const page1 = await pdf.getPage(1);
+                        const viewport = page1.getViewport({ scale: 2.0 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        if (context) {
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            await page1.render({ canvasContext: context, viewport }).promise;
+                            
+                            if (!(window as any).Tesseract) {
+                                await loadScript(TESSERACT_CDN);
+                            }
+                            const worker = await (window as any).Tesseract.createWorker('spa');
+                            const result = await worker.recognize(canvas);
+                            await worker.terminate();
+                            textToParse = result.data.text;
+                        }
+                    }
+                } else {
+                    if (!(window as any).Tesseract) {
+                        await loadScript(TESSERACT_CDN);
+                    }
+                    const worker = await (window as any).Tesseract.createWorker('spa');
+                    const source = photo || rawFile;
+                    if (!source) throw new Error("No hay origen de imagen válido.");
+                    const result = await worker.recognize(source);
+                    await worker.terminate();
+                    textToParse = result.data.text;
                 }
-                
-                setOcrProgress(30);
-                setOcrStatusText('Inicializando lector en español...');
-                
-                const worker = await (window as any).Tesseract.createWorker('spa');
-                
-                setOcrProgress(50);
-                setOcrStatusText('Analizando imagen de la cédula...');
-                
-                const source = photo || rawFile;
-                if (!source) throw new Error("No hay origen de imagen válido para analizar.");
-                const result = await worker.recognize(source);
-                await worker.terminate();
-                textToParse = result.data.text;
+                parsed = parseCedula(textToParse);
             }
 
             setOcrProgress(80);
             setOcrStatusText('Procesando datos extraídos...');
-            
-            // Parse text
-            const parsed = parseCedula(textToParse);
             console.log("Datos extraídos de la cédula:", parsed);
             
             let filledCount = 0;
-            // Autofill the form
             Object.entries(parsed).forEach(([key, value]) => {
                 if (value !== undefined && value !== null && value !== '') {
                     onChange(key, value);
@@ -276,9 +309,10 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
             
             setOcrProgress(100);
             if (filledCount > 0) {
-                setOcrSuccessMsg(`¡Escaneo exitoso! Se autocompletaron ${filledCount} campos del formulario.`);
+                const engineName = ocrEngineUsed === 'gemini' ? 'IA Avanzada (Gemini)' : 'Básico Local (Tesseract)';
+                setOcrSuccessMsg(`¡Escaneo exitoso con ${engineName}! Se autocompletaron ${filledCount} campos.`);
             } else {
-                setOcrError('No se pudieron extraer datos del escaneo. Asegúrese de que el documento sea nítido y legible.');
+                setOcrError('No se pudieron extraer datos legibles. Verifique la calidad de la foto.');
             }
         } catch (err: any) {
             console.error("Cédula OCR failed:", err);

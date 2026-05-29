@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { FinanceService } from '../../services/FinanceService';
 import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS } from '../../constants/catalogoUnamis';
+import { fetchApi } from '../../services/ApiService';
 import Tesseract from 'tesseract.js';
 
 const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
@@ -118,9 +119,110 @@ const PaymentRegistrationForm: React.FC<Props> = ({
         setOcrSuccessMsg(null);
         setOcrError(null);
         try {
+            let base64Image = '';
+
+            // Convert selectedFile to base64
+            if (selectedFile.type === 'application/pdf') {
+                if (!(window as any).pdfjsLib) {
+                    await loadScript(PDFJS_CDN);
+                }
+                if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                }
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const page1 = await pdf.getPage(1);
+                const viewport = page1.getViewport({ scale: 2.0 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                if (context) {
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page1.render({ canvasContext: context, viewport }).promise;
+                    base64Image = canvas.toDataURL('image/jpeg', 0.9);
+                }
+            } else {
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.readAsDataURL(selectedFile);
+                });
+                base64Image = await base64Promise;
+            }
+
+            let parsed: any = null;
+
+            // Intentar Gemini OCR
+            if (base64Image) {
+                try {
+                    const response = await fetchApi('', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'gemini_ocr',
+                            image: base64Image,
+                            doc_type: 'comprobante'
+                        })
+                    });
+                    if (response && response.status === 'success' && response.data) {
+                        parsed = response.data;
+                    }
+                } catch (geminiErr) {
+                    console.warn("Gemini Voucher OCR failed, falling back to local Tesseract:", geminiErr);
+                }
+            }
+
+            // Si Gemini funcionó, llenar los campos y finalizar
+            if (parsed) {
+                const fieldsFilled: string[] = [];
+                if (parsed.monto) {
+                    set('monto', parsed.monto.toString().replace(/[^0-9]/g, ''));
+                    fieldsFilled.push("Monto");
+                }
+                if (parsed.num_comprobante) {
+                    set('numComprobante', parsed.num_comprobante);
+                    fieldsFilled.push("Nº Comprobante");
+                }
+                if (parsed.fecha_pago) {
+                    let formattedDate = parsed.fecha_pago;
+                    if (formattedDate && !formattedDate.includes('T')) {
+                        formattedDate = formattedDate + 'T12:00';
+                    }
+                    set('fechaPago', formattedDate);
+                    fieldsFilled.push("Fecha");
+                }
+                if (parsed.titular) {
+                    set('titular', parsed.titular);
+                    fieldsFilled.push("Titular de cuenta");
+                }
+                if (parsed.concepto) {
+                    const foundArancel = dynamicAranceles.find(a => 
+                        a.concepto.toUpperCase().includes(parsed.concepto.toUpperCase()) || 
+                        parsed.concepto.toUpperCase().includes(a.concepto.toUpperCase())
+                    );
+                    if (foundArancel) {
+                        setConcepto(foundArancel.id.toString());
+                        if (parsed.monto) {
+                            set('monto', parsed.monto.toString().replace(/[^0-9]/g, ''));
+                        } else {
+                            set('monto', foundArancel.monto.toString());
+                        }
+                        fieldsFilled.push("Concepto (" + foundArancel.concepto + ")");
+                    }
+                }
+
+                if (fieldsFilled.length > 0) {
+                    setOcrSuccessMsg(`¡Escaneo exitoso con IA (Gemini)! Se autocompletaron: ${fieldsFilled.join(', ')}.`);
+                } else {
+                    setOcrSuccessMsg("Escaneo completado. Verifique los datos manualmente.");
+                }
+                setIsScanning(false);
+                return;
+            }
+
+            // Fallback a Tesseract local
             let textToParse = '';
 
-            // Si se subió un archivo PDF
             if (selectedFile.type === 'application/pdf') {
                 if (!(window as any).pdfjsLib) {
                     await loadScript(PDFJS_CDN);
@@ -133,7 +235,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
 
-                // Intentar extraer texto digital directamente
                 let digitalText = '';
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
@@ -142,14 +243,11 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     digitalText += pageText + '\n';
                 }
 
-                console.log("Comprobante Directly Extracted Text Length:", digitalText.trim().length);
-
                 if (digitalText.trim().length >= 30) {
                     textToParse = digitalText;
                 } else {
-                    // Fallback a OCR en canvas si es un PDF escaneado
                     const page1 = await pdf.getPage(1);
-                    const viewport = page1.getViewport({ scale: 2.0 }); // Resolución alta para mejor precisión
+                    const viewport = page1.getViewport({ scale: 2.0 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     if (context) {
@@ -160,20 +258,17 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                         const result = await Tesseract.recognize(canvas, 'spa');
                         textToParse = result.data.text;
                     } else {
-                        throw new Error("No se pudo inicializar el contexto de renderizado de la página.");
+                        throw new Error("No se pudo inicializar el contexto de renderizado.");
                     }
                 }
             } else {
-                // Si es una imagen
                 const result = await Tesseract.recognize(selectedFile, 'spa');
                 textToParse = result.data.text;
             }
 
             const text = textToParse.toUpperCase();
-            
             const fieldsFilled: string[] = [];
             
-            // Monto regex (soporta ₲, Gs., GS, comas o puntos)
             const montoMatch = text.match(/(?:GS\.?|GUARANIES|MONTO|₲)?\s*([1-9]\d{0,2}(?:[.,]\d{3})+)/);
             if (montoMatch && montoMatch[1]) {
                 const cleanedMonto = montoMatch[1].replace(/[^0-9]/g, '');
@@ -182,7 +277,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     fieldsFilled.push("Monto");
                 }
             } else {
-                // Fallback for amounts without dots but after 'GS' or '₲'
                 const fallbackMatch = text.match(/(?:GS\.?|₲)\s*(\d{4,10})/);
                 if (fallbackMatch && fallbackMatch[1]) {
                     set('monto', fallbackMatch[1]);
@@ -190,14 +284,12 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 }
             }
             
-            // Comprobante regex (muy flexible por el ruido del OCR)
             const compMatch = text.match(/(?:COMPROBANTE|NRO|N°|Nº|NUMERO|REF|TRANSACCION|DOCUMENTO|RECIBO)[^\d]{0,20}?(\d{6,15})/);
             if (compMatch && compMatch[1]) {
                 set('numComprobante', compMatch[1]);
                 fieldsFilled.push("Nº Comprobante");
             }
 
-            // Fecha y Hora regex (soporta multiples formatos)
             const months: {[key: string]: string} = {
                 'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
                 'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12',
@@ -206,7 +298,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
 
             let fechaEncontrada = false;
             
-            // 1. Formato YYYY-MM-DD HH:MM:SS (BNF)
             const bnfMatch = text.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})\s+(\d{2}:\d{2})/);
             if (bnfMatch) {
                 set('fechaPago', `${bnfMatch[1]}-${bnfMatch[2]}-${bnfMatch[3]}T${bnfMatch[4]}`);
@@ -214,7 +305,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 fieldsFilled.push("Fecha");
             }
 
-            // 2. Formato DD/MM/YYYY HH:MM (Ueno)
             if (!fechaEncontrada) {
                 const slashMatch = text.match(/(\d{2})[\/\-](\d{2}|[A-Z]{3,4})[\/\-](\d{2,4})[^\d]*(\d{2}:\d{2})/);
                 if (slashMatch) {
@@ -232,7 +322,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 }
             }
 
-            // 3. Formato texto "20 MAY 2026 a las 10:53" (Itaú, Continental, Eko)
             if (!fechaEncontrada) {
                 const textDateMatch = text.match(/(\d{1,2})\s*[\/\-]?\s*([A-Z]{3,10})\s*[\/\-]?\s*(\d{4})[^\d]*(\d{2}:\d{2})?/);
                 if (textDateMatch) {
@@ -240,14 +329,13 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                     let mStr = textDateMatch[2].substring(0,3);
                     let m = months[mStr] || '01';
                     let y = textDateMatch[3];
-                    let time = textDateMatch[4] || "00:00"; // Fallback to 00:00 if no time
+                    let time = textDateMatch[4] || "00:00";
                     set('fechaPago', `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${time}`);
                     fechaEncontrada = true;
                     fieldsFilled.push("Fecha");
                 }
             }
 
-            // 4. Titular de la cuenta bancaria regex (Nombre de la cuenta de origen)
             const titularRegexes = [
                 /(?:TITULAR\s*DE\s*LA\s*CUENTA|TITULAR\s*ORIGEN|TITULAR|ORDENANTE|REMITENTE|CLIENTE|NOMBRE\s*ORIGEN|TRANSFERIDO\s*POR|CTA\.?\s*ORIGEN|DE|DESDE)[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]{3,}(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]{3,})+)/i,
                 /(?:NOMBRE|BENEFICIARIO|DESTINATARIO)[:\-]?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ]{3,}(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]{3,})+)/i
@@ -258,7 +346,6 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 const match = text.match(regex);
                 if (match && match[1]) {
                     const candidate = match[1].trim();
-                    // Ignorar si coincide con la institución (UNAMIS, etc.)
                     const isInstitution = /UNAMIS|UNIVERSIDAD|FACULTAD|CAJA|ARANCEL|TESORERIA/i.test(candidate);
                     if (!isInstitution) {
                         titularEncontrado = candidate;
@@ -273,9 +360,9 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             }
 
             if (fieldsFilled.length > 0) {
-                setOcrSuccessMsg(`¡Escaneo exitoso! Se autocompletaron los campos: ${fieldsFilled.join(', ')}.`);
+                setOcrSuccessMsg(`¡Escaneo exitoso con motor local (Tesseract)! Se autocompletaron: ${fieldsFilled.join(', ')}.`);
             } else {
-                setOcrSuccessMsg("Escaneo completado. Por favor, verifique y complete los campos manualmente.");
+                setOcrSuccessMsg("Escaneo completado. Verifique y complete los campos manualmente.");
             }
 
         } catch (error) {

@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { parseAdmissionForm } from '../services/ocrParser';
 import AppButton from './ui/AppButton';
 import AppInput from './ui/AppInput';
+import { fetchApi } from '../services/ApiService';
 
 // Declare global types for CDN script objects
 declare global {
@@ -48,6 +49,7 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
     const [progress, setProgress] = useState(0);
     const [ocrState, setOcrState] = useState<'idle' | 'loading_libs' | 'processing_pdf' | 'running_ocr' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [ocrEngine, setOcrEngine] = useState<'gemini' | 'tesseract' | null>(null);
     
     // Parsed results for review
     const [parsedData, setParsedData] = useState<any>(null);
@@ -177,6 +179,30 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
         }
     };
 
+    // Helper to send image base64 data to Gemini API backend OCR endpoint
+    const tryGeminiOcr = async (base64Data: string, docType: 'formulario' | 'cedula' | 'comprobante' = 'formulario'): Promise<any> => {
+        try {
+            setStatusText('Enviando documento a IA Avanzada (Gemini)...');
+            setProgress(75);
+            const response = await fetchApi('', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'gemini_ocr',
+                    image: base64Data,
+                    doc_type: docType
+                })
+            });
+            if (response && response.status === 'success' && response.data) {
+                setOcrEngine('gemini');
+                return response.data;
+            }
+            throw new Error(response.message || 'La IA no retornó datos estructurados.');
+        } catch (err: any) {
+            console.warn("Gemini OCR failed, falling back to Tesseract:", err);
+            return null;
+        }
+    };
+
     // Helper: Runs Tesseract on an image or canvas
     const runOcrOnSource = async (source: any): Promise<string> => {
         setStatusText('Ejecutando OCR para lectura de texto. Por favor espere...');
@@ -213,8 +239,7 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
         }
         
         console.log("Directly Extracted Text Length:", extractedText.trim().length);
-        
-        // Step B: Generate PDF page image previews using HTML5 canvas
+             // Step B: Generate PDF page image previews using HTML5 canvas
         const pagesDataUrls: string[] = [];
         setStatusText('Generando vistas previas del PDF...');
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -231,6 +256,19 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
         }
         setPdfPages(pagesDataUrls);
 
+        // Intentar Gemini OCR en la primera página
+        if (pagesDataUrls.length > 0) {
+            const geminiData = await tryGeminiOcr(pagesDataUrls[0], 'formulario');
+            if (geminiData) {
+                setParsedData(geminiData);
+                setProgress(100);
+                setOcrState('success');
+                return;
+            }
+        }
+
+        // Fallback: Tesseract.js
+        setOcrEngine('tesseract');
         // Step C: Fallback to OCR if digital text is empty/insufficient (Scanned PDF)
         if (extractedText.trim().length < 150) {
             console.log("Scanned PDF detected. Running OCR on pages...");
@@ -278,6 +316,17 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
         const base64 = await base64Promise;
         setPreviewUrl(base64);
         
+        // Intentar Gemini OCR primero
+        const geminiData = await tryGeminiOcr(base64, 'formulario');
+        if (geminiData) {
+            setParsedData(geminiData);
+            setProgress(100);
+            setOcrState('success');
+            return;
+        }
+
+        // Fallback: Tesseract.js
+        setOcrEngine('tesseract');
         const extractedText = await runOcrOnSource(imgFile);
         
         setProgress(95);
@@ -589,6 +638,15 @@ export const OcrUploadModal: React.FC<OcrUploadModalProps> = ({ isOpen, onClose,
                                                 <p className="text-[10px] font-bold text-emerald-600">
                                                     Revise y complete la información extraída a continuación antes de integrarla al expediente.
                                                 </p>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ${
+                                                        ocrEngine === 'gemini' 
+                                                            ? 'bg-blue-50 text-blue-700 border border-blue-100' 
+                                                            : 'bg-amber-50 text-amber-700 border border-amber-100'
+                                                    }`}>
+                                                        Motor: {ocrEngine === 'gemini' ? '✨ IA Avanzada (Gemini)' : '⚙️ Básico Local (Tesseract)'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 

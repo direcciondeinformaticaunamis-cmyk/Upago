@@ -61,6 +61,7 @@ jobs:
           define('ADMIN_USER',  '${{ secrets.ADMIN_USER }}');
           define('ADMIN_PASS',  '${{ secrets.ADMIN_PASS }}');
           define('JWT_SECRET',  '${{ secrets.JWT_SECRET }}');
+          define('GEMINI_API_KEY',  '${{ secrets.GEMINI_API_KEY }}');
 
           define('UPLOAD_BASE', 'uploads/');
           define('MAX_FILE_SIZE', 5242880);
