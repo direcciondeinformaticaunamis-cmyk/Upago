@@ -1293,12 +1293,12 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     };
 
                                     const required = getRequiredDocs();
-                                    const cvDoc = exp.documentos?.find(d => d.id === 'cv');
+                                    const cvDoc = exp.documentos?.find((d: any) => d.tipo_documento === 'cv');
                                     const cvUrl = cvDoc?.url || '';
 
                                     const flatDocs: any[] = [];
                                     required.forEach((req) => {
-                                        const actualDocs = exp.documentos?.filter(d => d.id === req.id) || [];
+                                        const actualDocs = exp.documentos?.filter((d: any) => d.tipo_documento === req.id) || [];
                                         
                                         if (actualDocs.length === 0) {
                                             flatDocs.push({ req, actual: undefined, isGeneralReq: true });
@@ -1433,8 +1433,9 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                 disabled={actual && actual.estado === 'aprobado' && !isIncludedInCv}
                                                                 onChange={async (e) => {
                                                                     const isChecked = e.target.checked;
+                                                                    const targetAsignatura = activeRevisionTab !== 'General' ? activeRevisionTab : (actual?.asignatura || undefined);
                                                                     if (isChecked) {
-                                                                        handleMarcarEnCurriculum(exp.cedula, req.id, actual?.asignatura);
+                                                                        handleMarcarEnCurriculum(exp.cedula, req.id, targetAsignatura);
                                                                     } else {
                                                                         if (actual) {
                                                                             try {
