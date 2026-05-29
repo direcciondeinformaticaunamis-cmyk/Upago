@@ -330,18 +330,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         loadExpedientes();
     }, []);
 
-    React.useEffect(() => {
-        if (user.rol !== 'superadmin') {
-            const email = user.email.toLowerCase();
-            if (email.includes('medicina')) {
-                setFilterCarrera('Medicina');
-                setFilterSede('Sede San Ignacio Guazú');
-            } else if (email.includes('informatica')) {
-                setFilterCarrera('Ingeniería Informática');
-                setFilterSede('Sede Villa Florida');
-            }
-        }
-    }, [user]);
+
 
     React.useEffect(() => {
         if (selectedExpediente && selectedExpediente.cedula) {
