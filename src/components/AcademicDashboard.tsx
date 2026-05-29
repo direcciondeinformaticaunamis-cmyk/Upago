@@ -1293,12 +1293,12 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     };
 
                                     const required = getRequiredDocs();
-                                    const cvDoc = exp.documentos?.find((d: any) => d.tipo_documento === 'cv');
+                                    const cvDoc = exp.documentos?.find((d: any) => d.id === 'cv');
                                     const cvUrl = cvDoc?.url || '';
 
                                     const flatDocs: any[] = [];
                                     required.forEach((req) => {
-                                        const actualDocs = exp.documentos?.filter((d: any) => d.tipo_documento === req.id) || [];
+                                        const actualDocs = exp.documentos?.filter((d: any) => d.id === req.id) || [];
                                         
                                         if (actualDocs.length === 0) {
                                             flatDocs.push({ req, actual: undefined, isGeneralReq: true });
@@ -1341,7 +1341,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                     return filteredDocs.map(({ req, actual }) => {
                                         const uniqueKey = actual ? `${req.id}-${actual.asignatura || 'general'}-${actual.id || Math.random()}` : req.id;
                                         const isValidated = actual && actual.estado === 'aprobado';
-                                        const isIncludedInCv = actual && (actual.observaciones === 'Incluido en Currículum' || actual.archivo_nombre === 'Incluido en Currículum' || actual.archivo_url === 'INCLUIDO_EN_CV');
+                                        const isIncludedInCv = actual && (actual.observaciones === 'Incluido en Currículum' || (actual.url && actual.url.includes('INCLUIDO_EN_CV')));
                                         
                                         // Estilo dinámico según estado del archivo
                                         let cardBg = "bg-white";

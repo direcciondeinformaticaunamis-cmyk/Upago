@@ -1335,14 +1335,14 @@ if ($method === 'POST') {
             
             if ($stmt_check->rowCount() > 0) {
                 if (!empty($asignatura)) {
-                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'aprobado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'validado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum', observaciones = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
                     $stmt->execute([$cedula, $doc_id, $asignatura]);
                 } else {
-                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'aprobado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                    $stmt = $conn->prepare("UPDATE expedientes SET estado = 'validado', archivo_url = 'INCLUIDO_EN_CV', archivo_nombre = 'Incluido en Currículum', observaciones = 'Incluido en Currículum' WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
                     $stmt->execute([$cedula, $doc_id]);
                 }
             } else {
-                $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura, estado) VALUES (?, ?, ?, ?, ?, 'aprobado')");
+                $stmt = $conn->prepare("INSERT INTO expedientes (postulante_id, tipo_documento, archivo_nombre, archivo_url, asignatura, estado, observaciones) VALUES (?, ?, ?, ?, ?, 'validado', 'Incluido en Currículum')");
                 $stmt->execute([$cedula, $doc_id, 'Incluido en Currículum', 'INCLUIDO_EN_CV', $asignatura]);
             }
             
