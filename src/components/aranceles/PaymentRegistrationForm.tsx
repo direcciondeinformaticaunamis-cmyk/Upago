@@ -91,6 +91,7 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
+    const [createdPagoId, setCreatedPagoId] = useState<string>('');
     const [dynamicAranceles, setDynamicAranceles] = useState<Arancel[]>([]);
     const [loadingAranceles, setLoadingAranceles] = useState(true);
     const [ocrSuccessMsg, setOcrSuccessMsg] = useState<string | null>(null);
@@ -425,7 +426,10 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             // Adjuntar observaciones con los detalles especificos
             formData.append('observaciones', `Sede: ${actualSede} | Carrera: ${actualCarrera} | Cohorte: ${actualCohorte}`);
             
-            await FinanceService.registerPayment(formData);
+            const result = await FinanceService.registerPayment(formData);
+            if (result && result.status === 'success' && result.id) {
+                setCreatedPagoId(result.id.toString());
+            }
             setSuccess(true);
         } catch (err: any) {
             console.error("Error submitting payment:", err);
@@ -433,6 +437,30 @@ const PaymentRegistrationForm: React.FC<Props> = ({
             alert("Error del servidor: " + (err.message || JSON.stringify(err)));
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleDownloadReceipt = () => {
+        const arancelObj = dynamicAranceles.find(a => a.id.toString() === concepto);
+        const conceptoText = arancelObj ? arancelObj.concepto : 'Pago General';
+        const receiptCode = `UN-${createdPagoId || Math.floor(Math.random()*90000+10000)}-2026`;
+        const html = generatePaymentReceiptHTML({
+            nombre: form.nombre,
+            cedula: form.cedula,
+            telefono: form.telefono,
+            direccion: form.direccion,
+            carrera: form.carrera,
+            sede: isCustomSede ? customSede : selectedSede,
+            concepto: conceptoText,
+            monto: form.monto,
+            numComprobante: form.numComprobante,
+            fechaPago: form.fechaPago,
+            receiptCode
+        });
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(html);
+            win.document.close();
         }
     };
 
@@ -516,7 +544,10 @@ const PaymentRegistrationForm: React.FC<Props> = ({
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mb-20">
-                    <button className="px-8 py-4 bg-[#002f6c] text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#001738] transition-colors shadow-lg shadow-[#002f6c]/20">
+                    <button 
+                        onClick={handleDownloadReceipt}
+                        className="px-8 py-4 bg-[#002f6c] text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#001738] transition-colors shadow-lg shadow-[#002f6c]/20"
+                    >
                         <Download size={20} /> Descargar Comprobante Digital
                     </button>
                     <button 
@@ -1118,3 +1149,166 @@ const PaymentRegistrationForm: React.FC<Props> = ({
 };
 
 export default PaymentRegistrationForm;
+
+const generatePaymentReceiptHTML = (data: {
+    nombre: string;
+    cedula: string;
+    telefono: string;
+    direccion: string;
+    carrera: string;
+    sede: string;
+    concepto: string;
+    monto: string;
+    numComprobante: string;
+    fechaPago: string;
+    receiptCode: string;
+}) => {
+    const today = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const formatGs = (val: string) => {
+        const num = parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
+        return new Intl.NumberFormat('es-PY').format(num);
+    };
+
+    const formatLetras = (val: string) => {
+        const num = parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
+        return `${new Intl.NumberFormat('es-PY').format(num)} GUARANÍES EXACTOS.`;
+    };
+
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Comprobante de Pago - ${data.receiptCode}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding: 40px; color: #1e293b; }
+                .receipt { background: white; max-width: 800px; margin: 0 auto; padding: 45px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); position: relative; }
+                .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 25px; margin-bottom: 25px; }
+                .logo-area { display: flex; align-items: center; gap: 15px; }
+                .logo-u { width: 52px; height: 52px; background: #002f6c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; border-radius: 12px; }
+                h1 { font-size: 20px; font-weight: 900; margin: 0; letter-spacing: -0.5px; color: #002f6c; line-height: 1.2; }
+                .res-box { background: #002f6c; color: white; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; display: inline-block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+                .receipt-code { font-size: 20px; font-weight: 900; color: #ba1a1a; margin: 0; font-family: monospace; }
+                .grid-info { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-top: 25px; }
+                .info-item { background: #f8fafc; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; }
+                .info-label { font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px; }
+                .info-val { font-size: 14px; font-weight: 700; color: #1e293b; margin: 0; }
+                .concept-box { background: #e0eafd; border: 1px solid #c5d9fc; padding: 20px; border-radius: 20px; margin-top: 25px; }
+                .amount-box { background: #002f6c; color: white; border-radius: 16px; min-width: 200px; text-align: right; margin-left: auto; margin-top: 25px; padding: 15px 25px; }
+                .signatures { display: flex; justify-content: space-between; margin-top: 60px; gap: 40px; }
+                .sig-box { flex: 1; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 15px; }
+                .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+                .verified-stamp { font-size: 12px; font-weight: 900; color: #10b981; border: 3px solid #10b981; padding: 6px 12px; border-radius: 8px; display: inline-block; transform: rotate(-10deg); position: absolute; top: 110px; right: 60px; opacity: 0.85; }
+                .no-print-btn { background: #002f6c; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: all 0.2s; }
+                .no-print-btn:hover { background: #001738; }
+                @media print {
+                    body { background: white; padding: 0; }
+                    .receipt { border: none; box-shadow: none; padding: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt">
+                <div class="verified-stamp">PAGADO / TESORERÍA</div>
+                
+                <div class="header">
+                    <div class="logo-area">
+                        <div class="logo-u">U</div>
+                        <div>
+                            <h1>UNIVERSIDAD NACIONAL<br/>DE MISIONES</h1>
+                            <p style="font-size: 9px; color: #64748b; font-weight: 700; margin: 3px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Rectorado — Tesorería Central</p>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="res-box">Comprobante de Pago</div>
+                        <p class="receipt-code">${data.receiptCode}</p>
+                        <p style="font-size: 9px; color: #94a3b8; margin: 4px 0 0 0;">Fecha: ${today}</p>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center; margin-bottom: 20px;">
+                    <p style="font-size: 9px; font-weight: 900; color: #002f6c; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
+                        Comprobante de Registro Digital de Pago de Aranceles Académicos
+                    </p>
+                </div>
+
+                <div class="grid-info">
+                    <div class="info-item">
+                        <p class="info-label">Nombre del Postulante</p>
+                        <p class="info-val" style="text-transform: uppercase;">${data.nombre}</p>
+                    </div>
+                    <div class="info-item">
+                        <p class="info-label">Documento C.I. / RUC</p>
+                        <p class="info-val">${data.cedula}</p>
+                    </div>
+                    <div class="info-item">
+                        <p class="info-label">Carrera / Programa</p>
+                        <p class="info-val">${data.carrera}</p>
+                    </div>
+                    <div class="info-item">
+                        <p class="info-label">Sede Universitaria</p>
+                        <p class="info-val">${data.sede}</p>
+                    </div>
+                    <div class="info-item">
+                        <p class="info-label">Comprobante Origen (Banco)</p>
+                        <p class="info-val"># ${data.numComprobante || 'N/A'}</p>
+                    </div>
+                    <div class="info-item">
+                        <p class="info-label">Fecha Declarada de Pago</p>
+                        <p class="info-val">${data.fechaPago.replace('T', ' ')}</p>
+                    </div>
+                </div>
+
+                <div class="concept-box">
+                    <p class="info-label" style="color: #002f6c;">Concepto de Arancel</p>
+                    <p style="font-size: 16px; font-weight: 900; color: #001738; margin: 4px 0 0 0; text-transform: uppercase;">${data.concepto}</p>
+                </div>
+
+                <div style="display: flex; align-items: center; margin-top: 25px;">
+                    <div style="max-width: 60%;">
+                        <p class="info-label">Monto en letras</p>
+                        <p style="font-size: 11px; font-weight: 700; color: #475569; italic: true; margin: 4px 0 0 0;">${formatLetras(data.monto)}</p>
+                    </div>
+                    <div class="amount-box">
+                        <p class="info-label" style="color: rgba(255,255,255,0.7); margin-bottom: 2px;">Total Pagado</p>
+                        <p style="font-size: 26px; font-weight: 900; margin: 0; font-family: monospace;">Gs. ${formatGs(data.monto)}</p>
+                    </div>
+                </div>
+
+                <div class="signatures">
+                    <div class="sig-box">
+                        <p style="font-size: 10px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">Firma del Alumno</p>
+                        <p style="font-size: 8px; color: #94a3b8; font-weight: 700; margin: 4px 0 0 0;">Interesado</p>
+                    </div>
+                    <div class="sig-box" style="position: relative;">
+                        <p style="font-size: 10px; font-weight: 900; color: #1e293b; margin: 0; text-transform: uppercase;">Perceptor Autorizado</p>
+                        <p style="font-size: 8px; color: #94a3b8; font-weight: 700; margin: 4px 0 0 0;">Tesorería Central — UNAMIS</p>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div style="max-width: 65%; font-size: 9px; color: #94a3b8; font-style: italic; line-height: 1.5; margin: 0;">
+                        Este documento digital constituye un comprobante formal de la rendición del arancel. Toda información suministrada está sujeta a auditoría física. El presente comprobante es válido únicamente con la verificación en línea.
+                    </div>
+                    <div style="text-align: right;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://unamis.edu.py/verificar-pago/${data.receiptCode}" style="width: 65px; height: 65px; border: 1px solid #e2e8f0; padding: 2px; background: white; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;" class="no-print">
+                <button onclick="window.print()" class="no-print-btn">Imprimir Comprobante</button>
+            </div>
+        </body>
+        </html>
+    `;
+};
