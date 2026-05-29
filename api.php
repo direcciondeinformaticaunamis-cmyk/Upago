@@ -480,6 +480,19 @@ try {
       `necesita_adecuacion` tinyint(1) DEFAULT 0,
       `adecuacion_detalle` text DEFAULT NULL,
       `enfermedad_cronica` varchar(255) DEFAULT NULL,
+      `titulo_grado` varchar(255) DEFAULT NULL,
+      `titulo_posgrado` varchar(255) DEFAULT NULL,
+      `formacion_complementaria` varchar(255) DEFAULT NULL,
+      `area_especializacion` varchar(255) DEFAULT NULL,
+      `exp_docente_instituciones` text DEFAULT NULL,
+      `exp_docente_asignaturas` text DEFAULT NULL,
+      `exp_docente_nivel` varchar(100) DEFAULT NULL,
+      `exp_docente_anios` varchar(50) DEFAULT NULL,
+      `exp_docente_catedra` varchar(255) DEFAULT NULL,
+      `exp_prof_area` varchar(255) DEFAULT NULL,
+      `exp_prof_instituciones` text DEFAULT NULL,
+      `exp_prof_cargo` varchar(255) DEFAULT NULL,
+      `exp_prof_anios` varchar(50) DEFAULT NULL,
       `colegio_nombre` varchar(255) DEFAULT NULL,
       `colegio_ciudad` varchar(100) DEFAULT NULL,
       `colegio_distrito` varchar(100) DEFAULT NULL,
@@ -517,6 +530,19 @@ try {
         "necesita_adecuacion" => "tinyint(1) DEFAULT 0",
         "adecuacion_detalle" => "text DEFAULT NULL",
         "enfermedad_cronica" => "varchar(255) DEFAULT NULL",
+        "titulo_grado" => "varchar(255) DEFAULT NULL",
+        "titulo_posgrado" => "varchar(255) DEFAULT NULL",
+        "formacion_complementaria" => "varchar(255) DEFAULT NULL",
+        "area_especializacion" => "varchar(255) DEFAULT NULL",
+        "exp_docente_instituciones" => "text DEFAULT NULL",
+        "exp_docente_asignaturas" => "text DEFAULT NULL",
+        "exp_docente_nivel" => "varchar(100) DEFAULT NULL",
+        "exp_docente_anios" => "varchar(50) DEFAULT NULL",
+        "exp_docente_catedra" => "varchar(255) DEFAULT NULL",
+        "exp_prof_area" => "varchar(255) DEFAULT NULL",
+        "exp_prof_instituciones" => "text DEFAULT NULL",
+        "exp_prof_cargo" => "varchar(255) DEFAULT NULL",
+        "exp_prof_anios" => "varchar(50) DEFAULT NULL",
         "colegio_nombre" => "varchar(255) DEFAULT NULL",
         "colegio_ciudad" => "varchar(100) DEFAULT NULL",
         "colegio_distrito" => "varchar(100) DEFAULT NULL",
@@ -976,7 +1002,7 @@ if ($method === 'POST') {
             $schema .= "nombre, apellido, cedula, ruc, correo, telefono, fechaNacimiento (en formato YYYY-MM-DD), lugarNacimientoCiudad, lugarNacimientoDepto, nacionalidad, paisOrigen, genero (M o F), estadoCivil (Soltero, Casado, Divorciado, Otro), direccion, barrio, carrera, sede, grupoSanguineo, alergico, seguroMedico (Público, Privado o Ninguno), esZurdo (boolean), discapacidad (Ninguna, Visual, Motriz, Auditiva u Otras), discapacidadDetalle, necesitaAdecuacion (boolean), adecuacionDetalle, enfermedadCronica, colegioNombre, colegioCiudad, colegioDistrito, colegioDepto, colegioTipo (Público, Privado o Privado Subvencionado), egresoAnio (integer), egresoPromedio (float), trabaja (boolean), empresaNombre, cargo, horarioLaboral.";
         }
         if ($doc_type === 'cedula' || $doc_type === 'cedula_or_cv' || $doc_type === 'auto') {
-            $schema .= " (Para Cédula o Currículum: cedula (número limpio sin puntos ni guiones), apellido, nombre, fechaNacimiento (YYYY-MM-DD), genero (M o F), nacionalidad, paisOrigen, estadoCivil, correo, telefono, direccion, lugarNacimientoCiudad)";
+            $schema .= " (Para Cédula o Currículum: cedula (número limpio sin puntos ni guiones), apellido, nombre, fechaNacimiento (YYYY-MM-DD), genero (M o F), nacionalidad, paisOrigen, estadoCivil, correo, telefono, direccion, lugarNacimientoCiudad. Si es un Currículum, extrae también: tituloGrado, tituloPosgrado, formacionComplementaria, areaEspecializacion, expDocenteInstituciones, expDocenteAsignaturas, expDocenteNivel, expDocenteAnios, expDocenteCatedra, expProfArea, expProfInstituciones, expProfCargo, expProfAnios, colegioNombre, colegioCiudad, trabaja (boolean), empresaNombre, cargo, horarioLaboral)";
         }
         if ($doc_type === 'comprobante' || $doc_type === 'auto') {
             $schema .= " (Para Comprobante Bancario: num_comprobante (string), monto (integer sin puntos ni comas), fecha_pago (YYYY-MM-DD), banco (string), concepto (string))";
@@ -1779,7 +1805,7 @@ if ($method === 'POST') {
         }
 
 
-        $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral', 'password_hash', 'catedra'];
+        $fields = ['nombre', 'apellido', 'cedula', 'ruc', 'correo', 'telefono', 'fecha_nacimiento', 'lugar_nacimiento_ciudad', 'lugar_nacimiento_depto', 'nacionalidad', 'pais_origen', 'genero', 'estado_civil', 'direccion', 'barrio', 'carrera', 'sede', 'tipo_usuario', 'grupo_sanguineo', 'alergico', 'seguro_medico', 'es_zurdo', 'discapacidad', 'discapacidad_detalle', 'necesita_adecuacion', 'adecuacion_detalle', 'enfermedad_cronica', 'titulo_grado', 'titulo_posgrado', 'formacion_complementaria', 'area_especializacion', 'exp_docente_instituciones', 'exp_docente_asignaturas', 'exp_docente_nivel', 'exp_docente_anios', 'exp_docente_catedra', 'exp_prof_area', 'exp_prof_instituciones', 'exp_prof_cargo', 'exp_prof_anios', 'colegio_nombre', 'colegio_ciudad', 'colegio_distrito', 'colegio_depto', 'colegio_tipo', 'bachiller_tipo', 'egreso_anio', 'egreso_promedio', 'trabaja', 'empresa_nombre', 'cargo', 'horario_laboral', 'password_hash', 'catedra'];
         $placeholders = implode(',', array_fill(0, count($fields), '?'));
         $updates = implode(',', array_map(function($f) { 
             if ($f === 'password_hash') return "`$f` = COALESCE(?, `$f`)";
