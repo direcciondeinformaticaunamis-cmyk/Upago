@@ -489,8 +489,8 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                 const docsRes = await fetchApi(`expedientes?action=get_user_docs&cedula=${cedula}`);
                 if (docsRes.status === 'success') {
                     const docs = docsRes.data;
-                    setSelectedExpediente(prev => prev ? { ...prev, documentos: docs } : null);
-                    setAllPostulantes(prev => prev.map(p => p.cedula === cedula ? { ...p, documentos: docs } : p));
+                    setSelectedExpediente((prev: any) => prev ? { ...prev, documentos: docs } : null);
+                    setAllPostulantes((prev: any[]) => prev.map((p: any) => p.cedula === cedula ? { ...p, documentos: docs } : p));
                 }
             } else {
                 notificationService.send('Error', res.message || 'Error al procesar', 'error');
@@ -1437,7 +1437,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </div>
 
                                                 {/* Checkbox para indicar que está "Incluido en CV" */}
-                                                {isDocente && req.id !== 'cv' && req.id !== 'curriculum' && (
+                                                {(exp.tipo_usuario === 'concursante_docente' || exp.tipo_usuario === 'auxiliar_docente' || exp.tipo === 'docente') && req.id !== 'cv' && req.id !== 'curriculum' && (
                                                     <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between">
                                                         <label className="flex items-center gap-2 cursor-pointer select-none group w-full">
                                                             <input 
