@@ -358,10 +358,21 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                                 {p.nombre?.[0]}{p.apellido?.[0]}
                                                             </div>
                                                             <div>
-                                                                <div className="text-sm font-bold text-[#002f6c]">
-                                                                    {p.nombre} {p.apellido}
-                                                                </div>
-                                                                <div className="text-[10px] text-[#43474f]">ID: {p.postulante_cedula}</div>
+                                                                 <div className="text-sm font-bold text-[#002f6c]">
+                                                                     {p.nombre} {p.apellido}
+                                                                 </div>
+                                                                 <div className="flex items-center gap-2 mt-1">
+                                                                     <div className="text-[10px] text-[#43474f]">ID: {p.postulante_cedula}</div>
+                                                                     {p.tipo_usuario && (
+                                                                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                                                             p.tipo_usuario === 'concursante_docente' 
+                                                                                 ? 'bg-purple-100 text-purple-700' 
+                                                                                 : (p.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
+                                                                         }`}>
+                                                                             {p.tipo_usuario === 'concursante_docente' ? 'Docente' : (p.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar' : 'Postulante')}
+                                                                         </span>
+                                                                     )}
+                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -487,8 +498,8 @@ const AdminFinanceDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
                                                 <td className="px-4 py-4 text-sm font-black text-[#002f6c]">{post.cedula}</td>
                                                 <td className="px-4 py-4 text-sm font-medium text-slate-600">{post.carrera || 'No especificada'}</td>
                                                 <td className="px-4 py-4">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.tipo_usuario === 'postulante' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
-                                                        {post.tipo_usuario === 'postulante' ? 'Postulante' : 'Concursante'}
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${post.tipo_usuario === 'concursante_docente' ? 'bg-purple-50 text-purple-600' : (post.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-50 text-fuchsia-600' : 'bg-blue-50 text-blue-600')}`}>
+                                                        {post.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (post.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante')}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4">

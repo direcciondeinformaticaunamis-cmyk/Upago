@@ -9,10 +9,11 @@ import {
 import { FinanceService } from '../../services/FinanceService';
 import { CATALOGO_UNAMIS, TODAS_LAS_CARRERAS } from '../../constants/catalogoUnamis';
 import { fetchApi } from '../../services/ApiService';
-import Tesseract from 'tesseract.js';
+import { extractFileText } from '../../utils/ocrEngine';
 
 const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 
 
 interface Arancel {
@@ -225,51 +226,8 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                 return;
             }
 
-            // Fallback a Tesseract local
-            let textToParse = '';
-
-            if (selectedFile.type === 'application/pdf') {
-                if (!(window as any).pdfjsLib) {
-                    await loadScript(PDFJS_CDN);
-                }
-                if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
-                }
-
-                const arrayBuffer = await selectedFile.arrayBuffer();
-                const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
-                const pdf = await loadingTask.promise;
-
-                let digitalText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-                    digitalText += pageText + '\n';
-                }
-
-                if (digitalText.trim().length >= 30) {
-                    textToParse = digitalText;
-                } else {
-                    const page1 = await pdf.getPage(1);
-                    const viewport = page1.getViewport({ scale: 2.0 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    if (context) {
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        await page1.render({ canvasContext: context, viewport }).promise;
-                        
-                        const result = await Tesseract.recognize(canvas, 'spa');
-                        textToParse = result.data.text;
-                    } else {
-                        throw new Error("No se pudo inicializar el contexto de renderizado.");
-                    }
-                }
-            } else {
-                const result = await Tesseract.recognize(selectedFile, 'spa');
-                textToParse = result.data.text;
-            }
+            // Fallback a Tesseract local (A través de ocrEngine.ts)
+            let textToParse = await extractFileText(selectedFile);
 
             const text = textToParse.toUpperCase();
             const fieldsFilled: string[] = [];

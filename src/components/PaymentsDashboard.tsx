@@ -36,6 +36,7 @@ interface Pago {
     observaciones?: string;
     fecha_pago?: string;
     fecha_registro: string;
+    tipo_usuario?: string;
 }
 
 interface Stats {
@@ -256,9 +257,20 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                                                 <p className="text-sm font-black text-slate-800 uppercase tracking-tight">
                                                     {pago.nombre} {pago.apellido}
                                                 </p>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                    {pago.postulante_cedula}
-                                                </span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                        {pago.postulante_cedula}
+                                                    </span>
+                                                    {pago.tipo_usuario && (
+                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                                            pago.tipo_usuario === 'concursante_docente' 
+                                                                ? 'bg-purple-100 text-purple-700' 
+                                                                : (pago.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
+                                                        }`}>
+                                                            {pago.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (pago.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar' : 'Postulante')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-7">

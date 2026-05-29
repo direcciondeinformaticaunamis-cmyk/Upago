@@ -30,6 +30,7 @@ export interface Payment {
     cierre_fecha?: string | null;
     numero_expediente?: string;
     transaccion_id?: number | null;
+    tipo_usuario?: string;
 }
 
 export interface FinanceStats {

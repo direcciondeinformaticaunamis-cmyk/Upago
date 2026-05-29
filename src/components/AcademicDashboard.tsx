@@ -1136,23 +1136,34 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
 
             {/* Modal de Revisión de Expediente */}
             {selectedExpediente && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
-                        <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2rem] border border-slate-100 w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-white">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-800">Revisión de Expediente: {selectedExpediente.numero_expediente || selectedExpediente.id}</h3>
-                                <p className="text-sm text-slate-500">{selectedExpediente.nombre} - {selectedExpediente.carrera}</p>
+                                <div className="flex flex-wrap items-center gap-3 mb-1">
+                                    <h3 className="text-2xl font-black text-slate-850 tracking-tight">Revisión de Expediente</h3>
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-250/20">
+                                        {selectedExpediente.numero_expediente || 'PENDIENTE'}
+                                    </span>
+                                </div>
+                                <p className="text-slate-550 font-bold text-sm uppercase tracking-wider flex items-center gap-1.5">
+                                    👤 {selectedExpediente.nombre} <span className="text-slate-300">&bull;</span> 🎓 {selectedExpediente.carrera}
+                                </p>
                             </div>
-                            <button onClick={() => setSelectedExpediente(null)} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors">
-                                <X />
+                            <button 
+                                onClick={() => setSelectedExpediente(null)} 
+                                className="w-12 h-12 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded-2xl border border-transparent hover:border-slate-150 transition-all cursor-pointer"
+                            >
+                                <X style={{fontSize: 22}} />
                             </button>
                         </div>
                         
-                        <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
-                            <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                <Description style={{fontSize: 20}} /> Documentos del Expediente
+                        <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50/50 space-y-6">
+                            <h4 className="font-black text-slate-700 uppercase tracking-widest text-[11px] flex items-center gap-2 mb-2">
+                                <Description style={{fontSize: 18}} className="text-[#002f6c]" /> Documentos Adjuntos Requeridos
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {(() => {
                                     const exp = selectedExpediente;
                                     if (!exp) return null;
@@ -1200,71 +1211,172 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                             flatDocs.push({ req, actual: undefined });
                                         }
                                         actualDocs.forEach(d => { flatDocs.push({ req, actual: d }); });
-                                    }); return flatDocs.map(({ req, actual }) => {
+                                    });
+
+                                    return flatDocs.map(({ req, actual }) => {
                                         const uniqueKey = actual ? `${req.id}-${actual.asignatura || 'general'}` : req.id;
+                                        const isValidated = actual && actual.estado === 'aprobado';
+                                        const isIncludedInCv = actual && actual.observaciones === 'Incluido en Currículum';
+                                        
+                                        // Estilo dinámico según estado del archivo
+                                        let cardBg = "bg-white";
+                                        let cardBorder = "border-slate-200/80";
+                                        let iconBg = "bg-slate-100 text-slate-400";
+                                        let statusBadge = null;
+
+                                        if (isValidated) {
+                                            cardBg = "bg-emerald-50/20";
+                                            cardBorder = "border-emerald-250/70";
+                                            iconBg = "bg-emerald-100 text-emerald-600";
+                                            statusBadge = (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-150/40 text-emerald-700 border border-emerald-200/40">
+                                                    ✓ Aprobado
+                                                </span>
+                                            );
+                                        } else if (isIncludedInCv) {
+                                            cardBg = "bg-purple-50/20";
+                                            cardBorder = "border-purple-250/70";
+                                            iconBg = "bg-purple-100 text-purple-600";
+                                            statusBadge = (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-purple-150/40 text-purple-700 border border-purple-200/40">
+                                                    🗂 En Currículum
+                                                </span>
+                                            );
+                                        } else if (actual) {
+                                            cardBg = "bg-blue-50/20";
+                                            cardBorder = "border-blue-250/70";
+                                            iconBg = "bg-blue-100 text-blue-600";
+                                            statusBadge = (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-blue-150/40 text-blue-700 border border-blue-200/40 animate-pulse">
+                                                    Cargado / Pendiente
+                                                </span>
+                                            );
+                                        } else {
+                                            cardBg = "bg-slate-100/40";
+                                            cardBorder = "border-slate-200";
+                                            iconBg = "bg-slate-100 text-slate-400";
+                                            statusBadge = (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-100/60">
+                                                    No cargado / Pendiente
+                                                </span>
+                                            );
+                                        }
+
                                         return (
-                                            <div key={uniqueKey} className="bg-white p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
-                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${actual && actual.estado === 'aprobado' ? 'bg-emerald-50 text-emerald-600' : actual ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                    {actual && actual.estado === 'aprobado' ? <CheckCircle /> : <FileCheck />}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-bold text-slate-800 mb-1 flex flex-wrap items-center gap-2">
-                                                        {req.nombre}
+                                            <div 
+                                                key={uniqueKey} 
+                                                className={`${cardBg} ${cardBorder} p-5 rounded-2xl border-2 flex flex-col gap-4 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden`}
+                                            >
+                                                {/* Contenido Superior de la Tarjeta */}
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg} shadow-inner`}>
+                                                        {isValidated ? <CheckCircle style={{fontSize: 22}} /> : <Description style={{fontSize: 22}} />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-1.5">
+                                                            <p className="text-sm font-black text-slate-850 leading-tight">
+                                                                {req.nombre}
+                                                            </p>
+                                                            <div className="flex-shrink-0">
+                                                                {statusBadge}
+                                                            </div>
+                                                        </div>
+                                                        
                                                         {actual && actual.asignatura && (
-                                                            <span className="text-[8px] bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded font-black uppercase tracking-wider">
-                                                                📚 Carpeta: {actual.asignatura}
-                                                            </span>
+                                                            <div className="mb-2">
+                                                                <span className="text-[9px] bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md font-black uppercase tracking-wider">
+                                                                    📚 Carpeta: {actual.asignatura}
+                                                                </span>
+                                                            </div>
                                                         )}
-                                                    </p>
-                                                    {actual && actual.observaciones && (
-                                                        <p className="text-[10px] text-amber-600 font-medium mb-1 bg-amber-50 px-2 py-0.5 rounded w-fit italic">
-                                                            Nota: {actual.observaciones}
-                                                        </p>
-                                                    )}
-                                                    {!actual && (
-                                                        <p className="text-[10px] text-red-500 font-semibold mb-1 bg-red-50 px-2 py-0.5 rounded w-fit italic">
-                                                            No cargado / Pendiente
-                                                        </p>
-                                                    )}
-                                                    <div className="flex flex-wrap items-center gap-3 mt-1">
-                                                        {actual ? (
-                                                            <>
-                                                                <button 
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        setPreviewUrl(actual.url);
-                                                                        setPreviewTitle(req.nombre);
-                                                                    }}
-                                                                    className="text-xs text-blue-600 hover:underline font-medium focus:outline-none"
-                                                                >
-                                                                    Ver archivo
-                                                                </button>
-                                                                {actual.estado !== 'aprobado' && (
-                                                                    <div className="flex gap-2">
-                                                                        <button 
-                                                                            onClick={() => {
-                                                                                notificationService.send('Vision AI', 'Escaneando documento para verificar CI...', 'info');
-                                                                                setTimeout(() => notificationService.send('Vision AI', `CI Detectada: ${exp.cedula} (Coincidencia 100%)`, 'success'), 2000);
-                                                                            }}
-                                                                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                                                                        >
-                                                                            🤖 Smart Scan
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={() => handleValidarDocumento(exp.cedula, req.id, actual.asignatura)}
-                                                                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors"
-                                                                        >
-                                                                            ✓ Validar
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                                {actual.estado === 'aprobado' && (
-                                                                    <span className="text-[10px] font-bold text-emerald-600 italic">Validado</span>
-                                                                )}
-                                                                
-                                                                {/* Reemplazar button */}
-                                                                <label className="text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1">
-                                                                    <UploadFile style={{ fontSize: 12 }} />
+                                                        
+                                                        {actual && actual.observaciones && !isIncludedInCv && (
+                                                            <p className="text-[10px] text-amber-700 font-semibold mb-2 bg-amber-50 border border-amber-100/60 px-2 py-1 rounded-lg w-fit italic">
+                                                                Nota: {actual.observaciones}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Checkbox para indicar que está "Incluido en CV" */}
+                                                {exp.tipo === 'docente' && req.id !== 'cv' && cvUrl && (
+                                                    <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between">
+                                                        <label className="flex items-center gap-2 cursor-pointer select-none group w-full">
+                                                            <input 
+                                                                type="checkbox"
+                                                                checked={!!isIncludedInCv}
+                                                                disabled={actual && actual.estado === 'aprobado' && !isIncludedInCv}
+                                                                onChange={async (e) => {
+                                                                    const isChecked = e.target.checked;
+                                                                    if (isChecked) {
+                                                                        try {
+                                                                            await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl, actual?.asignatura);
+                                                                            notificationService.send('Criterio Aprobado', `Se marcó '${req.nombre}' como incluido en Currículum.`, 'success');
+                                                                            const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
+                                                                            setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
+                                                                        } catch (error) {
+                                                                            console.error('Error marking as included in CV:', error);
+                                                                        }
+                                                                    } else {
+                                                                        if (actual) {
+                                                                            try {
+                                                                                await AcademicService.deleteDocument(exp.cedula, req.id, actual.asignatura);
+                                                                                notificationService.send('Criterio Eliminado', `Se desmarcó '${req.nombre}' del Currículum.`, 'success');
+                                                                                const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
+                                                                                setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
+                                                                            } catch (error) {
+                                                                                console.error('Error deleting document:', error);
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="w-4.5 h-4.5 rounded text-purple-600 border-slate-300 focus:ring-purple-500 cursor-pointer"
+                                                            />
+                                                            <span className="text-[10px] font-black text-purple-700 uppercase tracking-tight group-hover:text-purple-900 transition-colors">
+                                                                ¿Documento incluido en el Currículum Vitae (C.V.)?
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                )}
+
+                                                {/* Botoneras y Acciones */}
+                                                <div className="flex flex-wrap items-center gap-2 mt-auto pt-3 border-t border-slate-100/50">
+                                                    {actual ? (
+                                                        <>
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    setPreviewUrl(actual.url);
+                                                                    setPreviewTitle(req.nombre);
+                                                                }}
+                                                                className="px-3.5 py-1.5 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/50 border border-blue-150 rounded-xl font-bold flex items-center gap-1 transition-all"
+                                                            >
+                                                                <Visibility style={{fontSize: 14}} /> Ver archivo
+                                                            </button>
+                                                            
+                                                            {actual.estado !== 'aprobado' && !isIncludedInCv && (
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            notificationService.send('Vision AI', 'Escaneando documento para verificar CI...', 'info');
+                                                                            setTimeout(() => notificationService.send('Vision AI', `CI Detectada: ${exp.cedula} (Coincidencia 100%)`, 'success'), 2000);
+                                                                        }}
+                                                                        className="text-[10px] font-black text-blue-700 bg-blue-50/50 border border-blue-200/50 px-2.5 py-1.5 rounded-xl hover:bg-blue-100 transition-all flex items-center gap-1"
+                                                                    >
+                                                                        🤖 Smart Scan
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleValidarDocumento(exp.cedula, req.id, actual.asignatura)}
+                                                                        className="text-[10px] font-black text-emerald-700 bg-emerald-55/10 border border-emerald-200/50 px-2.5 py-1.5 rounded-xl hover:bg-emerald-100 transition-all flex items-center gap-1"
+                                                                    >
+                                                                        ✓ Validar
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {!isIncludedInCv && (
+                                                                <label className="text-[10px] font-black text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1">
+                                                                    <UploadFile style={{ fontSize: 13 }} />
                                                                     Reemplazar
                                                                     <input 
                                                                         type="file" 
@@ -1272,73 +1384,52 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                         onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
                                                                     />
                                                                 </label>
-                                                                
-                                                                {/* Eliminar button */}
+                                                            )}
+                                                            
+                                                            {(!isValidated || isIncludedInCv) && (
                                                                 <button 
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
                                                                         handleDeleteDocument(exp.cedula, req.id, actual.asignatura);
                                                                     }}
-                                                                    className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-0.5 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                                                                    className="text-[10px] font-black text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
                                                                 >
-                                                                    <Delete style={{ fontSize: 12 }} />
+                                                                    <Delete style={{ fontSize: 13 }} />
                                                                     Eliminar
                                                                 </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                {req.id === 'comprobante_pago' ? (
-                                                                    <button 
-                                                                        onClick={() => {
-                                                                            setVentanillaPayment({
-                                                                                cedula: exp.cedula,
-                                                                                nombre: exp.nombre,
-                                                                                carrera: exp.carrera,
-                                                                                asignatura: undefined,
-                                                                                concepto: exp.carrera?.includes('Medicina') ? 'Examen de Admisión - Medicina (San Ignacio)' : 'Inscripción General'
-                                                                            });
-                                                                        }}
-                                                                        className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm mt-1"
-                                                                    >
-                                                                        <UploadFile style={{ fontSize: 14 }} />
-                                                                        <span>Registrar Pago Ventanilla</span>
-                                                                    </button>
-                                                                ) : (
-                                                                    <label className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 mt-1">
-                                                                        <UploadFile style={{ fontSize: 14 }} />
-                                                                        <span>Subir escaneado (Ventanilla)</span>
-                                                                        <input 
-                                                                            type="file" 
-                                                                            className="hidden" 
-                                                                            onChange={(e) => handleDirectUpload(exp.cedula, req.id, undefined, e)} 
-                                                                        />
-                                                                    </label>
-                                                                )}
-                                                                
-                                                                {exp.tipo === 'docente' && req.id !== 'cv' && (
-                                                                    <button 
-                                                                        onClick={async () => {
-                                                                            if (!cvUrl) {
-                                                                                alert("Debe cargarse primero el Currículum Vitae para poder marcar otros criterios como incluidos en él.");
-                                                                                return;
-                                                                            }
-                                                                            try {
-                                                                                await AcademicService.markDocInCv(exp.cedula, req.id, cvUrl, actual?.asignatura);
-                                                                                notificationService.send('Criterio Aprobado', `Se marcó '${req.nombre}' como incluido en Currículum.`, 'success');
-                                                                                const updatedDocs = await AcademicService.getDocsForPostulante(exp.cedula);
-                                                                                setSelectedExpediente(prev => prev ? { ...prev, documentos: updatedDocs } : null);
-                                                                            } catch (error) {
-                                                                                console.error('Error marking as included in CV:', error);
-                                                                            }
-                                                                        }}
-                                                                        className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded hover:bg-purple-100 transition-colors shadow-sm border border-purple-200 mt-1"
-                                                                    >
-                                                                        🗂 Incluido en CV
-                                                                    </button>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {req.id === 'comprobante_pago' ? (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setVentanillaPayment({
+                                                                            cedula: exp.cedula,
+                                                                            nombre: exp.nombre,
+                                                                            carrera: exp.carrera,
+                                                                            asignatura: undefined,
+                                                                            concepto: exp.carrera?.includes('Medicina') ? 'Examen de Admisión - Medicina (San Ignacio)' : 'Inscripción General'
+                                                                        });
+                                                                    }}
+                                                                    className="text-[10px] font-black text-blue-700 bg-blue-50/50 hover:bg-blue-100/50 border border-blue-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                                                                >
+                                                                    <Payments style={{ fontSize: 15 }} />
+                                                                    <span>Registrar Pago Ventanilla</span>
+                                                                </button>
+                                                            ) : (
+                                                                <label className="text-[10px] font-black text-slate-700 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
+                                                                    <UploadFile style={{ fontSize: 15 }} />
+                                                                    <span>Subir escaneado (Ventanilla)</span>
+                                                                    <input 
+                                                                        type="file" 
+                                                                        className="hidden" 
+                                                                        onChange={(e) => handleDirectUpload(exp.cedula, req.id, undefined, e)} 
+                                                                    />
+                                                                </label>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -1346,25 +1437,23 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 })()}
                             </div>
 
-                            <div className="mt-8 p-5 bg-amber-50 rounded-2xl border border-amber-100">
-                                <h5 className="text-xs font-black text-amber-700 uppercase tracking-wider mb-3">Observaciones Rápidas (Para el Alumno)</h5>
+                            <div className="mt-8 p-5 bg-amber-50/60 rounded-2xl border border-amber-100/80">
+                                <h5 className="text-xs font-black text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                    ⚠️ Observaciones Rápidas (Para el Alumno)
+                                </h5>
                                 <div className="flex flex-wrap gap-2">
                                     {['Documento ilegible', 'Cédula vencida', 'Falta firma/sello', 'Formato incorrecto', 'Documento incompleto'].map(obs => (
                                         <button 
                                             key={obs}
                                             onClick={() => {
-                                                // Asumimos que queremos aplicar la nota al primer documento no validado o seleccionado
-                                                // Para hacerlo pro, podríamos dejar que seleccionen el doc, pero por ahora
-                                                // lo aplicaremos al expediente general o al que estén viendo.
                                                 if (selectedExpediente) {
-                                                    // Buscamos el primer doc pendiente
                                                     const firstDoc = selectedExpediente.documentos?.find(d => d.estado !== 'aprobado');
                                                     if (firstDoc) {
                                                         handleSaveObservation(selectedExpediente.cedula, firstDoc.id, obs, firstDoc.asignatura);
                                                     }
                                                 }
                                             }}
-                                            className="px-3 py-1.5 bg-white border border-amber-200 text-[10px] font-bold text-amber-700 rounded-lg hover:bg-amber-100 transition-colors"
+                                            className="px-3.5 py-1.5 bg-white border border-amber-200 hover:border-amber-300 text-[10px] font-bold text-amber-700 rounded-xl hover:bg-amber-100/35 transition-all shadow-sm"
                                         >
                                             + {obs}
                                         </button>
@@ -1373,23 +1462,26 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-200 bg-white rounded-b-2xl flex justify-between items-center">
+                        <div className="p-6 md:p-8 border-t border-slate-100 bg-white rounded-b-[2rem] flex flex-wrap justify-between items-center gap-4">
                             {selectedExpediente.estado === 'aprobado' ? (
-                                <div className="flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-lg">
-                                    <CheckCircle /> Expediente Aprobado
+                                <div className="flex items-center gap-2 text-emerald-700 font-black bg-emerald-50 border border-emerald-150 px-4 py-2.5 rounded-2xl text-xs uppercase tracking-wide">
+                                    <CheckCircle style={{fontSize: 18}} /> Expediente Aprobado
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-500 italic">Revise todos los documentos antes de aprobar.</p>
+                                <p className="text-xs font-bold text-slate-450 uppercase tracking-wide italic">Por favor, revise todos los documentos antes de aprobar el expediente.</p>
                             )}
                             
                             <div className="flex gap-3">
-                                <button onClick={() => setSelectedExpediente(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                                <button 
+                                    onClick={() => setSelectedExpediente(null)} 
+                                    className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                                >
                                     Cerrar
                                 </button>
                                 {selectedExpediente.estado === 'pendiente' && (
                                     <button 
                                         onClick={() => handleAprobarExpediente(selectedExpediente.cedula)}
-                                        className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex items-center gap-2"
+                                        className="px-6 py-3 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2 text-xs uppercase tracking-widest"
                                     >
                                         <Check /> Aprobar Expediente
                                     </button>

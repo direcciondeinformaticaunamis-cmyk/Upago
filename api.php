@@ -543,6 +543,11 @@ try {
             // Columna ya existe o error menor
         } 
     }
+    
+    // Forzar la actualización del ENUM para tipo_usuario en caso de que la columna ya existiera con valores viejos
+    try {
+        $conn->exec("ALTER TABLE `postulantes` MODIFY COLUMN `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'");
+    } catch (Exception $e) {}
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `expedientes` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1368,16 +1373,22 @@ if ($method === 'POST') {
                 exit;
             }
             
-            // 1. Obtener la url del archivo para borrarlo del disco
+            // 1. Obtener la url y metadatos del archivo para borrarlo del disco (si no es referencia al CV)
             if (!empty($asignatura)) {
-                $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
+                $stmt = $conn->prepare("SELECT archivo_url, archivo_nombre, observaciones FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND asignatura = ?");
                 $stmt->execute([$cedula, $doc_id, $asignatura]);
             } else {
-                $stmt = $conn->prepare("SELECT archivo_url FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
+                $stmt = $conn->prepare("SELECT archivo_url, archivo_nombre, observaciones FROM expedientes WHERE postulante_id = ? AND tipo_documento = ? AND (asignatura IS NULL OR asignatura = '')");
                 $stmt->execute([$cedula, $doc_id]);
             }
             $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($existing && !empty($existing['archivo_url']) && file_exists($existing['archivo_url'])) {
+            
+            $is_cv_reference = $existing && (
+                ($existing['archivo_nombre'] ?? '') === 'Incluido en CV' || 
+                ($existing['observaciones'] ?? '') === 'Incluido en Currículum'
+            );
+            
+            if ($existing && !empty($existing['archivo_url']) && file_exists($existing['archivo_url']) && !$is_cv_reference) {
                 @unlink($existing['archivo_url']);
             }
             
@@ -1744,8 +1755,8 @@ if ($method === 'POST') {
                 $val = null;
             }
 
-            // Normalización a MAYÚSCULAS (Excepto correo y password_hash)
-            if (is_string($val) && $f !== 'correo' && $f !== 'password_hash') {
+            // Normalización a MAYÚSCULAS (Excepto correo, password_hash y tipo_usuario)
+            if (is_string($val) && $f !== 'correo' && $f !== 'password_hash' && $f !== 'tipo_usuario') {
                 $val = mb_strtoupper(trim($val), 'UTF-8');
             } elseif ($f === 'correo' && is_string($val)) {
                 $val = mb_strtolower(trim($val), 'UTF-8');
@@ -2646,7 +2657,7 @@ if ($method === 'GET') {
         // Run backfill to ensure all postulantes have expediente numbers
         $conn->exec("UPDATE postulantes SET numero_expediente = CONCAT('UNAMIS-2026-REG', LPAD(id, 4, '0')) WHERE numero_expediente IS NULL OR numero_expediente = ''");
         if ($cedula && $cedula !== 'true') { 
-            $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
+            $stmt = $conn->prepare("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente, pos.tipo_usuario,
                                            (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
                                     FROM pagos p 
                                     LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula 
@@ -2654,7 +2665,7 @@ if ($method === 'GET') {
             $stmt->execute([$cedula]); 
         }
         else { 
-            $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente,
+            $stmt = $conn->query("SELECT p.*, pos.nombre, pos.apellido, pos.numero_expediente, pos.tipo_usuario,
                                          (SELECT transaccion_bancaria_id FROM conciliaciones WHERE pago_id = p.id LIMIT 1) as transaccion_id
                                   FROM pagos p 
                                   LEFT JOIN postulantes pos ON p.postulante_cedula = pos.cedula"); 

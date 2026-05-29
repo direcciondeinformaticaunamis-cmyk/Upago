@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { OcrUploadModal } from './OcrUploadModal';
 import { parseCedula } from '../services/ocrParser';
 import { fetchApi } from '../services/ApiService';
+import { extractFileText, extractImageText } from '../utils/ocrEngine';
 import {
     User,
     Mail,
@@ -241,56 +242,10 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                 setOcrProgress(40);
                 let textToParse = '';
 
-                if (rawFile && rawFile.type === 'application/pdf') {
-                    if (!(window as any).pdfjsLib) {
-                        await loadScript(PDFJS_CDN);
-                    }
-                    if ((window as any).pdfjsLib && !(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                        (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
-                    }
-                    const arrayBuffer = await rawFile.arrayBuffer();
-                    const loadingTask = (window as any).pdfjsLib.getDocument({ data: arrayBuffer });
-                    const pdf = await loadingTask.promise;
-                    
-                    let digitalText = '';
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-                        digitalText += pageText + '\n';
-                    }
-
-                    if (digitalText.trim().length >= 30) {
-                        textToParse = digitalText;
-                    } else {
-                        const page1 = await pdf.getPage(1);
-                        const viewport = page1.getViewport({ scale: 2.0 });
-                        const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
-                        if (context) {
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
-                            await page1.render({ canvasContext: context, viewport }).promise;
-                            
-                            if (!(window as any).Tesseract) {
-                                await loadScript(TESSERACT_CDN);
-                            }
-                            const worker = await (window as any).Tesseract.createWorker('spa');
-                            const result = await worker.recognize(canvas);
-                            await worker.terminate();
-                            textToParse = result.data.text;
-                        }
-                    }
-                } else {
-                    if (!(window as any).Tesseract) {
-                        await loadScript(TESSERACT_CDN);
-                    }
-                    const worker = await (window as any).Tesseract.createWorker('spa');
-                    const source = photo || rawFile;
-                    if (!source) throw new Error("No hay origen de imagen válido.");
-                    const result = await worker.recognize(source);
-                    await worker.terminate();
-                    textToParse = result.data.text;
+                if (rawFile) {
+                    textToParse = await extractFileText(rawFile);
+                } else if (photo) {
+                    textToParse = await extractImageText(photo as any);
                 }
                 parsed = parseCedula(textToParse);
             }
