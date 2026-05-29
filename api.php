@@ -635,7 +635,13 @@ try {
             ('SERVICIOS', 'FOTOCOPIAS DE EXPEDIENTE POR HOJA', 1000)
         ");
     }
-
+    
+    // Add the newly requested "Auxiliar de Enseñanza" arancel if it doesn't exist
+    $stmtCheckAux = $conn->query("SELECT COUNT(*) FROM `aranceles` WHERE `concepto` LIKE '%AUXILIAR DE ENSEÑANZA%'");
+    if ($stmtCheckAux && $stmtCheckAux->fetchColumn() == 0) {
+        $conn->exec("INSERT INTO `aranceles` (`categoria`, `concepto`, `monto`) VALUES ('ACADÉMICOS', 'INSCRIPCIÓN A CONCURSO PARA DOCENTE AUXILIAR DE ENSEÑANZA', 300000)");
+    }
+    
     $conn->exec("CREATE TABLE IF NOT EXISTS `transacciones_bancarias` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `banco` varchar(100) NOT NULL,
