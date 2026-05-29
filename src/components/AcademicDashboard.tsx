@@ -953,6 +953,8 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                 postulanteCedula={prefilledPaymentData?.cedula}
                                 postulanteCarrera={prefilledPaymentData?.carrera}
                                 postulanteSede={prefilledPaymentData?.sede}
+                                postulanteTelefono={prefilledPaymentData?.telefono}
+                                postulanteDireccion={prefilledPaymentData?.direccion}
                                 onSuccess={() => {
                                     setActiveSection('admision');
                                     setPrefilledPaymentData(null);

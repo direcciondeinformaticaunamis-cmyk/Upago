@@ -394,6 +394,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout }) =
                                 postulanteCedula={user.cedula} 
                                 postulanteCarrera={user.carrera || 'Medicina'}
                                 postulanteSede={user.sede || 'Sede San Ignacio Guazú'}
+                                postulanteTelefono={(user as any).telefono || ''}
+                                postulanteDireccion={(user as any).direccion || ''}
                                 onSuccess={() => setActiveSection('pagos')} 
                                 onBack={() => setActiveSection('pagos')} 
                             />

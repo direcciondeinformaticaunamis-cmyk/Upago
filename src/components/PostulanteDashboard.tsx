@@ -426,6 +426,8 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                 postulanteCedula={user.cedula} 
                                 postulanteCarrera={user.carrera || 'Medicina'}
                                 postulanteSede={user.sede || 'Sede San Ignacio Guazú'}
+                                postulanteTelefono={(user as any).telefono || ''}
+                                postulanteDireccion={(user as any).direccion || ''}
                                 isDocente={user.rol === 'concursante_docente' || user.rol === 'auxiliar_docente'}
                                 onSuccess={() => setActiveSection('pagos')} 
                                 onBack={() => setActiveSection('pagos')} 

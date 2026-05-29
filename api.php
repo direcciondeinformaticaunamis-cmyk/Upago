@@ -2679,6 +2679,7 @@ if ($method === 'GET') {
                 p.id, p.nombre, p.apellido, p.cedula, p.correo, 
                 p.carrera, p.sede, p.tipo_usuario, p.catedra,
                 p.estado_revision, p.fecha_registro, p.numero_expediente,
+                p.telefono, p.direccion,
                 (SELECT COUNT(*) FROM expedientes e WHERE e.postulante_id = p.cedula) as total_docs
             FROM postulantes p 
             ORDER BY p.fecha_registro DESC

@@ -30,6 +30,8 @@ interface Props {
     postulanteCedula?: string;
     postulanteCarrera?: string;
     postulanteSede?: string;
+    postulanteTelefono?: string;
+    postulanteDireccion?: string;
     onSuccess: () => void;
     onBack?: () => void;
     mode?: 'postulante' | 'admin';
@@ -41,6 +43,8 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     postulanteCedula = '', 
     postulanteCarrera = '',
     postulanteSede = '',
+    postulanteTelefono = '',
+    postulanteDireccion = '',
     onSuccess, 
     onBack,
     mode = 'postulante',
@@ -72,8 +76,8 @@ const PaymentRegistrationForm: React.FC<Props> = ({
     const [form, setForm] = useState({
         nombre: postulanteName, 
         cedula: postulanteCedula, 
-        telefono: '',
-        direccion: '', 
+        telefono: postulanteTelefono,
+        direccion: postulanteDireccion, 
         carrera: postulanteCarrera || (CATALOGO_UNAMIS[postulanteSede || 'Sede San Ignacio Guazú']?.[0] || 'Medicina'), 
         titular: '',
         numComprobante: '', 
@@ -762,6 +766,8 @@ const PaymentRegistrationForm: React.FC<Props> = ({
                                                             ...f,
                                                             nombre: `${found.nombre} ${found.apellido}`,
                                                             cedula: found.cedula,
+                                                            telefono: found.telefono || '',
+                                                            direccion: found.direccion || '',
                                                             carrera: found.carrera || f.carrera
                                                         }));
                                                         if (found.sede) {
