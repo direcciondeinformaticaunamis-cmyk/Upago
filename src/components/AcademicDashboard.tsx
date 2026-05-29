@@ -481,16 +481,14 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
         try {
             const res = await fetchApi('expedientes', {
                 method: 'POST',
-                body: { action: 'mark_in_cv', cedula, doc_id: docId, asignatura }
+                body: JSON.stringify({ action: 'mark_in_cv', cedula, doc_id: docId, asignatura })
             });
             if (res.status === 'success') {
                 notificationService.send('Éxito', 'Documento marcado como incluido en CV.', 'success');
                 // Refresh the docs
-                const docsRes = await fetchApi(`expedientes?action=get_user_docs&cedula=${cedula}`);
-                if (docsRes.status === 'success') {
-                    const docs = docsRes.data;
-                    setSelectedExpediente((prev: any) => prev ? { ...prev, documentos: docs } : null);
-                    setAllPostulantes((prev: any[]) => prev.map((p: any) => p.cedula === cedula ? { ...p, documentos: docs } : p));
+                const updatedDocs = await AcademicService.getDocsForPostulante(cedula);
+                if (selectedExpediente) {
+                    setSelectedExpediente({ ...selectedExpediente, documentos: updatedDocs });
                 }
             } else {
                 notificationService.send('Error', res.message || 'Error al procesar', 'error');
