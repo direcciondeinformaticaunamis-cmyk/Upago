@@ -699,11 +699,17 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                     )}
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                            exp.tipo_usuario === 'concursante_docente' 
-                                                                ? 'bg-purple-100 text-purple-700' 
-                                                                : (exp.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
+                                                            exp.tipo_usuario?.includes('concursante_docente') && exp.tipo_usuario?.includes('auxiliar_docente')
+                                                                ? 'bg-indigo-100 text-indigo-800 font-extrabold border border-indigo-200'
+                                                                : exp.tipo_usuario?.includes('concursante_docente') 
+                                                                    ? 'bg-purple-100 text-purple-700' 
+                                                                    : (exp.tipo_usuario?.includes('auxiliar_docente') ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
                                                         }`}>
-                                                            {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
+                                                            {exp.tipo_usuario?.includes('concursante_docente') && exp.tipo_usuario?.includes('auxiliar_docente')
+                                                                ? 'Docente y Auxiliar'
+                                                                : exp.tipo_usuario?.includes('concursante_docente') 
+                                                                    ? 'Docente Encargado' 
+                                                                    : (exp.tipo_usuario?.includes('auxiliar_docente') ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
                                                         </span>
                                                         {(exp.totalDocs ?? 0) > 0 ? (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
@@ -938,7 +944,11 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                          )}
                                                      </td>
                                                      <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                                                          {exp.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (exp.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
+                                                          {exp.tipo_usuario?.includes('concursante_docente') && exp.tipo_usuario?.includes('auxiliar_docente')
+                                                              ? 'Docente y Auxiliar'
+                                                              : exp.tipo_usuario?.includes('concursante_docente') 
+                                                                  ? 'Docente Encargado' 
+                                                                  : (exp.tipo_usuario?.includes('auxiliar_docente') ? 'Auxiliar de Enseñanza' : 'Postulante a Examen de Admisión')}
                                                      </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`text-[10px] font-black uppercase ${exp.estado === 'aprobado' ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -958,19 +968,19 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
                                             <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Examen de Admisión</span>
                                             <span className="text-lg font-black text-[#002f6c]">
-                                                {expedientes.filter(e => e.tipo_usuario !== 'concursante_docente' && e.tipo_usuario !== 'auxiliar_docente').length}
+                                                {expedientes.filter(e => !e.tipo_usuario?.includes('concursante_docente') && !e.tipo_usuario?.includes('auxiliar_docente')).length}
                                             </span>
                                         </div>
                                         <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
                                             <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Docente Encargado de Cátedra</span>
                                             <span className="text-lg font-black text-[#002f6c]">
-                                                {expedientes.filter(e => e.tipo_usuario === 'concursante_docente').length}
+                                                {expedientes.filter(e => e.tipo_usuario?.includes('concursante_docente')).length}
                                             </span>
                                         </div>
                                         <div className="flex flex-col items-center justify-center p-2 bg-white rounded border border-slate-200">
                                             <span className="text-slate-500 text-[10px] uppercase font-bold text-center">Docente Auxiliar de Enseñanza</span>
                                             <span className="text-lg font-black text-[#002f6c]">
-                                                {expedientes.filter(e => e.tipo_usuario === 'auxiliar_docente').length}
+                                                {expedientes.filter(e => e.tipo_usuario?.includes('auxiliar_docente')).length}
                                             </span>
                                         </div>
                                     </div>
@@ -1311,7 +1321,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
 
                                     // Filtrar por la pestaña activa
                                     const filteredDocs = flatDocs.filter(({ req, actual, isGeneralReq }) => {
-                                        let isDocente = exp.tipo === 'docente' || exp.tipo_usuario === 'concursante_docente' || exp.tipo_usuario === 'auxiliar_docente';
+                                        let isDocente = exp.tipo === 'docente' || exp.tipo_usuario?.includes('concursante_docente') || exp.tipo_usuario?.includes('auxiliar_docente');
                                         if (!isDocente) return true; // Si no es docente, mostrar todo
                                         
                                         if (activeRevisionTab === 'General') {
@@ -1424,7 +1434,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                 </div>
 
                                                 {/* Checkbox para indicar que está "Incluido en CV" */}
-                                                {(exp.tipo_usuario === 'concursante_docente' || exp.tipo_usuario === 'auxiliar_docente' || exp.tipo === 'docente') && req.id !== 'cv' && req.id !== 'curriculum' && (
+                                                {(exp.tipo_usuario?.includes('concursante_docente') || exp.tipo_usuario?.includes('auxiliar_docente') || exp.tipo === 'docente') && req.id !== 'cv' && req.id !== 'curriculum' && (
                                                     <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between">
                                                         <label className="flex items-center gap-2 cursor-pointer select-none group w-full">
                                                             <input 
@@ -1500,7 +1510,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                     <input 
                                                                         type="file" 
                                                                         className="hidden" 
-                                                                        onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
+                                                                        onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual?.asignatura, e)} 
                                                                     />
                                                                 </label>
                                                             )}
@@ -1509,7 +1519,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                 <button 
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        handleDeleteDocument(exp.cedula, req.id, actual.asignatura);
+                                                                        handleDeleteDocument(exp.cedula, req.id, actual?.asignatura);
                                                                     }}
                                                                     className="text-[10px] font-black text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
                                                                 >
@@ -1527,7 +1537,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                             cedula: exp.cedula,
                                                                             nombre: exp.nombre,
                                                                             carrera: exp.carrera,
-                                                                            asignatura: undefined,
+                                                                            asignatura: activeRevisionTab !== 'General' ? activeRevisionTab : undefined,
                                                                             concepto: exp.carrera?.includes('Medicina') ? 'Examen de Admisión - Medicina (San Ignacio)' : 'Inscripción General'
                                                                         });
                                                                     }}
@@ -1544,7 +1554,7 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                                                         <input 
                                                                             type="file" 
                                                                             className="hidden" 
-                                                                            onChange={(e) => handleDirectUpload(exp.cedula, req.id, actual.asignatura, e)} 
+                                                                            onChange={(e) => handleDirectUpload(exp.cedula, req.id, activeRevisionTab !== 'General' ? activeRevisionTab : undefined, e)} 
                                                                         />
                                                                     </label>
                                                                 </div>
@@ -1832,36 +1842,82 @@ const AcademicDashboard: React.FC<AcademicDashboardProps> = ({ user, onLogout })
                                         ))}
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Tipo de Usuario</label>
-                                    <select 
-                                        value={editForm.tipo_usuario}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setEditForm(prev => ({
-                                                ...prev,
-                                                tipo_usuario: val,
-                                                catedra: val === 'postulante' ? '' : prev.catedra
-                                            }));
-                                        }}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
-                                    >
-                                        <option value="postulante">Postulante a Examen de Admisión</option>
-                                        <option value="concursante_docente">Docente Encargado</option>
-                                        <option value="auxiliar_docente">Auxiliar de Enseñanza</option>
-                                    </select>
-                                </div>
-                                {(editForm.tipo_usuario === 'concursante_docente' || editForm.tipo_usuario === 'auxiliar_docente') && (
-                                     <div>
-                                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Cátedra de Concurso</label>
-                                         <input 
-                                             type="text"
-                                             value={editForm.catedra || ''}
-                                             onChange={(e) => setEditForm({ ...editForm, catedra: e.target.value })}
-                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
-                                             placeholder="Nombre de la cátedra"
-                                         />
+                                 <div className="col-span-2">
+                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Perfil del Postulante (Marcar todos los que correspondan)</label>
+                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                         <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100/80 transition-all select-none">
+                                             <input 
+                                                 type="checkbox"
+                                                 checked={!editForm.tipo_usuario || editForm.tipo_usuario === 'postulante' || editForm.tipo_usuario.split(',').map((r: string) => r.trim()).includes('postulante')}
+                                                 onChange={() => {
+                                                     setEditForm(prev => ({ ...prev, tipo_usuario: 'postulante', catedra: '' }));
+                                                 }}
+                                                 className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                             />
+                                             <div className="flex flex-col">
+                                                 <span className="text-xs font-bold text-slate-800">Estudiante</span>
+                                                 <span className="text-[9px] text-slate-500 font-medium">Examen Admisión</span>
+                                             </div>
+                                         </label>
+                                         
+                                         <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100/80 transition-all select-none">
+                                             <input 
+                                                 type="checkbox"
+                                                 checked={editForm.tipo_usuario?.split(',').map((r: string) => r.trim()).includes('concursante_docente') || false}
+                                                 onChange={() => {
+                                                     const current = editForm.tipo_usuario ? editForm.tipo_usuario.split(',').map((r: string) => r.trim()).filter(Boolean) : [];
+                                                     let next = current.includes('postulante') ? [] : current;
+                                                     if (next.includes('concursante_docente')) {
+                                                         next = next.filter((r: string) => r !== 'concursante_docente');
+                                                     } else {
+                                                         next = [...next, 'concursante_docente'];
+                                                     }
+                                                     const finalVal = next.length === 0 ? 'postulante' : next.join(',');
+                                                     setEditForm(prev => ({ ...prev, tipo_usuario: finalVal, catedra: finalVal === 'postulante' ? '' : prev.catedra }));
+                                                 }}
+                                                 className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                             />
+                                             <div className="flex flex-col">
+                                                 <span className="text-xs font-bold text-slate-800">Docente Encargado</span>
+                                                 <span className="text-[9px] text-slate-500 font-medium">Cátedra Docente</span>
+                                             </div>
+                                         </label>
+
+                                         <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100/80 transition-all select-none">
+                                             <input 
+                                                 type="checkbox"
+                                                 checked={editForm.tipo_usuario?.split(',').map((r: string) => r.trim()).includes('auxiliar_docente') || false}
+                                                 onChange={() => {
+                                                     const current = editForm.tipo_usuario ? editForm.tipo_usuario.split(',').map((r: string) => r.trim()).filter(Boolean) : [];
+                                                     let next = current.includes('postulante') ? [] : current;
+                                                     if (next.includes('auxiliar_docente')) {
+                                                         next = next.filter((r: string) => r !== 'auxiliar_docente');
+                                                     } else {
+                                                         next = [...next, 'auxiliar_docente'];
+                                                     }
+                                                     const finalVal = next.length === 0 ? 'postulante' : next.join(',');
+                                                     setEditForm(prev => ({ ...prev, tipo_usuario: finalVal, catedra: finalVal === 'postulante' ? '' : prev.catedra }));
+                                                 }}
+                                                 className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                             />
+                                             <div className="flex flex-col">
+                                                 <span className="text-xs font-bold text-slate-800">Auxiliar Enseñanza</span>
+                                                 <span className="text-[9px] text-slate-500 font-medium">Auxiliar Docente</span>
+                                             </div>
+                                         </label>
                                      </div>
+                                 </div>
+                                 {(editForm.tipo_usuario?.includes('concursante_docente') || editForm.tipo_usuario?.includes('auxiliar_docente')) && (
+                                      <div className="col-span-2">
+                                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Cátedra de Concurso</label>
+                                          <input 
+                                              type="text"
+                                              value={editForm.catedra || ''}
+                                              onChange={(e) => setEditForm({ ...editForm, catedra: e.target.value })}
+                                              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 bg-white shadow-sm"
+                                              placeholder="Nombre de la cátedra"
+                                          />
+                                      </div>
                                  )}
                             </div>
                         </div>

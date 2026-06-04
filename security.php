@@ -80,7 +80,7 @@ function get_authorized_user() {
     
     $valid_signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(hash_hmac('sha256', "$header.$payload", get_jwt_secret(), true)));
     
-    if ($signature !== $valid_signature) return null;
+    if (!hash_equals($valid_signature, $signature)) return null;
     
     $data = json_decode(base64_decode($payload), true);
     if (!$data || (isset($data['exp']) && time() > $data['exp'])) return null;

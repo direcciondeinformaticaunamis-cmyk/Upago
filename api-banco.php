@@ -53,11 +53,14 @@ try {
     $conn->exec("set names utf8mb4");
 
     // --- AUTO-INICIALIZACIÓN DE TABLAS SI NO EXISTEN ---
-    $sql = file_get_contents('banco_proyectos_schema.sql');
-    if ($sql) {
-        $statements = array_filter(array_map('trim', explode(';', $sql)));
-        foreach ($statements as $stmt_sql) {
-            if ($stmt_sql) $conn->exec($stmt_sql);
+    $check_table = $conn->query("SHOW TABLES LIKE 'banco_proyectos'")->rowCount();
+    if ($check_table === 0 || isset($_GET['run_migrations'])) {
+        $sql = file_get_contents('banco_proyectos_schema.sql');
+        if ($sql) {
+            $statements = array_filter(array_map('trim', explode(';', $sql)));
+            foreach ($statements as $stmt_sql) {
+                if ($stmt_sql) $conn->exec($stmt_sql);
+            }
         }
     }
 

@@ -348,7 +348,7 @@ try {
       `barrio` varchar(100) DEFAULT NULL,
       `carrera` varchar(255) DEFAULT NULL,
       `sede` varchar(100) DEFAULT 'Santa Rosa de Lima',
-      `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante',
+      `tipo_usuario` varchar(150) DEFAULT 'postulante',
       `grupo_sanguineo` varchar(10) DEFAULT NULL,
       `alergico` varchar(255) DEFAULT NULL,
       `seguro_medico` varchar(100) DEFAULT NULL,
@@ -410,7 +410,7 @@ try {
         "estado_revision" => "enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente'",
         "observaciones" => "text DEFAULT NULL",
         "numero_expediente" => "varchar(50) DEFAULT NULL",
-        "tipo_usuario" => "enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'"
+        "tipo_usuario" => "varchar(150) DEFAULT 'postulante'"
     ];
     foreach ($cols_mig as $col => $def) { 
         try { 
@@ -419,6 +419,11 @@ try {
             // Columna ya existe o error menor
         } 
     }
+    
+    // Forzar la actualización del VARCHAR para tipo_usuario en caso de que la columna ya existiera con valores viejos
+    try {
+        $conn->exec("ALTER TABLE `postulantes` MODIFY COLUMN `tipo_usuario` varchar(150) DEFAULT 'postulante'");
+    } catch (Exception $e) {}
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `expedientes` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -957,8 +962,11 @@ if ($method === 'POST') {
 
             // Validar tipo_usuario
             $allowed_types = ['postulante', 'concursante_docente', 'auxiliar_docente'];
-            if (!in_array($tipo_usuario, $allowed_types)) {
-                throw new Exception("Tipo de usuario no válido.");
+            $input_types = explode(',', $tipo_usuario);
+            foreach ($input_types as $t) {
+                if (!in_array(trim($t), $allowed_types)) {
+                    throw new Exception("Tipo de usuario no válido: " . $t);
+                }
             }
 
             // 1. Verificar si el postulante a editar existe

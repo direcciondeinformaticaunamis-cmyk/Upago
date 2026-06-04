@@ -130,7 +130,13 @@ const PostulanteDashboard: React.FC<PostulanteDashboardProps> = ({ user, onLogou
                                 {user.nombre} {user.apellido}
                             </p>
                             <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase tracking-wider">
-                                {(user.rol === 'concursante_docente' || user.tipo_usuario === 'concursante_docente') ? 'Docente Titular' : ((user.rol === 'auxiliar_docente' || user.tipo_usuario === 'auxiliar_docente') ? 'Auxiliar Docente' : 'Postulante')}
+                                {((user.rol || '').includes('concursante_docente') || (user.tipo_usuario || '').includes('concursante_docente')) && ((user.rol || '').includes('auxiliar_docente') || (user.tipo_usuario || '').includes('auxiliar_docente'))
+                                    ? 'Docente y Auxiliar'
+                                    : ((user.rol === 'concursante_docente' || user.tipo_usuario?.includes('concursante_docente'))
+                                        ? 'Docente Titular'
+                                        : ((user.rol === 'auxiliar_docente' || user.tipo_usuario?.includes('auxiliar_docente'))
+                                            ? 'Auxiliar Docente'
+                                            : 'Postulante'))}
                             </p>
                         </div>
                     </div>

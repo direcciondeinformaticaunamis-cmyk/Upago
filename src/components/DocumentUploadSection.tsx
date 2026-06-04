@@ -53,7 +53,7 @@ interface PostulanteData {
     direccion?: string;
     carrera: string;
     sede: string;
-    tipoUsuario?: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
+    tipoUsuario?: string;
     numero_expediente?: string;
     catedra?: string;
 }
@@ -68,7 +68,7 @@ interface DocumentUploadSectionProps {
 const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulanteData, photo, onFinish, onSkipToPayment }) => {
     const [documents, setDocuments] = useState<DocumentItem[]>(() => {
         // --- CASO DOCENTE / CONCURSANTE (MEDICINA Y OTROS) ---
-        if (postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') {
+        if (postulanteData.tipoUsuario?.includes('concursante_docente') || postulanteData.tipoUsuario?.includes('auxiliar_docente')) {
             return [
                 { id: 'cv', label: 'a) Currículum vitae actualizado', description: 'Formato PDF, debidamente firmado y actualizado.', status: 'pending', fileNames: [], phase: 1 },
                 { id: 'solicitud_participacion', label: 'a.1) Nota de Solicitud de Participación en el Concurso', description: 'Nota formal firmada y dirigida a la Comisión de Selección/Evaluación.', status: 'pending', fileNames: [], phase: 1 },
@@ -137,7 +137,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
             
             setDocSubjects(Array.from(new Set(subjects)));
         };
-        if (postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') {
+        if (postulanteData.tipoUsuario?.includes('concursante_docente') || postulanteData.tipoUsuario?.includes('auxiliar_docente')) {
             fetchSubjects();
         }
     }, [postulanteData.cedula, postulanteData.tipoUsuario, postulanteData.catedra]);
@@ -153,7 +153,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                         
                         const cloudDoc = data.find((d: any) => {
                             if (d.tipo_documento !== doc.id) return false;
-                            if (postulanteData.tipoUsuario !== 'concursante_docente' && postulanteData.tipoUsuario !== 'auxiliar_docente') return true;
+                            if (!postulanteData.tipoUsuario?.includes('concursante_docente') && !postulanteData.tipoUsuario?.includes('auxiliar_docente')) return true;
                             
                             if (isShared) {
                                 return !d.asignatura || d.asignatura === '';
@@ -365,7 +365,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                     icon={FileCheck}
                 />
 
-                {(postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') && (
+                {(postulanteData.tipoUsuario?.includes('concursante_docente') || postulanteData.tipoUsuario?.includes('auxiliar_docente')) && (
                     <div className="bg-purple-50/50 border border-purple-100 rounded-3xl p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
                         <div className="space-y-1">
                             <h4 className="text-purple-950 font-black tracking-tight text-sm uppercase">Carpeta Digital por Asignatura</h4>
@@ -481,7 +481,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({ postulant
                                     <div className="flex-1 text-center md:text-left min-w-0">
                                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
                                             <h3 className="text-sm font-black text-slate-800 tracking-tight">{doc.label}</h3>
-                                            {(postulanteData.tipoUsuario === 'concursante_docente' || postulanteData.tipoUsuario === 'auxiliar_docente') && (
+                                            {(postulanteData.tipoUsuario?.includes('concursante_docente') || postulanteData.tipoUsuario?.includes('auxiliar_docente')) && (
                                                 ['cedula', 'titulos', 'antecedente_judicial', 'antecedente_policial'].includes(doc.id) ? (
                                                     <span className="text-[8px] bg-sky-50 text-sky-700 border border-sky-100 px-2 py-0.5 rounded font-black uppercase tracking-wider">
                                                         🌐 Compartido

@@ -91,7 +91,7 @@ interface FormData {
     barrio?: string;
     carrera: string;
     sede: string;
-    tipoUsuario: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
+    tipoUsuario: string;
     catedra?: string;
 
     // Datos de Salud
@@ -161,6 +161,36 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
     const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
     const [customCatedra, setCustomCatedra] = useState('');
     const [rawFile, setRawFile] = useState<File | null>(null);
+
+    const handleRoleSelect = (role: 'postulante' | 'concursante_docente' | 'auxiliar_docente') => {
+        if (role === 'postulante') {
+            onChange('tipoUsuario', 'postulante');
+            onChange('catedra', '');
+            return;
+        }
+        
+        const currentRoles = formData.tipoUsuario
+            ? formData.tipoUsuario.split(',').map((r: string) => r.trim()).filter(Boolean)
+            : [];
+            
+        let newRoles: string[];
+        if (currentRoles.includes('postulante')) {
+            newRoles = [role];
+        } else {
+            if (currentRoles.includes(role)) {
+                newRoles = currentRoles.filter((r: string) => r !== role);
+            } else {
+                newRoles = [...currentRoles, role];
+            }
+        }
+        
+        if (newRoles.length === 0) {
+            onChange('tipoUsuario', 'postulante');
+            onChange('catedra', '');
+        } else {
+            onChange('tipoUsuario', newRoles.join(','));
+        }
+    };
 
     // OCR scanning states for Cédula
     const [isOcrScanning, setIsOcrScanning] = useState(false);
@@ -297,7 +327,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
     };
 
 
-    const isDocente = formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente';
+    const isDocente = formData.tipoUsuario?.includes('concursante_docente') || formData.tipoUsuario?.includes('auxiliar_docente');
 
     const selectedCatedras = formData.catedra
         ? formData.catedra.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '')
@@ -397,7 +427,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                     className="p-6 md:p-8 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-200/80 transition-all duration-300"
                 >
                     <SectionTitle
-                        title={formData.tipoUsuario === 'concursante_docente' ? "Identidad del Concursante" : "Identidad del Postulante"}
+                        title={formData.tipoUsuario?.includes('concursante_docente') ? "Identidad del Concursante" : "Identidad del Postulante"}
                         subtitle="Asegúrese de que sus datos coincidan exactamente con su cédula de identidad civil."
                         icon={User}
                     />
@@ -727,18 +757,15 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     whileHover={{ y: -2 }}
                                     whileTap={{ scale: 0.99 }}
                                     type="button"
-                                    onClick={() => {
-                                        onChange('tipoUsuario', 'postulante');
-                                        onChange('catedra', '');
-                                    }}
+                                    onClick={() => handleRoleSelect('postulante')}
                                     className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
-                                        formData.tipoUsuario === 'postulante' || !formData.tipoUsuario
+                                        formData.tipoUsuario === 'postulante' || !formData.tipoUsuario || formData.tipoUsuario.split(',').map((r: string) => r.trim()).includes('postulante')
                                             ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
                                             : 'bg-white/50 border-slate-100 text-slate-400'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'postulante' || !formData.tipoUsuario ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'postulante' || !formData.tipoUsuario || formData.tipoUsuario.split(',').map((r: string) => r.trim()).includes('postulante') ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
                                             <User size={22} />
                                         </div>
                                         <div className="flex flex-col text-left">
@@ -751,15 +778,15 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     whileHover={{ y: -2 }}
                                     whileTap={{ scale: 0.99 }}
                                     type="button"
-                                    onClick={() => onChange('tipoUsuario', 'concursante_docente')}
+                                    onClick={() => handleRoleSelect('concursante_docente')}
                                     className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
-                                        formData.tipoUsuario === 'concursante_docente'
+                                        formData.tipoUsuario?.split(',').map((r: string) => r.trim()).includes('concursante_docente')
                                             ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
                                             : 'bg-white/50 border-slate-100 text-slate-400'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'concursante_docente' ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario?.split(',').map((r: string) => r.trim()).includes('concursante_docente') ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
                                             <School size={22} />
                                         </div>
                                         <div className="flex flex-col text-left">
@@ -772,15 +799,15 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                                     whileHover={{ y: -2 }}
                                     whileTap={{ scale: 0.99 }}
                                     type="button"
-                                    onClick={() => onChange('tipoUsuario', 'auxiliar_docente')}
+                                    onClick={() => handleRoleSelect('auxiliar_docente')}
                                     className={`px-6 py-5 rounded-2xl text-left transition-all duration-300 border-2 ${
-                                        formData.tipoUsuario === 'auxiliar_docente'
+                                        formData.tipoUsuario?.split(',').map((r: string) => r.trim()).includes('auxiliar_docente')
                                             ? 'bg-white border-[var(--primary)] shadow-premium text-slate-800'
                                             : 'bg-white/50 border-slate-100 text-slate-400'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario === 'auxiliar_docente' ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${formData.tipoUsuario?.split(',').map((r: string) => r.trim()).includes('auxiliar_docente') ? 'bg-[var(--primary-50)] text-[var(--primary)]' : 'bg-slate-50 text-slate-300'}`}>
                                             <GraduationCap size={22} />
                                         </div>
                                         <div className="flex flex-col text-left">
@@ -832,7 +859,7 @@ const PersonalDataForm: React.FC<PersonalDataFormProps> = ({ formData, photo, se
                             </div>
                         </div>
                         
-                        {(formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') && (
+                        {isDocente && (
                             <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
                                 <div className="flex flex-col gap-1.5 w-full">
                                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] ml-1">

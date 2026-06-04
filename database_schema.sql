@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `postulantes` (
   `barrio` varchar(100) DEFAULT NULL,
   `carrera` varchar(255) DEFAULT NULL,
   `sede` varchar(100) DEFAULT 'Santa Rosa de Lima',
-  `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante',
+  `tipo_usuario` varchar(150) DEFAULT 'postulante',
   `grupo_sanguineo` varchar(10) DEFAULT NULL,
   `alergico` varchar(255) DEFAULT NULL,
   `seguro_medico` varchar(100) DEFAULT NULL,

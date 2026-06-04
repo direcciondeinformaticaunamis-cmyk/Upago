@@ -262,14 +262,18 @@ const PaymentsDashboard: React.FC<PaymentsDashboardProps> = ({ onLogout }) => {
                                                         {pago.postulante_cedula}
                                                     </span>
                                                     {pago.tipo_usuario && (
-                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                            pago.tipo_usuario === 'concursante_docente' 
-                                                                ? 'bg-purple-100 text-purple-700' 
-                                                                : (pago.tipo_usuario === 'auxiliar_docente' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
-                                                        }`}>
-                                                            {pago.tipo_usuario === 'concursante_docente' ? 'Docente Encargado' : (pago.tipo_usuario === 'auxiliar_docente' ? 'Auxiliar' : 'Postulante')}
-                                                        </span>
-                                                    )}
+                                                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                                             pago.tipo_usuario?.includes('concursante_docente') && pago.tipo_usuario?.includes('auxiliar_docente')
+                                                                 ? 'bg-indigo-100 text-indigo-700'
+                                                                 : pago.tipo_usuario?.includes('concursante_docente') 
+                                                                     ? 'bg-purple-100 text-purple-700' 
+                                                                     : (pago.tipo_usuario?.includes('auxiliar_docente') ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-blue-100 text-blue-700')
+                                                         }`}>
+                                                             {pago.tipo_usuario?.includes('concursante_docente') && pago.tipo_usuario?.includes('auxiliar_docente')
+                                                                 ? 'Docente y Auxiliar'
+                                                                 : pago.tipo_usuario?.includes('concursante_docente') ? 'Docente Encargado' : (pago.tipo_usuario?.includes('auxiliar_docente') ? 'Auxiliar' : 'Postulante')}
+                                                         </span>
+                                                     )}
                                                 </div>
                                             </div>
                                         </td>

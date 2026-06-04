@@ -31,7 +31,7 @@ interface PostulanteSubmission {
     correo: string;
     telefono: string;
     sede: string;
-    tipo_usuario?: 'postulante' | 'concursante_docente' | 'auxiliar_docente';
+    tipo_usuario?: string;
 }
 
 interface AdminDashboardProps {
@@ -197,13 +197,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onViewDetail,
                                                     <div>
                                                         <div className="flex items-center gap-2">
                                                             <p className="font-semibold text-slate-800">{postulante.nombre} {postulante.apellido}</p>
-                                                            {postulante.tipo_usuario === 'concursante_docente' ? (
-                                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[8px] font-black uppercase rounded border border-purple-100">Docente Encargado</span>
-                                                            ) : postulante.tipo_usuario === 'auxiliar_docente' ? (
-                                                                <span className="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-600 text-[8px] font-black uppercase rounded border border-fuchsia-100">Auxiliar de Enseñanza</span>
-                                                            ) : (
-                                                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded border border-emerald-100">Postulante</span>
-                                                            )}
+                                                             {postulante.tipo_usuario?.includes('concursante_docente') && postulante.tipo_usuario?.includes('auxiliar_docente') ? (
+                                                                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase rounded border border-indigo-100">Docente y Auxiliar</span>
+                                                             ) : postulante.tipo_usuario?.includes('concursante_docente') ? (
+                                                                 <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[8px] font-black uppercase rounded border border-purple-100">Docente Encargado</span>
+                                                             ) : postulante.tipo_usuario?.includes('auxiliar_docente') ? (
+                                                                 <span className="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-600 text-[8px] font-black uppercase rounded border border-fuchsia-100">Auxiliar de Enseñanza</span>
+                                                             ) : (
+                                                                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded border border-emerald-100">Postulante</span>
+                                                             )}
                                                         </div>
                                                         <p className="text-xs text-slate-400">{postulante.cedula}</p>
                                                     </div>

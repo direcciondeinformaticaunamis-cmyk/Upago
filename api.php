@@ -451,7 +451,9 @@ try {
     $conn->exec("set names utf8mb4");
 
     // --- AUTO-INICIALIZACIÓN DE TABLAS ---
-    $conn->exec("CREATE TABLE IF NOT EXISTS `postulantes` (
+    $check_table = $conn->query("SHOW TABLES LIKE 'postulantes'")->rowCount();
+    if ($check_table === 0 || isset($_GET['run_migrations'])) {
+        $conn->exec("CREATE TABLE IF NOT EXISTS `postulantes` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `nombre` varchar(100) NOT NULL,
       `apellido` varchar(100) NOT NULL,
@@ -558,7 +560,7 @@ try {
         "estado_revision" => "enum('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente'",
         "observaciones" => "text DEFAULT NULL",
         "numero_expediente" => "varchar(50) DEFAULT NULL",
-        "tipo_usuario" => "enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'",
+        "tipo_usuario" => "varchar(150) DEFAULT 'postulante'",
         "password_hash" => "varchar(255) DEFAULT NULL",
         "catedra" => "varchar(255) DEFAULT NULL"
     ];
@@ -570,9 +572,9 @@ try {
         } 
     }
     
-    // Forzar la actualización del ENUM para tipo_usuario en caso de que la columna ya existiera con valores viejos
+    // Forzar la actualización del VARCHAR para tipo_usuario en caso de que la columna ya existiera con valores viejos
     try {
-        $conn->exec("ALTER TABLE `postulantes` MODIFY COLUMN `tipo_usuario` enum('postulante', 'concursante_docente', 'auxiliar_docente') DEFAULT 'postulante'");
+        $conn->exec("ALTER TABLE `postulantes` MODIFY COLUMN `tipo_usuario` varchar(150) DEFAULT 'postulante'");
     } catch (Exception $e) {}
 
     $conn->exec("CREATE TABLE IF NOT EXISTS `expedientes` (
@@ -776,6 +778,7 @@ try {
     } catch (Exception $e) {
         // Silencioso por si falla alguna columna
     }
+    }
 
 } catch(PDOException $exception) {
     http_response_code(500);
@@ -791,8 +794,28 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // --- MANEJO DE ARCHIVOS ---
 if (isset($_FILES['file']) && isset($_POST['type'])) {
+    // 🛡️ REQUERIR INICIO DE SESIÓN
+    $user = get_authorized_user();
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Sesión inválida o expirada. Por favor inicie sesión nuevamente."]);
+        exit;
+    }
+
     $type = $_POST['type'];
     $postulante_id = $_POST['postulante_id'];
+
+    // 🛡️ PROTEGER INTEGRIDAD DEL EXPEDIENTE:
+    // Solo permitir si es admin/académico, o si es el postulante modificando su propio expediente
+    $user_role = $user['rol'] ?? '';
+    $user_cedula = $user['cedula'] ?? '';
+
+    if ($user_role !== 'admin' && $user_role !== 'academico' && $user_cedula !== $postulante_id) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "No tiene permisos para modificar este expediente institucional."]);
+        exit;
+    }
+
     $target_dir = $upload_base . ($folders_map[$type] ?? "otros/");
     if ($_FILES["file"]["error"] !== UPLOAD_ERR_OK) { echo json_encode(["status" => "error", "message" => "Error al subir"]); exit; }
     $file_ext = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
@@ -903,6 +926,54 @@ if (isset($_FILES['invoice_file']) && isset($_POST['to_email']) && isset($_POST[
 if ($method === 'POST') {
     $raw = file_get_contents("php://input");
     $data = json_decode($raw, true);
+
+    // Endpoints de gestión de roles institucionales
+    if (isset($_GET['save_institutional_role'])) {
+        $admin_user = require_admin('admin'); // Seguridad: solo administradores
+        try {
+            $correo = trim($data['correo'] ?? '');
+            $rol = trim($data['rol'] ?? 'academico');
+            $nombre = trim($data['nombre_referencia'] ?? '');
+
+            if (empty($correo)) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "El correo electrónico es obligatorio."]);
+                exit;
+            }
+
+            $stmt = $conn->prepare("INSERT INTO roles_institucionales (correo, rol, nombre_referencia) 
+                                   VALUES (?, ?, ?) 
+                                   ON DUPLICATE KEY UPDATE rol = ?, nombre_referencia = ?");
+            $stmt->execute([$correo, $rol, $nombre, $rol, $nombre]);
+            
+            write_system_log("SAVE_INSTITUTIONAL_ROLE", $admin_user['email'] ?? 'Admin', "Guardó rol para $correo: $rol");
+            echo json_encode(["status" => "success", "message" => "Rol guardado correctamente."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if (isset($_GET['delete_institutional_role'])) {
+        $admin_user = require_admin('admin'); // Seguridad: solo administradores
+        try {
+            $id = (int)$_GET['delete_institutional_role'];
+            if ($id <= 0) {
+                throw new Exception("ID de rol inválido.");
+            }
+
+            $stmt = $conn->prepare("DELETE FROM roles_institucionales WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            write_system_log("DELETE_INSTITUTIONAL_ROLE", $admin_user['email'] ?? 'Admin', "Eliminó rol ID: $id");
+            echo json_encode(["status" => "success", "message" => "Rol eliminado correctamente."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
 
     if (isset($data['action']) && $data['action'] === 'admin_login') {
         $user = $data['username'] ?? ''; $pass = $data['password'] ?? '';
@@ -1581,8 +1652,11 @@ if ($method === 'POST') {
 
             // Validar tipo_usuario
             $allowed_types = ['postulante', 'concursante_docente', 'auxiliar_docente'];
-            if (!in_array($tipo_usuario, $allowed_types)) {
-                throw new Exception("Tipo de usuario no válido.");
+            $input_types = explode(',', $tipo_usuario);
+            foreach ($input_types as $t) {
+                if (!in_array(trim($t), $allowed_types)) {
+                    throw new Exception("Tipo de usuario no válido: " . $t);
+                }
             }
 
             // 1. Verificar si el postulante a editar existe
@@ -2760,6 +2834,19 @@ if ($method === 'GET') {
     if (isset($_GET['aranceles'])) { $stmt = $conn->query("SELECT * FROM aranceles WHERE activo = 1"); echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC)); exit; }
     if (isset($_GET['stats'])) { $stmt = $conn->query("SELECT COUNT(*) as total, SUM(CASE WHEN estado = 'verificado' THEN monto ELSE 0 END) as total_recaudado FROM pagos"); echo json_encode($stmt->fetch(PDO::FETCH_ASSOC)); exit; }
     
+    // Obtener roles institucionales para el panel de configuración
+    if (isset($_GET['get_institutional_roles'])) {
+        require_admin('admin'); // Seguridad
+        try {
+            $stmt = $conn->query("SELECT id, correo, rol, nombre_referencia FROM roles_institucionales ORDER BY id DESC");
+            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
+        exit;
+    }
+
     // Obtener usuarios manuales (externos) para el panel de migración
     if (isset($_GET['get_external_users'])) {
         // Buscamos usuarios cuyo correo NO termine en @unamis.edu.py

@@ -44,7 +44,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
         barrio: (user as any)?.barrio || '',
         carrera: (user as any)?.carrera || '',
         sede: (user as any)?.sede || '',
-        tipoUsuario: (user as any)?.tipo_usuario || (user as any)?.tipoUsuario || 'postulante' as 'postulante' | 'concursante_docente' | 'auxiliar_docente',
+        tipoUsuario: (user as any)?.tipo_usuario || (user as any)?.tipoUsuario || 'postulante' as string,
         catedra: (user as any)?.catedra || '',
         numero_expediente: (user as any)?.numero_expediente || (user as any)?.numeroExpediente || '',
         
@@ -88,7 +88,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
 
     const handleContinue = async () => {
         const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
-        if (formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') {
+        if (formData.tipoUsuario?.includes('concursante_docente') || formData.tipoUsuario?.includes('auxiliar_docente')) {
             required.push('catedra');
         }
         const missing = required.filter(field => !formData[field as keyof typeof formData]);
@@ -130,7 +130,7 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
 
     const handleSkipToPayment = async () => {
         const required = ['nombre', 'apellido', 'cedula', 'correo', 'telefono', 'carrera', 'sede'];
-        if (formData.tipoUsuario === 'concursante_docente' || formData.tipoUsuario === 'auxiliar_docente') {
+        if (formData.tipoUsuario?.includes('concursante_docente') || formData.tipoUsuario?.includes('auxiliar_docente')) {
             required.push('catedra');
         }
         const missing = required.filter(field => !formData[field as keyof typeof formData]);
@@ -295,7 +295,13 @@ const MisDatosModule: React.FC<MisDatosModuleProps> = ({ user, initialStep = 1, 
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Perfil</p>
                                     <p className="font-medium text-slate-800 capitalize">
-                                        {formData.tipoUsuario === 'concursante_docente' ? 'Docente' : (formData.tipoUsuario === 'auxiliar_docente' ? 'Auxiliar' : 'Estudiante')}
+                                        {formData.tipoUsuario?.includes('concursante_docente') && formData.tipoUsuario?.includes('auxiliar_docente')
+                                            ? 'Docente y Auxiliar'
+                                            : formData.tipoUsuario?.includes('concursante_docente')
+                                                ? 'Docente'
+                                                : formData.tipoUsuario?.includes('auxiliar_docente')
+                                                    ? 'Auxiliar'
+                                                    : 'Estudiante'}
                                     </p>
                                 </div>
                             </div>
