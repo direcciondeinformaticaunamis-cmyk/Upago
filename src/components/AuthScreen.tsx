@@ -92,14 +92,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
                             </p>
                         </div>
 
-                        <p className="text-white/50 text-[13px] leading-relaxed px-2 font-medium">
-                            Gestione el pago de todos los aranceles de los servicios ofrecidos por la universidad de forma rápida y centralizada.
-                        </p>
+                        <div className="mt-6 bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-inner">
+                            <p className="text-white/70 text-[11px] leading-relaxed font-semibold uppercase tracking-wider text-center">
+                                Los datos proporcionados serán utilizados únicamente para la gestión del trámite.
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="relative z-10 mt-12 pb-4">
-                        <div className="h-px w-12 bg-white/20 mb-4" />
-                        <p className="text-white/40 text-[10px] font-black tracking-[0.25em] uppercase">Secretaría de Tecnologías • UNAMIS</p>
+                    <div className="relative z-10 mt-12 pb-4 text-center md:text-left">
+                        <div className="h-px w-12 bg-white/20 mb-4 mx-auto md:mx-0" />
+                        <p className="text-white/50 text-[10px] font-bold tracking-widest uppercase">
+                            © 2026 Universidad Nacional de Misiones (UNAMIS).
+                        </p>
+                        <p className="text-white/40 text-[9px] font-black tracking-[0.2em] uppercase mt-1">
+                            Desarrollado por la Dirección de Informática
+                        </p>
                     </div>
                 </div>
 
