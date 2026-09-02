@@ -69,7 +69,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
                         <div className="w-20 h-20 bg-gradient-to-tr from-white/10 to-white/5 backdrop-blur-2xl rounded-3xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl shadow-black/20 group hover:scale-105 transition-transform duration-500">
                             <CreditCard size={38} className="text-white drop-shadow-md group-hover:rotate-6 transition-transform duration-500" />
                         </div>
-                        <h1 className="text-[2.75rem] font-black tracking-tight mb-3 uppercase leading-none drop-shadow-sm">UNAMIS</h1>
+                        <h1 className="text-[2.75rem] font-black tracking-tight mb-3 uppercase leading-none drop-shadow-sm">U-Pago</h1>
                         <p className="text-emerald-400 text-xl font-bold tracking-wide">Portal de Pagos de Aranceles</p>
                     </div>
 
