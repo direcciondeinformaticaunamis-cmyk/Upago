@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { CreditCard, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react';
 import { CATALOGO_UNAMIS } from '../constants/catalogoUnamis';
 import { loginRequest } from '../services/MicrosoftAuthService';
 import { useMsal } from '@azure/msal-react';
@@ -51,51 +51,55 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onMicrosof
     };
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden font-sans">
             {/* Background decorative elements */}
-            <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[70%] bg-[var(--primary)] opacity-[0.03] rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-15%] left-[-5%] w-[40%] h-[50%] bg-[var(--primary-light)] opacity-[0.02] rounded-full blur-[100px]" />
+            <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[60%] bg-[var(--primary)] opacity-[0.04] rounded-full blur-[100px] animate-pulse" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[50%] bg-emerald-500 opacity-[0.03] rounded-full blur-[120px]" />
 
-            <div className="w-full max-w-[1100px] flex flex-col md:flex-row bg-white rounded-[var(--radius-2xl)] shadow-premium overflow-hidden relative z-10 border border-[var(--border-subtle)]">
+            <div className="w-full max-w-[1100px] flex flex-col md:flex-row bg-white rounded-[2rem] shadow-2xl overflow-hidden relative z-10 border border-slate-100/50">
                 
                 {/* Brand Sidebar */}
-                <div className="md:w-[40%] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] p-12 text-white flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
+                <div className="md:w-[45%] bg-gradient-to-br from-[var(--primary)] via-[#0d2a54] to-[#0a1f40] p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                    {/* Decorative abstract shapes */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--primary-light)] opacity-10 rounded-full blur-2xl -translate-x-1/2 translate-y-1/2" />
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
                     
-                    <div className="relative z-10">
-                        <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-8 border border-white/20 shadow-xl">
-                            <GraduationCap size={35} className="text-white" />
+                    <div className="relative z-10 pt-4">
+                        <div className="w-20 h-20 bg-gradient-to-tr from-white/10 to-white/5 backdrop-blur-2xl rounded-3xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl shadow-black/20 group hover:scale-105 transition-transform duration-500">
+                            <CreditCard size={38} className="text-white drop-shadow-md group-hover:rotate-6 transition-transform duration-500" />
                         </div>
-                        <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">UNAMIS</h1>
-                        <p className="text-white/60 text-lg font-medium leading-tight">Portal Digital de Admisión y Concursos</p>
+                        <h1 className="text-[2.75rem] font-black tracking-tight mb-3 uppercase leading-none drop-shadow-sm">UNAMIS</h1>
+                        <p className="text-emerald-400 text-xl font-bold tracking-wide">Portal de Pagos de Aranceles</p>
                     </div>
 
-                    <div className="relative z-10 space-y-6">
-                        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-emerald-400">
-                                <CheckCircle size={22} />
+                    <div className="relative z-10 space-y-6 mt-8">
+                        <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-inner">
+                            <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400">
+                                <ShieldCheck size={22} />
                             </div>
-                            <p className="text-sm font-bold">Proceso 2026 Activo</p>
+                            <div className="flex flex-col">
+                                <p className="text-sm font-bold text-white">Plataforma Segura</p>
+                                <p className="text-[11px] text-white/60 font-medium">Transacciones encriptadas</p>
+                            </div>
                         </div>
                         
                         {/* Guía para Externos */}
-                        <div className="bg-white/10 backdrop-blur-md p-6 rounded-[30px] border border-white/20 space-y-3">
-                            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Guía de Acceso</p>
-                            <p className="text-sm leading-relaxed text-white/90">
-                                Si aún no posee cuenta institucional **(@unamis.edu.py)**, debe realizar el registro manual.
-                            </p>
-                            <p className="text-[11px] text-white/60 italic">
-                                Válido para: Postulantes, Encargados de Cátedra y Auxiliares.
+                        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-lg space-y-3">
+                            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Acceso al Sistema</p>
+                            <p className="text-sm leading-relaxed text-white/90 font-medium">
+                                Si no posee cuenta institucional (@unamis.edu.py), realice su registro manual para acceder.
                             </p>
                         </div>
 
-                        <p className="text-white/50 text-sm leading-relaxed px-2">
-                            Sistema centralizado para la gestión de postulantes, concursantes y aranceles institucionales.
+                        <p className="text-white/50 text-[13px] leading-relaxed px-2 font-medium">
+                            Gestione el pago de todos los aranceles de los servicios ofrecidos por la universidad de forma rápida y centralizada.
                         </p>
                     </div>
 
-                    <div className="relative z-10">
-                        <p className="text-white/40 text-[10px] font-black tracking-[0.2em] uppercase">Secretaría de Tecnologías - UNAMIS</p>
+                    <div className="relative z-10 mt-12 pb-4">
+                        <div className="h-px w-12 bg-white/20 mb-4" />
+                        <p className="text-white/40 text-[10px] font-black tracking-[0.25em] uppercase">Secretaría de Tecnologías • UNAMIS</p>
                     </div>
                 </div>
 
